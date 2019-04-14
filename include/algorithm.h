@@ -20,7 +20,8 @@ inline void swap(Object* a, Object* b) {
     *b = t;
 }
 
-int int_asc_order(const Object a, const Object b);
-int int_desc_order(const Object a, const Object b);
+int asc_order_int(const Object a, const Object b);
+int desc_order_int(const Object a, const Object b);
+void print_array_int(const Object *arr, int size);
 
 #endif //ALGORITHM_ALGORITHM_H

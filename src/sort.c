@@ -1,15 +1,8 @@
-#include <stdio.h>
+#include <stdlib.h>
 #include "sort.h"
 
 
 extern void swap(Object* a, Object* b);
-
-void print_int_array(const Object arr[], int size) {
-    for (int i=0; i<size; ++i) {
-        printf("%ld ", arr[i].int_value);
-    }
-    printf("\n");
-}
 
 void bubble_sort(Object arr[], int size, compare_function compare) {
     for (int i=size-1; i>=1; --i) {
@@ -41,13 +34,11 @@ void _quick_sort(Object arr[], int l, int r, compare_function compare) {
     while (i < j) {
         for (; j>i && compare(k, arr[j]); --j);
         if (j > i) {
-            arr[i] = arr[j];
-            ++i;
+            arr[i++] = arr[j];
         }
         for (; i<j && compare(arr[i], k); ++i);
         if (i < j) {
-            arr[j] = arr[i];
-            --j;
+            arr[j--] = arr[i];
         }
     }
     arr[i] = k;
@@ -65,9 +56,34 @@ void quick_sort(Object arr[], int size, compare_function compare) {
     }
 }
 
+void merge_sort(Object arr[], int size, compare_function compare) {
+    Object* t = (Object*)malloc(sizeof(Object)*size);
+    for (int i=1; i<size; i+=i) {
+        int l, ml, r, mr;
+        for (l=0; l+i<size; l=mr) {
+            r = ml = l + i;
+            mr = r + i;
+            if (mr > size) {
+                mr = size;
+            }
+            int j = 0;
+            while (l<ml && r<mr) {
+                t[j++] = compare(arr[l], arr[r]) ? arr[l++] : arr[r++];
+            }
+            while (l < ml) {
+                arr[--r] = arr[--ml];
+            }
+            while (j > 0) {
+                arr[--r] = t[--j];
+            }
+        }
+    }
+    free(t);
+}
+
 void sort(Object arr[], int size, compare_function compare) {
-    if (size > 40) {
-        quick_sort(arr, size, compare);
+    if (size > 60) {
+        merge_sort(arr, size, compare);
     } else {
         insert_sort(arr, size, compare);
     }
