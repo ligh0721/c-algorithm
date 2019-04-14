@@ -5,6 +5,7 @@
 
 
 void bubble_sort(Object arr[], int size, compare_function compare);
+void select_sort(Object arr[], int size, compare_function compare);
 void insert_sort(Object arr[], int size, compare_function compare);
 void quick_sort(Object arr[], int size, compare_function compare);
 void merge_sort(Object arr[], int size, compare_function compare);

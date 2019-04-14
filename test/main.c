@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     };
     int size = sizeof(arr)/sizeof(arr[0]);
     print_array_item(arr, size);
-    merge_sort(arr, size, asc_order_item);
+    merge_sort(arr, size, desc_order_item);
     print_array_item(arr, size);
     return 0;
 }

@@ -14,6 +14,20 @@ void bubble_sort(Object arr[], int size, compare_function compare) {
     }
 }
 
+void select_sort(Object arr[], int size, compare_function compare) {
+    for (int i=1; i<size; ++i) {
+        int k = i-1;
+        for (int j=i; j<size; ++j) {
+            if (!compare(arr[k], arr[j])) {
+                k = j;
+            }
+        }
+        if (k != i-1) {
+            swap(&arr[k], &arr[i-1]);
+        }
+    }
+}
+
 void insert_sort(Object arr[], int size, compare_function compare) {
     for (int i=1; i<size; ++i) {
         Object k = arr[i];
