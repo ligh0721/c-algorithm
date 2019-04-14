@@ -6,16 +6,16 @@
 #include "algorithm.h"
 
 
-int asc_order_int(const Object a, const Object b) {
+int asc_order_int(const VALUE a, const VALUE b) {
     return a.int_value <= b.int_value;
 }
 
-int desc_order_int(const Object a, const Object b) {
+int desc_order_int(const VALUE a, const VALUE b) {
     return a.int_value >= b.int_value;
 }
 
-void print_array_int(const Object *arr, int size) {
-    for (int i=0; i<size; ++i) {
+void print_array_int(const VALUE arr[], size_t size) {
+    for (size_t i=0; i<size; ++i) {
         printf("%ld ", arr[i].int_value);
     }
     printf("\n");

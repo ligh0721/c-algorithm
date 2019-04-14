@@ -1,0 +1,18 @@
+//
+// Created by t5w0rd on 19-4-14.
+//
+
+#ifndef ALGORITHM_STACK_H
+#define ALGORITHM_STACK_H
+
+#include "algorithm.h"
+
+
+typedef struct stack STACK;
+
+STACK* open_stack();
+void close_stack(STACK *st);
+void stack_push(STACK* st, VALUE value);
+VALUE stack_pop(STACK* st);
+
+#endif //ALGORITHM_STACK_H
