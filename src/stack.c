@@ -15,14 +15,15 @@ struct stack {
 extern struct link_node* open_link_node(VALUE value, struct link_node *next);
 
 STACK* open_stack() {
-    struct stack* ret = (struct stack*)malloc(sizeof(struct stack));
+    struct stack* ret = NEW(struct stack);
     ret->top = NULL;
     return ret;
 }
 
-void close_stack(STACK *st) {
+void close_stack(STACK* st) {
     assert(st != NULL);
     close_all_link_node(st->top);
+    DELETE(st);
 }
 
 void stack_push(STACK* st, VALUE value) {
@@ -34,7 +35,7 @@ void stack_push(STACK* st, VALUE value) {
 VALUE stack_pop(STACK* st) {
     assert(st != NULL);
     if (st->top == NULL) {
-        return NULL_OBJECT;
+        return NULL_VALUE;
     }
     struct link_node* poped = st->top;
     VALUE ret = poped->value;

@@ -14,7 +14,7 @@ struct link_node {
 };
 
 inline struct link_node* open_link_node(VALUE value, struct link_node *next) {
-    struct link_node* ret = (struct link_node*)malloc(sizeof(struct link_node));
+    struct link_node* ret = NEW(struct link_node);
     ret->value = value;
     ret->next = next;
     return ret;

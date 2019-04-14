@@ -9,27 +9,30 @@
 
 typedef struct array ARRAY;
 
-ARRAY* open_array(size_t cap);
-ARRAY* open_array_by_data(const VALUE arr[], size_t cap);
-ARRAY* reopen_array(ARRAY* arr, size_t cap);
+ARRAY* open_array(long cap);
+ARRAY* open_array_by_data(const VALUE arr[], long cap);
+ARRAY* reopen_array(ARRAY* arr, long cap);
 ARRAY* assign_array(ARRAY* arr);
 void close_array(ARRAY* arr);
-size_t array_len(ARRAY* arr);
-size_t array_cap(ARRAY* arr);
-VALUE array_get(ARRAY *arr, size_t index);
-void array_set(ARRAY *arr, size_t index, const VALUE value);
+long array_len(ARRAY* arr);
+long array_cap(ARRAY* arr);
+VALUE* array_data(ARRAY* arr);
+VALUE array_get(ARRAY *arr, long index);
+VALUE array_set(ARRAY *arr, long index, const VALUE value);
 
 
 typedef struct slice SLICE;
 
-SLICE* open_slice(size_t len, size_t cap);
-SLICE* open_slice_by_array(ARRAY* arr, size_t start, size_t end);
-SLICE* open_slice_by_slice(SLICE* sli, size_t start, size_t end);
+SLICE* open_slice(long len, long cap);
+SLICE* open_slice_by_array(ARRAY* arr, long start, long end);
+SLICE* open_slice_by_slice(SLICE* sli, long start, long end);
 void close_slice(SLICE* sli);
-size_t slice_len(SLICE* sli);
-size_t slice_cap(SLICE* sli);
-VALUE slice_get(SLICE *sli, size_t index);
-void slice_set(SLICE *sli, size_t index, const VALUE value);
-void slice_append(SLICE* sli, const VALUE value);
+long slice_len(SLICE* sli);
+long slice_cap(SLICE* sli);
+VALUE* slice_data(SLICE *sli);
+VALUE slice_get(SLICE *sli, long index);
+VALUE slice_set(SLICE *sli, long index, const VALUE value);
+void slice_append(SLICE *sli, const VALUE value);
+VALUE slice_remove(SLICE* sli, long index);
 
 #endif //ALGORITHM_ARRAY_H

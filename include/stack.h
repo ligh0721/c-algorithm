@@ -11,7 +11,7 @@
 typedef struct stack STACK;
 
 STACK* open_stack();
-void close_stack(STACK *st);
+void close_stack(STACK* st);
 void stack_push(STACK* st, VALUE value);
 VALUE stack_pop(STACK* st);
 
