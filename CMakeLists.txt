@@ -1,0 +1,35 @@
+cmake_minimum_required(VERSION 3.12)
+project(algorithm C)
+
+set(CMAKE_C_STANDARD 11)
+
+set(LIB_TARGET algorithm)
+set(TEST_TARGET algorithm_test)
+
+# 设置构建类型，及相应的编译选项
+set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_C_FLAGS_DEBUG "$ENV{CFLAGS} -O0 -Wall -g -ggdb")
+set(CMAKE_C_FLAGS_RELEASE "$ENV{CFLAGS} -O3 -Wall")
+
+# 设置执行文件输出目录
+set(EXECUTABLE_OUTPUT_PATH bin)
+
+# 设置库输出路径
+set(LIBRARY_OUTPUT_PATH lib)
+
+# 头文件搜索目录
+include_directories(include)
+# 链接库搜索路径
+link_directories(lib)
+
+# 添加源码
+aux_source_directory(src SRCS)
+aux_source_directory(test TEST_SRCS)
+
+# 目标文件
+add_library(${LIB_TARGET} ${SRCS})
+add_executable(${TEST_TARGET} ${TEST_SRCS})
+target_link_libraries(${TEST_TARGET} ${LIB_TARGET})
+
+# 添加依赖
+#add_dependencies(${TEST_TARGET} ${LIB_TARGET})
