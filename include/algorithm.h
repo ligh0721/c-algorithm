@@ -14,7 +14,7 @@ typedef union VALUE {
     void* ptr_value;
 } VALUE;
 
-VALUE int_value(int value);
+VALUE int_value(long value);
 VALUE float_value(double value);
 VALUE ptr_value(void* value);
 

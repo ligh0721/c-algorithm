@@ -5,7 +5,11 @@
 #ifndef ALGORITHM_ARRAY_H
 #define ALGORITHM_ARRAY_H
 
+#include <limits.h>
 #include "algorithm.h"
+
+#define ARRAY_MAX_SIZE (LONG_MAX-16)
+
 
 typedef struct array ARRAY;
 
@@ -33,6 +37,7 @@ VALUE* slice_data(SLICE *sli);
 VALUE slice_get(SLICE *sli, long index);
 VALUE slice_set(SLICE *sli, long index, const VALUE value);
 void slice_append(SLICE *sli, const VALUE value);
-VALUE slice_remove(SLICE* sli, long index);
+void slice_push(SLICE *sli, long index, const VALUE value);
+VALUE slice_pop(SLICE *sli, long index);
 
 #endif //ALGORITHM_ARRAY_H

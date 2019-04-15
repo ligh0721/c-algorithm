@@ -6,7 +6,7 @@
 #include "algorithm.h"
 
 
-VALUE int_value(int value) {
+VALUE int_value(long value) {
     VALUE ret;
     ret.int_value = value;
     return ret;

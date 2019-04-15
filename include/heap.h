@@ -15,6 +15,6 @@ HEAP* open_heap_by_data(COMPARE compare, const VALUE data[], long cap);
 void close_heap(HEAP* hp);
 void heap_push(HEAP* hp, const VALUE value);
 VALUE heap_pop(HEAP* hp);
-const VALUE heap_peek(HEAP* hp);
+const VALUE heap_top(HEAP *hp);
 
 #endif //ALGORITHM_HEAP_H

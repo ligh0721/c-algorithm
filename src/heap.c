@@ -16,7 +16,7 @@ void _heap_sift_up(VALUE arr[], long size, long index, COMPARE compare) {
     VALUE k = arr[index];
     long i, p;
     for (i=index; i>0; i=p) {
-        p = (i - 1) / 2;
+        p = (i - 1) >> 1;
         if (compare(arr[p], k)) {
             break;
         }
@@ -30,7 +30,7 @@ void _heap_sift_up(VALUE arr[], long size, long index, COMPARE compare) {
 void _heap_sift_down(VALUE arr[], long size, long index, COMPARE compare) {
     VALUE k = arr[index];
     long i = index;
-    for (long c=i*2+1; c<size; c=i*2+1) {
+    for (long c=(i<<1)+1; c<size; c=(i<<1)+1) {
         long r = c + 1;
         if (r < size && !compare(arr[c], arr[r])) {
             c = r;
@@ -49,7 +49,7 @@ void _heap_sift_down(VALUE arr[], long size, long index, COMPARE compare) {
 void _heap_build(HEAP* hp) {
     long len = slice_len(hp->data);
     VALUE* arr = slice_data(hp->data);
-    for (long i=len/2-1; i>=0; --i) {
+    for (long i=(len>>1)-1; i>=0; --i) {
         _heap_sift_down(arr, len, i, hp->compare);
     }
 }
@@ -93,14 +93,14 @@ VALUE heap_pop(HEAP* hp) {
         return NULL_VALUE;
     }
     if (len == 1) {
-        return slice_remove(hp->data, len-1);
+        return slice_pop(hp->data, len - 1);
     }
-    VALUE ret = slice_set(hp->data, 0, slice_remove(hp->data, len-1));
+    VALUE ret = slice_set(hp->data, 0, slice_pop(hp->data, len - 1));
     _heap_sift_down(slice_data(hp->data), len-1, 0, hp->compare);
     return ret;
 }
 
-const VALUE heap_peek(HEAP* hp) {
+const VALUE heap_top(HEAP *hp) {
     assert(hp != NULL);
     if (slice_len(hp->data) == 0) {
         return NULL_VALUE;
@@ -109,5 +109,6 @@ const VALUE heap_peek(HEAP* hp) {
 }
 
 SLICE* _heap_data(HEAP* hp) {
+    assert(hp != NULL);
     return hp->data;
 }

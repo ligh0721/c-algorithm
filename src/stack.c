@@ -12,7 +12,7 @@ struct stack {
     SLICE* data;
 };
 
-//extern struct linked_node* open_link_node(VALUE value, struct linked_node *next);
+//extern struct dlinked_node* open_link_node(VALUE value, struct dlinked_node *next);
 
 STACK* open_stack(long cap) {
     struct stack* ret = NEW(struct stack);
@@ -37,6 +37,14 @@ VALUE stack_pop(STACK* st) {
     if (len == 0) {
         return NULL_VALUE;
     }
-    return slice_remove(st->data, slice_len(st->data)-1);
+    return slice_pop(st->data, slice_len(st->data) - 1);
 }
 
+VALUE stack_top(STACK* st) {
+    assert(st != NULL);
+    long len = slice_len(st->data);
+    if (len == 0) {
+        return NULL_VALUE;
+    }
+    return slice_get(st->data, len-1);
+}

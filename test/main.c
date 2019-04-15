@@ -8,6 +8,8 @@
 #include "stack.h"
 #include "array.h"
 #include "heap.h"
+#include "deque.h"
+#include "main.h"
 
 
 typedef struct {
@@ -108,8 +110,8 @@ void array_test() {
 
 
     slice_append(sl2, new_item(6, "six"));
-    slice_remove(sl2, slice_len(sl2)-1);
-//    slice_remove(sl2, 0);
+    slice_pop(sl2, slice_len(sl2) - 1);
+//    slice_pop(sl2, 0);
 
     slice_set(sl2, 0, new_item(-3, "-three"));
 //    merge_sort(slice_data(sl2), slice_len(sl2), desc_order_item);
@@ -134,13 +136,12 @@ void array_test() {
     printf("sl3 len: %ld cap: %ld\n", slice_len(sl3), slice_cap(sl3));
 
     SLICE* sl4 = open_slice_by_slice(sl3, 3, 6);
-    slice_remove(sl4, 0);
+    slice_pop(sl4, 0);
 
     for (int i=0; i<slice_len(sl4); ++i) {
         printf("%ld ", slice_get(sl4, i).int_value);
     }
     printf("\n");
-
 
     close_slice(sl1);
     close_slice(sl2);
@@ -166,7 +167,6 @@ void heap_test() {
     heap_pop(hp);
     heap_pop(hp);
 
-    extern SLICE* _heap_data(HEAP* hp);
     SLICE* sl = _heap_data(hp);
     for (long i=0; i<slice_len(sl); ++i) {
         print_item(slice_get(sl, i));
@@ -199,11 +199,41 @@ void heap_test() {
     printf("\n");
 }
 
+void deque_test() {
+    printf("=== deque test ===\n");
+    DEQUE* q = open_deque(5);
+    deque_push_back(q, int_value(0));
+    deque_push_back(q, int_value(1));
+    deque_push_back(q, int_value(2));
+    deque_push_back(q, int_value(3));
+
+    deque_push_front(q, int_value(-1));
+    deque_push_front(q, int_value(-2));
+    deque_push_front(q, int_value(-3));
+
+    ARRAY* arr = _deque_data(q);
+    for (int i=0; i<array_cap(arr); ++i) {
+        printf("%ld ", array_get(arr, i).int_value);
+    }
+    printf("\n");
+
+    close_deque(q);
+    printf("\n");
+}
+
+void test() {
+    printf("=== test ===\n");
+
+    printf("\n");
+}
+
 int main(int argc, char* argv[]) {
     sort_test();
     stack_test();
     array_test();
     heap_test();
+    deque_test();
+    test();
 
     return 0;
 }
