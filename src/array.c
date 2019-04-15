@@ -160,7 +160,6 @@ VALUE slice_set(SLICE *sli, long index, const VALUE value) {
 
 void slice_grow(SLICE* sli, long mincap) {
     assert(sli != NULL);
-//    ARRAY* old_arr = sli->data;
     long old_cap = sli->data->cap;
     long new_cap = old_cap + (old_cap >> 1);
     if (new_cap < mincap) {
