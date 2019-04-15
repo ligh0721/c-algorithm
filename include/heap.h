@@ -13,8 +13,9 @@ typedef struct heap HEAP;
 HEAP* open_heap(COMPARE compare, long cap);
 HEAP* open_heap_by_data(COMPARE compare, const VALUE data[], long cap);
 void close_heap(HEAP* hp);
+long heap_len(HEAP* hp);
 void heap_push(HEAP* hp, const VALUE value);
-VALUE heap_pop(HEAP* hp);
+VALUE heap_pop(HEAP* hp, int* empty);
 const VALUE heap_top(HEAP *hp);
 
 #endif //ALGORITHM_HEAP_H

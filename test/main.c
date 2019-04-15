@@ -79,7 +79,8 @@ void stack_test() {
     stack_push(st, new_item(8, "eight"));
     stack_push(st, new_item(7, "seven"));
     stack_push(st, new_item(6, "six"));
-    for (VALUE i=stack_pop(st); !is_null_value(i); i=stack_pop(st)) {
+    int empty = 0;
+    for (VALUE i=stack_pop(st, &empty); !empty; i=stack_pop(st, &empty)) {
         print_item(i);
     }
     printf("\n");
@@ -163,9 +164,9 @@ void heap_test() {
     heap_push(hp, new_item(2, "two"));
     heap_push(hp, new_item(1, "one2"));
 
-    heap_pop(hp);
-    heap_pop(hp);
-    heap_pop(hp);
+    heap_pop(hp, NULL);
+    heap_pop(hp, NULL);
+    heap_pop(hp, NULL);
 
     SLICE* sl = _heap_data(hp);
     for (long i=0; i<slice_len(sl); ++i) {
@@ -211,11 +212,27 @@ void deque_test() {
     deque_push_front(q, int_value(-2));
     deque_push_front(q, int_value(-3));
 
+
+    int empty = 0;
+    for (VALUE i=deque_pop_back(q, &empty); !empty; i=deque_pop_back(q, &empty)) {
+        printf("%ld ", i.int_value);
+    }
+    printf("\n");
+
+    deque_pop_back(q, NULL);
+
+    empty = 0;
+    for (VALUE i=deque_pop_back(q, &empty); !empty; i=deque_pop_back(q, &empty)) {
+        printf("%ld ", i.int_value);
+    }
+    printf("\n");
+
+
     ARRAY* arr = _deque_data(q);
     for (int i=0; i<array_cap(arr); ++i) {
         printf("%ld ", array_get(arr, i).int_value);
     }
-    printf("\n");
+    printf("_deque_data\n");
 
     close_deque(q);
     printf("\n");

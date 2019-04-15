@@ -24,6 +24,8 @@ VALUE ptr_value(void* value) {
     return ret;
 }
 
+const VALUE NULL_VALUE = {0};
+
 int asc_order_int(const VALUE a, const VALUE b) {
     return a.int_value <= b.int_value;
 }

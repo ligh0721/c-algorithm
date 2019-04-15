@@ -18,8 +18,7 @@ VALUE int_value(long value);
 VALUE float_value(double value);
 VALUE ptr_value(void* value);
 
-#define is_null_value(obj) ((obj).ptr_value==NULL)
-#define NULL_VALUE ((VALUE)NULL)
+extern const VALUE NULL_VALUE;
 
 #define NEW(TYPE) ((TYPE*)malloc(sizeof(TYPE)))
 #define NEW2(TYPE, append) ((TYPE*)malloc(sizeof(TYPE)+(append)))

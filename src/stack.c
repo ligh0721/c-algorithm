@@ -26,15 +26,23 @@ void close_stack(STACK* st) {
     DELETE(st);
 }
 
+long stack_len(STACK* st) {
+    assert(st != NULL);
+    return slice_len(st->data);
+}
+
 void stack_push(STACK* st, VALUE value) {
     assert(st != NULL);
     slice_append(st->data, value);
 }
 
-VALUE stack_pop(STACK* st) {
+VALUE stack_pop(STACK* st, int* empty) {
     assert(st != NULL);
     long len = slice_len(st->data);
     if (len == 0) {
+        if (empty != NULL) {
+            *empty = 1;
+        }
         return NULL_VALUE;
     }
     return slice_pop(st->data, slice_len(st->data) - 1);

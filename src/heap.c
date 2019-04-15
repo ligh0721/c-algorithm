@@ -79,6 +79,11 @@ void close_heap(HEAP* hp) {
     DELETE(hp);
 }
 
+long heap_len(HEAP* hp) {
+    assert(hp != NULL);
+    return slice_len(hp->data);
+}
+
 void heap_push(HEAP* hp, const VALUE value) {
     assert(hp != NULL);
     long index = slice_len(hp->data);
@@ -86,10 +91,13 @@ void heap_push(HEAP* hp, const VALUE value) {
     _heap_sift_up(slice_data(hp->data), slice_len(hp->data), index, hp->compare);
 }
 
-VALUE heap_pop(HEAP* hp) {
+VALUE heap_pop(HEAP* hp, int* empty) {
     assert(hp != NULL);
     long len = slice_len(hp->data);
     if (len == 0) {
+        if (empty != NULL) {
+            *empty = 1;
+        }
         return NULL_VALUE;
     }
     if (len == 1) {

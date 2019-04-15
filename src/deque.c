@@ -121,9 +121,12 @@ void deque_push_front(DEQUE* dq, const VALUE value) {
     }
 }
 
-VALUE deque_pop_front(DEQUE* dq) {
+VALUE deque_pop_front(DEQUE* dq, int* empty) {
     assert(dq != NULL);
     if (dq->front == -1) {
+        if (empty != NULL) {
+            *empty = 1;
+        }
         return NULL_VALUE;
     }
     VALUE ret = array_get(dq->data, dq->front);
@@ -166,9 +169,12 @@ void deque_push_back(DEQUE* dq, const VALUE value) {
     }
 }
 
-VALUE deque_pop_back(DEQUE* dq) {
+VALUE deque_pop_back(DEQUE* dq, int* empty) {
     assert(dq != NULL);
     if (dq->back == -1) {
+        if (empty != NULL) {
+            *empty = 1;
+        }
         return NULL_VALUE;
     }
     VALUE ret = array_get(dq->data, dq->back);
