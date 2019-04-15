@@ -17,6 +17,4 @@ void heap_push(HEAP* hp, const VALUE value);
 VALUE heap_pop(HEAP* hp);
 const VALUE heap_peek(HEAP* hp);
 
-SLICE* _heap_data(HEAP* hp);
-
 #endif //ALGORITHM_HEAP_H

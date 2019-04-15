@@ -8,18 +8,15 @@
 #include "algorithm.h"
 
 
-struct link_node {
+struct linked_node {
     VALUE value;
-    struct link_node* next;
+    struct linked_node* next;
+    struct linked_node* prev;
 };
 
-inline struct link_node* open_link_node(VALUE value, struct link_node *next) {
-    struct link_node* ret = NEW(struct link_node);
-    ret->value = value;
-    ret->next = next;
-    return ret;
-}
+struct linked_node* open_linked_node(VALUE value, struct linked_node* prev, struct linked_node* next);
+void close_linked_node(struct linked_node* node);
 
-void close_all_link_node(struct link_node *from);
+typedef struct list LIST;
 
 #endif //ALGORITHM_LINK_H

@@ -72,7 +72,7 @@ void sort_test() {
 
 void stack_test() {
     printf("=== stack test ===\n");
-    STACK* st = open_stack();
+    STACK* st = open_stack(0);
     stack_push(st, new_item(9, "nine"));
     stack_push(st, new_item(8, "eight"));
     stack_push(st, new_item(7, "seven"));
@@ -166,6 +166,7 @@ void heap_test() {
     heap_pop(hp);
     heap_pop(hp);
 
+    extern SLICE* _heap_data(HEAP* hp);
     SLICE* sl = _heap_data(hp);
     for (long i=0; i<slice_len(sl); ++i) {
         print_item(slice_get(sl, i));

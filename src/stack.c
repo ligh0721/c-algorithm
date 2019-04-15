@@ -4,43 +4,39 @@
 
 #include <stdlib.h>
 #include <assert.h>
-#include "link.h"
+#include "array.h"
 #include "stack.h"
 
 
 struct stack {
-    struct link_node* top;
+    SLICE* data;
 };
 
-extern struct link_node* open_link_node(VALUE value, struct link_node *next);
+//extern struct linked_node* open_link_node(VALUE value, struct linked_node *next);
 
-STACK* open_stack() {
+STACK* open_stack(long cap) {
     struct stack* ret = NEW(struct stack);
-    ret->top = NULL;
+    ret->data = open_slice(0, cap);
     return ret;
 }
 
 void close_stack(STACK* st) {
     assert(st != NULL);
-    close_all_link_node(st->top);
+    close_slice(st->data);
     DELETE(st);
 }
 
 void stack_push(STACK* st, VALUE value) {
     assert(st != NULL);
-    struct link_node* node = open_link_node(value, st->top);
-    st->top = node;
+    slice_append(st->data, value);
 }
 
 VALUE stack_pop(STACK* st) {
     assert(st != NULL);
-    if (st->top == NULL) {
+    long len = slice_len(st->data);
+    if (len == 0) {
         return NULL_VALUE;
     }
-    struct link_node* poped = st->top;
-    VALUE ret = poped->value;
-    st->top = st->top->next;
-    free(poped);
-    return ret;
+    return slice_remove(st->data, slice_len(st->data)-1);
 }
 

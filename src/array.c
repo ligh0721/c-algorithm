@@ -6,7 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <limits.h>
 #include "array.h"
+
+#define ARRAY_MAX_SIZE (LONG_MAX-16)
 
 
 struct array {
@@ -16,7 +19,7 @@ struct array {
 };
 
 ARRAY* open_array(long cap) {
-    assert(cap > 0);
+    assert(cap >= 0);
     struct array* ret = NEW2(struct array, sizeof(VALUE)*cap);
     assert(ret != NULL);
     ret->cap = cap;
@@ -94,9 +97,6 @@ struct slice {
 SLICE* open_slice(long len, long cap) {
     assert(len <= cap);
     struct slice* ret = NEW(struct slice);
-    if (cap < 1) {
-        cap = 1;
-    }
     ret->arr = open_array(cap);
     ret->pos = 0;
     ret->len = len;
@@ -161,19 +161,30 @@ VALUE slice_set(SLICE *sli, long index, const VALUE value) {
     return ret;
 }
 
-void slice_append(SLICE *sli, const VALUE value) {
+void slice_grow(SLICE* sli, long mincap) {
     assert(sli != NULL);
     ARRAY* arr = sli->arr;
-    long pos = sli->pos + sli->len;
-    if (pos == arr->cap) {
-        ARRAY* new_arr = open_array(arr->cap*2);
-        memcpy(new_arr->data, arr->data, sizeof(VALUE)*arr->cap);
-        close_array(arr);
-        arr = sli->arr = new_arr;
-//        arr = reopen_array(arr, arr->cap*2);
-        printf("realloc array data\n");
+    long new_cap = arr->cap + (arr->cap >> 1);
+    if (new_cap < mincap) {
+        new_cap = mincap;
     }
-    arr->data[pos] = value;
+    if (new_cap > ARRAY_MAX_SIZE) {
+        new_cap = mincap > ARRAY_MAX_SIZE ? LONG_MAX : ARRAY_MAX_SIZE;
+    }
+    ARRAY* new_arr = open_array(new_cap);
+    memcpy(new_arr->data, arr->data, sizeof(VALUE)*new_cap);
+    close_array(arr);
+    arr = sli->arr = new_arr;
+    printf("realloc array data\n");
+}
+
+void slice_append(SLICE* sli, const VALUE value) {
+    assert(sli != NULL);
+    long pos = sli->pos + sli->len;
+    if (pos == sli->arr->cap) {
+        slice_grow(sli, sli->arr->cap+1);
+    }
+    sli->arr->data[pos] = value;
     sli->len++;
 }
 
