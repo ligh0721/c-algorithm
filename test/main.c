@@ -219,10 +219,11 @@ void deque_test() {
     }
     printf("\n");
 
-    deque_pop_back(q, NULL);
+    deque_push_back(q, int_value(88));
+    deque_push_front(q, int_value(-88));
 
     empty = 0;
-    for (VALUE i=deque_pop_back(q, &empty); !empty; i=deque_pop_back(q, &empty)) {
+    for (VALUE i=deque_pop_front(q, &empty); !empty; i=deque_pop_front(q, &empty)) {
         printf("%ld ", i.int_value);
     }
     printf("\n");
