@@ -10,5 +10,6 @@
 
 typedef struct rbtree RBTREE;
 
+void rbtree_clear(RBTREE* tr);
 
 #endif //ALGORITHM_RBTREE_H

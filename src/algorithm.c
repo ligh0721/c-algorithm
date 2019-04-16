@@ -27,11 +27,11 @@ VALUE ptr_value(void* value) {
 const VALUE NULL_VALUE = {0};
 
 int asc_order_int(const VALUE a, const VALUE b) {
-    return a.int_value <= b.int_value;
+    return a.int_value - b.int_value;
 }
 
 int desc_order_int(const VALUE a, const VALUE b) {
-    return a.int_value >= b.int_value;
+    return b.int_value - a.int_value;
 }
 
 void print_array_int(const VALUE arr[], long size) {

@@ -41,13 +41,13 @@ void print_array_item(const VALUE arr[], long size) {
 int asc_order_item(const VALUE a, const VALUE b) {
     ITEM* ela = (ITEM*)a.ptr_value;
     ITEM* elb = (ITEM*)b.ptr_value;
-    return ela->key <= elb->key;
+    return ela->key - elb->key;
 }
 
 int desc_order_item(const VALUE a, const VALUE b) {
     ITEM* ela = (ITEM*)a.ptr_value;
     ITEM* elb = (ITEM*)b.ptr_value;
-    return ela->key >= elb->key;
+    return elb->key - ela->key;
 }
 
 void sort_test() {
@@ -67,7 +67,7 @@ void sort_test() {
     };
     long size = sizeof(arr)/sizeof(arr[0]);
     print_array_item(arr, size);
-    quick_sort(arr, size, desc_order_item);
+    merge_sort(arr, size, desc_order_item);
     print_array_item(arr, size);
     printf("\n");
 }

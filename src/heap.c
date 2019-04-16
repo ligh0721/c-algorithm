@@ -17,7 +17,7 @@ void _heap_sift_up(VALUE arr[], long size, long index, COMPARE compare) {
     long i, p;
     for (i=index; i>0; i=p) {
         p = (i - 1) >> 1;
-        if (compare(arr[p], k)) {
+        if (compare(arr[p], k) <= 0) {
             break;
         }
         arr[i] = arr[p];
@@ -32,10 +32,10 @@ void _heap_sift_down(VALUE arr[], long size, long index, COMPARE compare) {
     long i = index;
     for (long c=(i<<1)+1; c<size; c=(i<<1)+1) {
         long r = c + 1;
-        if (r < size && !compare(arr[c], arr[r])) {
+        if (r < size && compare(arr[c], arr[r]) > 0) {
             c = r;
         }
-        if (compare(k, arr[c])) {
+        if (compare(k, arr[c]) <= 0) {
             break;
         }
         arr[i] = arr[c];

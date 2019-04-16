@@ -11,7 +11,7 @@ extern void swap(VALUE* a, VALUE* b);
 void bubble_sort(VALUE arr[], long size, COMPARE compare) {
     for (long i=size-1; i>=1; --i) {
         for (long j=1; j<=i; ++j) {
-            if (!compare(arr[j-1], arr[j])) {
+            if (compare(arr[j-1], arr[j]) > 0) {
                 swap(&arr[j-1], &arr[j]);
             }
         }
@@ -22,7 +22,7 @@ void select_sort(VALUE arr[], long size, COMPARE compare) {
     for (long i=1; i<size; ++i) {
         long k = i-1;
         for (long j=i; j<size; ++j) {
-            if (!compare(arr[k], arr[j])) {
+            if (compare(arr[k], arr[j]) > 0) {
                 k = j;
             }
         }
@@ -36,7 +36,7 @@ void insert_sort(VALUE arr[], long size, COMPARE compare) {
     for (int i=1; i<size; ++i) {
         VALUE k = arr[i];
         long j = i;
-        for (; j>0 && !compare(arr[j-1], k); --j) {
+        for (; j>0 && compare(arr[j-1], k)>0; --j) {
             arr[j] = arr[j-1];
         }
         if (j != i) {
@@ -50,11 +50,11 @@ void _quick_sort(VALUE arr[], long l, long r, COMPARE compare) {
     long i = l;
     long j = r;
     while (i < j) {
-        for (; j>i && compare(k, arr[j]); --j);
+        for (; j>i && compare(k, arr[j])<=0; --j);
         if (j > i) {
             arr[i++] = arr[j];
         }
-        for (; i<j && compare(arr[i], k); ++i);
+        for (; i<j && compare(arr[i], k)<=0; ++i);
         if (i < j) {
             arr[j--] = arr[i];
         }
@@ -86,7 +86,7 @@ void merge_sort(VALUE arr[], long size, COMPARE compare) {
             }
             int j = 0;
             while (l<ml && r<mr) {
-                t[j++] = compare(arr[l], arr[r]) ? arr[l++] : arr[r++];
+                t[j++] = compare(arr[l], arr[r]) <= 0 ? arr[l++] : arr[r++];
             }
             while (l < ml) {
                 arr[--r] = arr[--ml];
