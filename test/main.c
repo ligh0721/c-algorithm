@@ -67,7 +67,7 @@ void sort_test() {
     };
     long size = sizeof(arr)/sizeof(arr[0]);
     print_array_item(arr, size);
-    merge_sort(arr, size, desc_order_item);
+    quick_sort(arr, size, desc_order_item);
     print_array_item(arr, size);
     printf("\n");
 }
@@ -241,6 +241,9 @@ void deque_test() {
 
 void test() {
     printf("=== test ===\n");
+
+    extern void rbtree_test();
+    rbtree_test();
 
     printf("\n");
 }
