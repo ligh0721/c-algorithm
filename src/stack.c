@@ -56,3 +56,8 @@ VALUE stack_top(STACK* st) {
     }
     return slice_get(st->data, len-1);
 }
+
+SLICE* stack_data(STACK* st) {
+    assert(st != NULL);
+    return st->data;
+}

@@ -91,7 +91,7 @@ VALUE deque_get(DEQUE* dq, long index) {
     return array_get(dq->data, index);
 }
 
-VALUE deque_set(DEQUE* dq, long index, const VALUE value) {
+VALUE deque_set(DEQUE* dq, long index, VALUE value) {
     assert(dq != NULL);
     assert(index < deque_len(dq));
     index = dq->front + index;
@@ -102,7 +102,7 @@ VALUE deque_set(DEQUE* dq, long index, const VALUE value) {
     return array_set(dq->data, index, value);
 }
 
-void deque_push_front(DEQUE* dq, const VALUE value) {
+void deque_push_front(DEQUE* dq, VALUE value) {
     assert(dq != NULL);
     if (dq->front == -1) {
         dq->back = 0;
@@ -150,7 +150,7 @@ VALUE deque_front(DEQUE* dq) {
     return array_get(dq->data, dq->front);
 }
 
-void deque_push_back(DEQUE* dq, const VALUE value) {
+void deque_push_back(DEQUE* dq, VALUE value) {
     assert(dq != NULL);
     if (dq->back == -1) {
         dq->front = 0;

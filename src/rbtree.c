@@ -3,50 +3,69 @@
 //
 
 #include <assert.h>
+#include <stdio.h>
 #include "rbtree.h"
 
 
-struct rb_node {
+struct rbnode {
     VALUE value;
-    unsigned long parent_and_color;  // 父节点的指针以及颜色
+    union {
+        unsigned long parent_and_color;  // 父节点的指针以及颜色
+        struct {
+            unsigned long color:1;
+        };
+    };
 #define RB_RED      0
 #define RB_BLACK    1
-    struct rb_node* right;
-    struct rb_node* left;
+    struct rbnode* right;
+    struct rbnode* left;
 } __attribute__((aligned(sizeof(long))));
 
 
-static inline struct rb_node* open_rb_node(const VALUE value) {
-    struct rb_node* ret = NEW(struct rb_node);
+static inline RBNODE* open_rbnode(VALUE value) {
+    struct rbnode* ret = NEW(struct rbnode);
     ret->value = value;
     ret->left = ret->right = NULL;
     return ret;
 }
 
-static inline void close_rb_node(struct rb_node* node) {
+static inline void close_rbnode(RBNODE* node) {
     DELETE(node);
 }
 
-#define rb_node_parent(node) ((struct rb_node*)((node)->parent_and_color & ~3))
-#define rb_node_color(node) ((node)->parent_and_color & 1)
-#define rb_node_is_red(node) (rb_node_color(node) == RB_RED)
-#define rb_node_is_black(node) (rb_node_color(node) == RB_BLACK)
-#define rb_node_set_red(node) do { (node)->parent_and_color &= ~1; } while (0)
-#define rb_node_set_black(node) do { (node)->parent_and_color |= 1; } while (0)
-
-// 只设置父节点地址
-static inline void rb_node_set_parent(struct rb_node *node, struct rb_node *parent) {
-    node->parent_and_color = (node->parent_and_color & 3) | (unsigned long)parent;
+static inline struct rbnode* rbnode_parent(struct rbnode* node) {
+    return (struct rbnode*)((node)->parent_and_color & ~1);
 }
 
-static inline void rb_node_copy_color(struct rb_node *node, struct rb_node *src) {
+static inline int rbnode_is_red(struct rbnode* node) {
+    return !(node->parent_and_color & 1);
+}
+
+static inline int rbnode_is_black(struct rbnode* node) {
+    return node->parent_and_color & 1;
+}
+
+static inline void rbnode_set_red(struct rbnode* node) {
+    node->parent_and_color &= ~1;
+}
+
+static inline void rbnode_set_black(struct rbnode* node) {
+    node->parent_and_color |= 1;
+}
+
+// 只设置父节点地址
+static inline void rbnode_set_parent(struct rbnode *node, struct rbnode *parent) {
+    node->parent_and_color = (node->parent_and_color & 1) | (unsigned long)parent;
+}
+
+static inline void rbnode_copy_color(struct rbnode *node, struct rbnode *src) {
     node->parent_and_color = (node->parent_and_color & ~1) | (src->parent_and_color & 1);
 }
 
 
 struct rbtree {
-    struct rb_node* root;
-    struct rb_node* leaf;
+    struct rbnode* root;
+    struct rbnode* leaf;
     COMPARE compare;
     long len;
 };
@@ -54,9 +73,9 @@ struct rbtree {
 RBTREE* open_rbtree(COMPARE compare) {
     struct rbtree* ret = NEW(struct rbtree);
     assert(ret != NULL);
-    ret->root = NULL;
-    ret->leaf = open_rb_node(NULL_VALUE);
-    ret->leaf->parent_and_color = 0;
+    ret->leaf = open_rbnode(NULL_VALUE);
+    ret->leaf->parent_and_color = RB_BLACK;
+    ret->root = ret->leaf;
     ret->compare = compare;
     ret->len = 0;
     return ret;
@@ -65,7 +84,7 @@ RBTREE* open_rbtree(COMPARE compare) {
 void close_rbtree(RBTREE* tr) {
     assert(tr != NULL);
     rbtree_clear(tr);
-    close_rb_node(tr->leaf);
+    close_rbnode(tr->leaf);
     DELETE(tr);
 }
 
@@ -78,28 +97,34 @@ void rbtree_clear(RBTREE* tr) {
     assert(tr != NULL);
 }
 
-// default red color
-static inline struct rb_node* rbtree_open_node(RBTREE* tr, const VALUE value, struct rb_node* parent) {
-    struct rb_node* ret = NEW(struct rb_node);
+// default red
+inline RBNODE* rbtree_open_node(RBTREE* tr, VALUE value, RBNODE* parent) {
+    struct rbnode* ret = NEW(struct rbnode);
     ret->value = value;
     ret->parent_and_color = (unsigned long)parent;
     ret->left = ret->right = tr->leaf;
     return ret;
 }
 
-#define rbtree_empty(rbtree) ((rbtree)->root == NULL)
+inline void rbtree_close_node(RBTREE* tr, RBNODE* node) {
+    DELETE(node);
+}
 
-static inline void rbtree_left_rotate(RBTREE* tr, struct rb_node* node) {
+static inline int rbtree_empty(RBTREE* tr) {
+    return tr->root == tr->leaf;
+}
+
+static inline void rbtree_left_rotate(RBTREE* tr, struct rbnode* node) {
     assert(node->right != tr->leaf);
-    struct rb_node* right = node->right;
-    struct rb_node* parent = rb_node_parent(node);
+    struct rbnode* right = node->right;
+    struct rbnode* parent = rbnode_parent(node);
 
     node->right = right->left;
     if (right->left != tr->leaf) {
-        rb_node_set_parent(right->left, node);
+        rbnode_set_parent(right->left, node);
     }
 
-    rb_node_set_parent(right, parent);
+    rbnode_set_parent(right, parent);
     if (node == tr->root) {
         tr->root = right;
     } else if (node == parent->left) {
@@ -108,20 +133,20 @@ static inline void rbtree_left_rotate(RBTREE* tr, struct rb_node* node) {
         parent->right = right;
     }
     right->left = node;
-    rb_node_set_parent(node, right);
+    rbnode_set_parent(node, right);
 }
 
-static inline void rbtree_right_rotate(RBTREE* tr, struct rb_node* node) {
+static inline void rbtree_right_rotate(RBTREE* tr, struct rbnode* node) {
     assert(node->left != tr->leaf);
-    struct rb_node* left = node->left;
-    struct rb_node* parent = rb_node_parent(node);
+    struct rbnode* left = node->left;
+    struct rbnode* parent = rbnode_parent(node);
 
     node->left = left->right;
     if (left->right != tr->leaf) {
-        rb_node_set_parent(left->right, node);
+        rbnode_set_parent(left->right, node);
     }
 
-    rb_node_set_parent(left, parent);
+    rbnode_set_parent(left, parent);
     if (node == tr->root) {
         tr->root = left;
     } else if (node == parent->right) {
@@ -130,146 +155,110 @@ static inline void rbtree_right_rotate(RBTREE* tr, struct rb_node* node) {
         parent->left = left;
     }
     left->right = node;
-    rb_node_set_parent(node, left);
+    rbnode_set_parent(node, left);
 }
 /*
- *  if *ret == NULL, not found && empty tree
- *  elif *ret == leaf, not found
+ *  if *ret == leaf, not found (ret == &root)
  *  else found
  */
-static inline struct rb_node** rbtree_search(RBTREE* tr, const VALUE key) {
-    struct rb_node** ret = &tr->root;
-    if (rbtree_empty(tr)) {
+inline RBNODE** rbtree_fast_get(RBTREE *tr, const VALUE key, RBNODE** parent) {
+    struct rbnode** ret = &tr->root;
+    struct rbnode* leaf = tr->leaf;
+    if (*ret == leaf) {
+        if (parent) {
+            *parent = NULL;
+        }
         return ret;
     }
-    struct rb_node* leaf = tr->leaf;
-    struct rb_node* node = tr->root;
+
     for (;;) {
+        struct rbnode* node = *ret;
         register int cmp = tr->compare(key, node->value);
         if (cmp == 0) {
+            if (parent) {
+                *parent = rbnode_parent(node);
+            }
             return ret;
         }
         ret = cmp < 0 ? &node->left : &node->right;
         if (*ret == leaf) {
+            if (parent) {
+                *parent = node;
+            }
             return ret;
         }
-        node = *ret;
     }
 }
 
-VALUE rbtree_get(RBTREE* tr, const VALUE key, int* ok) {
-    if (rbtree_empty(tr)) {
-        if (ok) {
-            *ok = 0;
-        }
-        return NULL_VALUE;
-    }
-    struct rb_node* leaf = tr->leaf;
-    struct rb_node* node = tr->root;
-    do {
-        register int cmp = tr->compare(key, node->value);
-        if (cmp == 0) {
-            if (ok) {
-                *ok = 1;
-            }
-            return node->value;
-        }
-        node = cmp < 0 ? node->left : node->right;
-    } while (node != leaf);
-
-    if (ok) {
-        *ok = 0;
-    }
-    return NULL_VALUE;
-}
-
-#include <stdio.h>
-void rbtree_set(RBTREE *tr, const VALUE value) {
+void rbtree_fast_set(RBTREE *tr, RBNODE** where, RBNODE* node) {
     assert(tr != NULL);
-    if (rbtree_empty(tr)) {
-        tr->root = rbtree_open_node(tr, value, NULL);
-        rb_node_set_black(tr->root);
-        tr->len = 1;
+    assert(*where == tr->leaf);
+    *where = node;
+    tr->len++;
+    if (where == &tr->root) {
+        rbnode_set_black(tr->root);
         return;
     }
 
-    // insert node as a Binary Search Tree
-    struct rb_node* leaf = tr->leaf;
-    struct rb_node* node = tr->root;
-    struct rb_node** parent_child;
-    for (;;) {
-        register int cmp = tr->compare(value, node->value);
-        if (cmp == 0) {
-            node->value = value;
-            return;
-        }
-        parent_child = cmp < 0 ? &node->left : &node->right;
-        if (*parent_child == leaf) {
-            *parent_child = node = rbtree_open_node(tr, value, node);
-            tr->len++;
-            break;
-        }
-        node = *parent_child;
-    }
-
     // re-balance tree
-    while (node != tr->root && rb_node_is_red(rb_node_parent(node))) {
+    while (node != tr->root && rbnode_is_red(rbnode_parent(node))) {
         // node isnot root and node's parent is red
-        if (rb_node_parent(node) == rb_node_parent(rb_node_parent(node))->left) {
+        if (rbnode_parent(node) == rbnode_parent(rbnode_parent(node))->left) {
             // node's parent is node's grand parent's left child; right uncle
-            struct rb_node* uncle = rb_node_parent(rb_node_parent(node))->right;
-            if (rb_node_is_red(uncle)) {
+            struct rbnode* uncle = rbnode_parent(rbnode_parent(node))->right;
+            if (rbnode_is_red(uncle)) {
                 // right uncle is red
-                rb_node_set_black(rb_node_parent(node));
-                rb_node_set_black(uncle);
-                rb_node_set_red(rb_node_parent(rb_node_parent(node)));
-                node = rb_node_parent(rb_node_parent(node));
+                rbnode_set_black(rbnode_parent(node));
+                rbnode_set_black(uncle);
+                rbnode_set_red(rbnode_parent(rbnode_parent(node)));
+                node = rbnode_parent(rbnode_parent(node));
             } else {
                 // right uncle is black
-                if (node == rb_node_parent(node)->right) {
+                if (node == rbnode_parent(node)->right) {
                     // node is parent's right child
-                    node = rb_node_parent(node);
+                    node = rbnode_parent(node);
                     rbtree_left_rotate(tr, node);
                 }
 
                 // node is parent's left child
-                rb_node_is_black(rb_node_parent(node));
-                rb_node_is_red(rb_node_parent(rb_node_parent(node)));
-                rbtree_right_rotate(tr, rb_node_parent(rb_node_parent(node)));
+                rbnode_set_black(rbnode_parent(node));
+                rbnode_set_red(rbnode_parent(rbnode_parent(node)));
+                rbtree_right_rotate(tr, rbnode_parent(rbnode_parent(node)));
             }
         } else {
             // node's parent is node's grand parent's right child; left uncle
-            struct rb_node* uncle = rb_node_parent(rb_node_parent(node))->left;
-            if (rb_node_is_red(uncle)) {
+            struct rbnode* uncle = rbnode_parent(rbnode_parent(node))->left;
+            if (rbnode_is_red(uncle)) {
                 // left uncle is red
-                rb_node_set_black(rb_node_parent(node));
-                rb_node_set_black(uncle);
-                rb_node_set_red(rb_node_parent(rb_node_parent(node)));
-                node = rb_node_parent(rb_node_parent(node));
+                rbnode_set_black(rbnode_parent(node));
+                rbnode_set_black(uncle);
+                rbnode_set_red(rbnode_parent(rbnode_parent(node)));
+                node = rbnode_parent(rbnode_parent(node));
             } else {
                 // left uncle is black
-                if (node == rb_node_parent(node)->left) {
+                if (node == rbnode_parent(node)->left) {
                     // node is parent's left child
-                    node = rb_node_parent(node);
+                    node = rbnode_parent(node);
                     rbtree_right_rotate(tr, node);
                 }
 
                 // node is parent's right child
-                rb_node_is_black(rb_node_parent(node));
-                rb_node_is_red(rb_node_parent(rb_node_parent(node)));
-                rbtree_left_rotate(tr, rb_node_parent(rb_node_parent(node)));
+                rbnode_set_black(rbnode_parent(node));
+                rbnode_set_red(rbnode_parent(rbnode_parent(node)));
+                rbtree_left_rotate(tr, rbnode_parent(rbnode_parent(node)));
             }
         }
     }
-    rb_node_set_black(tr->root);
+    rbnode_set_black(tr->root);
 }
 
-VALUE rbtree_pop_by_node(RBTREE* tr, struct rb_node* node) {
+VALUE rbtree_fast_pop(RBTREE *tr, RBNODE *node) {
     assert(tr != NULL);
+    assert(node != NULL);
     VALUE ret = node->value;
-    struct rb_node* leaf = tr->leaf;
-    struct rb_node* temp;
-    struct rb_node* subst;
+    struct rbnode* leaf = tr->leaf;
+    struct rbnode* temp;
+    struct rbnode* subst;
 
     // a Binary Search Tree delete
     if (node->left == leaf) {
@@ -289,26 +278,26 @@ VALUE rbtree_pop_by_node(RBTREE* tr, struct rb_node* node) {
 
     if (subst == tr->root) {
         tr->root = temp;
-        rb_node_set_black(temp);
-        close_rb_node(node);
+        rbnode_set_black(temp);
+        tr->len--;
         return ret;
     }
 
-    unsigned long red = rb_node_is_red(subst);
+    unsigned long red = rbnode_is_red(subst);
 
-    if (subst == rb_node_parent(subst)->left) {
-        rb_node_parent(subst)->left = temp;
+    if (subst == rbnode_parent(subst)->left) {
+        rbnode_parent(subst)->left = temp;
     } else {
-        rb_node_parent(subst)->right = temp;
+        rbnode_parent(subst)->right = temp;
     }
 
     if (subst == node) {
-        rb_node_set_parent(temp, rb_node_parent(subst));
+        rbnode_set_parent(temp, rbnode_parent(subst));
     } else {
-        if (rb_node_parent(subst) == node) {
-            rb_node_set_parent(temp, subst);
+        if (rbnode_parent(subst) == node) {
+            rbnode_set_parent(temp, subst);
         } else {
-            rb_node_set_parent(temp, rb_node_parent(subst));
+            rbnode_set_parent(temp, rbnode_parent(subst));
         }
 
         subst->left = node->left;
@@ -318,98 +307,96 @@ VALUE rbtree_pop_by_node(RBTREE* tr, struct rb_node* node) {
         if (node == tr->root) {
             tr->root = subst;
         } else {
-            if (node == rb_node_parent(node)->left) {
-                rb_node_parent(node)->left = subst;
+            if (node == rbnode_parent(node)->left) {
+                rbnode_parent(node)->left = subst;
             } else {
-                rb_node_parent(node)->right = subst;
+                rbnode_parent(node)->right = subst;
             }
         }
 
         if (subst->left != leaf) {
-            rb_node_set_parent(subst->left, subst);
+            rbnode_set_parent(subst->left, subst);
         }
 
         if (subst->right != leaf) {
-            rb_node_set_parent(subst->right, subst);
+            rbnode_set_parent(subst->right, subst);
         }
     }
-    
-    close_rb_node(node);
+
+    tr->len--;
 
     if (red) {
         return ret;
     }
 
-    /* a delete fixup */
-    struct rb_node* w;
-    while (temp != tr->root && rb_node_is_black(temp)) {
+    // re-balance tree
+    struct rbnode* w;
+    while (temp != tr->root && rbnode_is_black(temp)) {
+        if (temp == rbnode_parent(temp)->left) {
+            w = rbnode_parent(temp)->right;
 
-        if (temp == rb_node_parent(temp)->left) {
-            w = rb_node_parent(temp)->right;
-
-            if (rb_node_is_red(w)) {
-                rb_node_set_black(w);
-                rb_node_set_red(rb_node_parent(temp));
-                rbtree_left_rotate(tr, rb_node_parent(temp));
-                w = rb_node_parent(temp)->right;
+            if (rbnode_is_red(w)) {
+                rbnode_set_black(w);
+                rbnode_set_red(rbnode_parent(temp));
+                rbtree_left_rotate(tr, rbnode_parent(temp));
+                w = rbnode_parent(temp)->right;
             }
 
-            if (rb_node_is_black(w->left) && rb_node_is_black(w->right)) {
-                rb_node_set_red(w);
-                temp = rb_node_parent(temp);
+            if (rbnode_is_black(w->left) && rbnode_is_black(w->right)) {
+                rbnode_set_red(w);
+                temp = rbnode_parent(temp);
             } else {
-                if (rb_node_is_black(w->right)) {
-                    rb_node_set_black(w->left);
-                    rb_node_set_red(w);
+                if (rbnode_is_black(w->right)) {
+                    rbnode_set_black(w->left);
+                    rbnode_set_red(w);
                     rbtree_right_rotate(tr, w);
-                    w = rb_node_parent(temp)->right;
+                    w = rbnode_parent(temp)->right;
                 }
 
-                rb_node_copy_color(w, rb_node_parent(temp));
-                rb_node_set_black(rb_node_parent(temp));
-                rb_node_set_black(w->right);
-                rbtree_left_rotate(tr, rb_node_parent(temp));
+                rbnode_copy_color(w, rbnode_parent(temp));
+                rbnode_set_black(rbnode_parent(temp));
+                rbnode_set_black(w->right);
+                rbtree_left_rotate(tr, rbnode_parent(temp));
                 temp = tr->root;
             }
 
         } else {
-            w = rb_node_parent(temp)->left;
+            w = rbnode_parent(temp)->left;
 
-            if (rb_node_is_red(w)) {
-                rb_node_set_black(w);
-                rb_node_set_red(rb_node_parent(temp));
-                rbtree_right_rotate(tr, rb_node_parent(temp));
-                w = rb_node_parent(temp)->left;
+            if (rbnode_is_red(w)) {
+                rbnode_set_black(w);
+                rbnode_set_red(rbnode_parent(temp));
+                rbtree_right_rotate(tr, rbnode_parent(temp));
+                w = rbnode_parent(temp)->left;
             }
 
-            if (rb_node_is_black(w->left) && rb_node_is_black(w->right)) {
-                rb_node_set_red(w);
-                temp = rb_node_parent(temp);
+            if (rbnode_is_black(w->left) && rbnode_is_black(w->right)) {
+                rbnode_set_red(w);
+                temp = rbnode_parent(temp);
             } else {
-                if (rb_node_is_black(w->left)) {
-                    rb_node_set_black(w->right);
-                    rb_node_set_red(w);
+                if (rbnode_is_black(w->left)) {
+                    rbnode_set_black(w->right);
+                    rbnode_set_red(w);
                     rbtree_left_rotate(tr, w);
-                    w = rb_node_parent(temp)->left;
+                    w = rbnode_parent(temp)->left;
                 }
 
-                rb_node_copy_color(w, rb_node_parent(temp));
-                rb_node_set_black(rb_node_parent(temp));
-                rb_node_set_black(w->left);
-                rbtree_right_rotate(tr, rb_node_parent(temp));
+                rbnode_copy_color(w, rbnode_parent(temp));
+                rbnode_set_black(rbnode_parent(temp));
+                rbnode_set_black(w->left);
+                rbtree_right_rotate(tr, rbnode_parent(temp));
                 temp = tr->root;
             }
         }
     }
 
-    rb_node_set_black(temp);
+    rbnode_set_black(temp);
     return ret;
 }
 
-VALUE rbtree_pop(RBTREE* tr, const VALUE key, int* ok) {
-    assert(tr != NULL);
-    struct rb_node** search = rbtree_search(tr, key);
-    if (*search == NULL || *search == tr->leaf) {
+VALUE rbtree_get(RBTREE* tr, const VALUE key, int* ok) {
+    RBNODE* where = *rbtree_fast_get(tr, key, NULL);
+    if (where == tr->leaf) {
         if (ok) {
             *ok = 0;
         }
@@ -418,7 +405,38 @@ VALUE rbtree_pop(RBTREE* tr, const VALUE key, int* ok) {
     if (ok) {
         *ok = 1;
     }
-    return rbtree_pop_by_node(tr, *search);
+    return where->value;
+}
+
+void rbtree_set(RBTREE *tr, const VALUE value) {
+    assert(tr != NULL);
+    struct rbnode* leaf = tr->leaf;
+    struct rbnode* node;
+    RBNODE* parent;
+    RBNODE** where = rbtree_fast_get(tr, value, &parent);
+    if (*where != leaf) {
+        (*where)->value = value;
+        return;
+    }
+    node = rbtree_open_node(tr, value, parent);
+    rbtree_fast_set(tr, where, node);
+}
+
+VALUE rbtree_pop(RBTREE* tr, const VALUE key, int* ok) {
+    assert(tr != NULL);
+    RBNODE* search = *rbtree_fast_get(tr, key, NULL);
+    if (search == NULL || search == tr->leaf) {
+        if (ok) {
+            *ok = 0;
+        }
+        return NULL_VALUE;
+    }
+    if (ok) {
+        *ok = 1;
+    }
+    VALUE ret = rbtree_fast_pop(tr, search);
+    close_rbnode(search);
+    return ret;
 }
 
 #include "stack.h"
@@ -430,7 +448,7 @@ void rbtree_ldr(RBTREE* tr) {
         return;
     }
     STACK* st = open_stack(100);
-    struct rb_node* top = tr->root;
+    struct rbnode* top = tr->root;
     stack_push(st, ptr_value(top));
     while (stack_len(st) > 0) {
         while (top->left != tr->leaf) {
@@ -438,8 +456,9 @@ void rbtree_ldr(RBTREE* tr) {
             stack_push(st, ptr_value(top));
         }
         do {
-            top = (struct rb_node*)stack_pop(st, NULL).ptr_value;
+            top = (struct rbnode*)stack_pop(st, NULL).ptr_value;
             printf("%ld ", top->value.int_value);
+            fflush(stdout);
         } while (top->right == tr->leaf && stack_len(st) > 0);
         if (top->right != tr->leaf) {
             top = top->right;
@@ -448,22 +467,4 @@ void rbtree_ldr(RBTREE* tr) {
     }
     printf("\n");
     close_stack(st);
-}
-
-void rbtree_test() {
-    RBTREE* tr = open_rbtree(asc_order_int);
-    rbtree_set(tr, int_value(5));
-    rbtree_set(tr, int_value(5));
-    rbtree_set(tr, int_value(8));
-    rbtree_set(tr, int_value(3));
-    rbtree_set(tr, int_value(1));
-    rbtree_set(tr, int_value(-6));
-    rbtree_set(tr, int_value(7));
-
-    int ok;
-    VALUE res = rbtree_pop(tr, int_value(5), &ok);
-    printf("%ld %d\n", res.int_value, ok);
-
-    rbtree_ldr(tr);
-    close_rbtree(tr);
 }

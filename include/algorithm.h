@@ -18,14 +18,14 @@ VALUE int_value(long value);
 VALUE float_value(double value);
 VALUE ptr_value(void* value);
 
-extern const VALUE NULL_VALUE;
+extern VALUE NULL_VALUE;
 
 #define NEW(TYPE) ((TYPE*)malloc(sizeof(TYPE)))
 #define NEW2(TYPE, append) ((TYPE*)malloc(sizeof(TYPE)+(append)))
 #define RENEW2(p, TYPE, append) ((TYPE*)realloc((p), sizeof(TYPE)+(append)))
 #define DELETE(p) free((p))
 
-typedef int (*COMPARE)(const VALUE, const VALUE);
+typedef int (*COMPARE)(VALUE, VALUE);
 
 inline void swap(VALUE* a, VALUE* b) {
     VALUE t = *a;
@@ -33,8 +33,8 @@ inline void swap(VALUE* a, VALUE* b) {
     *b = t;
 }
 
-int asc_order_int(const VALUE a, const VALUE b);
-int desc_order_int(const VALUE a, const VALUE b);
-void print_array_int(const VALUE arr[], long size);
+int asc_order_int(VALUE a, VALUE b);
+int desc_order_int(VALUE a, VALUE b);
+void print_array_int(VALUE arr[], long size);
 
 #endif //ALGORITHM_ALGORITHM_H

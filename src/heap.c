@@ -62,7 +62,7 @@ HEAP* open_heap(COMPARE compare, long cap) {
     return ret;
 }
 
-HEAP* open_heap_by_data(COMPARE compare, const VALUE data[], long cap) {
+HEAP* open_heap_by_data(COMPARE compare, VALUE data[], long cap) {
     struct heap* ret = NEW(struct heap);
     assert(ret != NULL);
     ret->compare = compare;
@@ -84,7 +84,7 @@ long heap_len(HEAP* hp) {
     return slice_len(hp->data);
 }
 
-void heap_push(HEAP* hp, const VALUE value) {
+void heap_push(HEAP* hp, VALUE value) {
     assert(hp != NULL);
     long index = slice_len(hp->data);
     slice_append(hp->data, value);
@@ -108,7 +108,7 @@ VALUE heap_pop(HEAP* hp, int* empty) {
     return ret;
 }
 
-const VALUE heap_top(HEAP *hp) {
+VALUE heap_top(HEAP *hp) {
     assert(hp != NULL);
     if (slice_len(hp->data) == 0) {
         return NULL_VALUE;

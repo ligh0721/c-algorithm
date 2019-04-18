@@ -24,7 +24,7 @@ ARRAY* open_array(long cap) {
     return ret;
 }
 
-ARRAY* open_array_by_data(const VALUE data[], long cap) {
+ARRAY* open_array_by_data(VALUE data[], long cap) {
     struct array* ret = open_array(cap);
     memcpy(ret->data, data, sizeof(VALUE)*cap);
     return ret;
@@ -76,7 +76,7 @@ VALUE array_get(ARRAY *arr, long index) {
     return arr->data[index];
 }
 
-VALUE array_set(ARRAY *arr, long index, const VALUE value) {
+VALUE array_set(ARRAY *arr, long index, VALUE value) {
     assert(arr != NULL);
     assert(index < arr->cap);
     VALUE ret = arr->data[index];
@@ -149,7 +149,7 @@ VALUE slice_get(SLICE *sli, long index) {
     return sli->data->data[sli->pos+index];
 }
 
-VALUE slice_set(SLICE *sli, long index, const VALUE value) {
+VALUE slice_set(SLICE *sli, long index, VALUE value) {
     assert(sli != NULL);
     assert(index < sli->len);
     VALUE* retp = sli->data->data + sli->pos + index;
@@ -175,7 +175,7 @@ void slice_grow(SLICE* sli, long mincap) {
     printf("slice_grow: cap: %ld -> %ld\n", old_cap, new_cap);
 }
 
-void slice_append(SLICE* sli, const VALUE value) {
+void slice_append(SLICE* sli, VALUE value) {
     assert(sli != NULL);
     long pos = sli->pos + sli->len;
     if (pos == sli->data->cap) {
@@ -185,7 +185,7 @@ void slice_append(SLICE* sli, const VALUE value) {
     sli->len++;
 }
 
-void slice_push(SLICE *sli, long index, const VALUE value) {
+void slice_push(SLICE *sli, long index, VALUE value) {
     assert(sli != NULL);
     assert(index <= sli->len);
     if (sli->pos+sli->len == sli->data->cap) {

@@ -4,11 +4,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "sort.h"
 #include "stack.h"
 #include "array.h"
 #include "heap.h"
 #include "deque.h"
+#include "rbtree.h"
 #include "main.h"
 
 
@@ -26,25 +28,25 @@ VALUE new_item(int key, const char* msg) {
     return ret;
 }
 
-void print_item(const VALUE value) {
+void print_item(VALUE value) {
     ITEM* v = (ITEM*)value.ptr_value;
     printf("{%d: %s} ", v->key, v->msg);
 }
 
-void print_array_item(const VALUE arr[], long size) {
+void print_array_item(VALUE arr[], long size) {
     for (long i=0; i<size; ++i) {
         print_item(arr[i]);
     }
     printf("\n");
 }
 
-int asc_order_item(const VALUE a, const VALUE b) {
+int asc_order_item(VALUE a, VALUE b) {
     ITEM* ela = (ITEM*)a.ptr_value;
     ITEM* elb = (ITEM*)b.ptr_value;
     return ela->key - elb->key;
 }
 
-int desc_order_item(const VALUE a, const VALUE b) {
+int desc_order_item(VALUE a, VALUE b) {
     ITEM* ela = (ITEM*)a.ptr_value;
     ITEM* elb = (ITEM*)b.ptr_value;
     return elb->key - ela->key;
@@ -239,11 +241,35 @@ void deque_test() {
     printf("\n");
 }
 
+void rbtree_test() {
+    extern void rbtree_ldr(RBTREE* tr);
+
+    RBTREE* tr = open_rbtree(asc_order_int);
+    rbtree_set(tr, int_value(5));
+    rbtree_set(tr, int_value(5));
+    rbtree_set(tr, int_value(8));
+    rbtree_set(tr, int_value(3));
+    rbtree_set(tr, int_value(1));
+    rbtree_set(tr, int_value(-6));
+    rbtree_set(tr, int_value(7));
+    srand((int)time(0));
+    for (int i=0; i<1000; ++i) {
+        rbtree_set(tr, int_value(rand() % 100));
+    }
+
+    int ok;
+    RBNODE* search = *rbtree_fast_get(tr, int_value(5), NULL);
+    rbtree_fast_pop(tr, search);
+
+    VALUE res = rbtree_pop(tr, int_value(1), &ok);
+    printf("%ld %d\n", res.int_value, ok);
+
+    rbtree_ldr(tr);
+    close_rbtree(tr);
+}
+
 void test() {
     printf("=== test ===\n");
-
-    extern void rbtree_test();
-    rbtree_test();
 
     printf("\n");
 }
@@ -254,6 +280,7 @@ int main(int argc, char* argv[]) {
     array_test();
     heap_test();
     deque_test();
+    rbtree_test();
     test();
 
     return 0;

@@ -14,7 +14,7 @@
 typedef struct array ARRAY;
 
 ARRAY* open_array(long cap);
-ARRAY* open_array_by_data(const VALUE arr[], long cap);
+ARRAY* open_array_by_data(VALUE arr[], long cap);
 ARRAY* reopen_array(ARRAY* arr, long cap);
 ARRAY* assign_array(ARRAY* arr);
 void close_array(ARRAY* arr);
@@ -22,7 +22,7 @@ long array_len(ARRAY* arr);
 long array_cap(ARRAY* arr);
 VALUE* array_data(ARRAY* arr);
 VALUE array_get(ARRAY *arr, long index);
-VALUE array_set(ARRAY *arr, long index, const VALUE value);
+VALUE array_set(ARRAY *arr, long index, VALUE value);
 
 
 typedef struct slice SLICE;
@@ -35,9 +35,9 @@ long slice_len(SLICE* sli);
 long slice_cap(SLICE* sli);
 VALUE* slice_data(SLICE *sli);
 VALUE slice_get(SLICE *sli, long index);
-VALUE slice_set(SLICE *sli, long index, const VALUE value);
-void slice_append(SLICE *sli, const VALUE value);
-void slice_push(SLICE *sli, long index, const VALUE value);
+VALUE slice_set(SLICE *sli, long index, VALUE value);
+void slice_append(SLICE *sli, VALUE value);
+void slice_push(SLICE *sli, long index, VALUE value);
 VALUE slice_pop(SLICE *sli, long index);
 
 #endif //ALGORITHM_ARRAY_H
