@@ -12,7 +12,7 @@
 struct array {
     long cap;
     long ref;
-    VALUE data[0];
+    VALUE data[];
 };
 
 ARRAY* open_array(long cap) {

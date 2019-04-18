@@ -3,8 +3,9 @@
 //
 
 #include <assert.h>
-#include <stdio.h>
+#include <math.h>
 #include "rbtree.h"
+#include "stack.h"
 
 
 struct rbnode {
@@ -67,7 +68,7 @@ struct rbtree {
     struct rbnode* root;
     struct rbnode* leaf;
     COMPARE compare;
-    long len;
+    long length;
 };
 
 RBTREE* open_rbtree(COMPARE compare) {
@@ -77,7 +78,7 @@ RBTREE* open_rbtree(COMPARE compare) {
     ret->leaf->parent_and_color = RB_BLACK;
     ret->root = ret->leaf;
     ret->compare = compare;
-    ret->len = 0;
+    ret->length = 0;
     return ret;
 }
 
@@ -90,11 +91,12 @@ void close_rbtree(RBTREE* tr) {
 
 long rbtree_len(RBTREE* tr) {
     assert(tr != NULL);
-    return tr->len;
+    return tr->length;
 }
 
 void rbtree_clear(RBTREE* tr) {
     assert(tr != NULL);
+    // FIXME: unimplemented
 }
 
 // default red
@@ -171,9 +173,10 @@ inline RBNODE** rbtree_fast_get(RBTREE *tr, const VALUE key, RBNODE** parent) {
         return ret;
     }
 
+    register COMPARE compare = tr->compare;
     for (;;) {
         struct rbnode* node = *ret;
-        register int cmp = tr->compare(key, node->value);
+        register int cmp = compare(key, node->value);
         if (cmp == 0) {
             if (parent) {
                 *parent = rbnode_parent(node);
@@ -194,7 +197,7 @@ void rbtree_fast_set(RBTREE *tr, RBNODE** where, RBNODE* node) {
     assert(tr != NULL);
     assert(*where == tr->leaf);
     *where = node;
-    tr->len++;
+    tr->length++;
     if (where == &tr->root) {
         rbnode_set_black(tr->root);
         return;
@@ -279,7 +282,7 @@ VALUE rbtree_fast_pop(RBTREE *tr, RBNODE *node) {
     if (subst == tr->root) {
         tr->root = temp;
         rbnode_set_black(temp);
-        tr->len--;
+        tr->length--;
         return ret;
     }
 
@@ -323,7 +326,7 @@ VALUE rbtree_fast_pop(RBTREE *tr, RBNODE *node) {
         }
     }
 
-    tr->len--;
+    tr->length--;
 
     if (red) {
         return ret;
@@ -439,15 +442,12 @@ VALUE rbtree_pop(RBTREE* tr, const VALUE key, int* ok) {
     return ret;
 }
 
-#include "stack.h"
-
-
-void rbtree_ldr(RBTREE* tr) {
+void rbtree_ldr(RBTREE* tr, RBTREE_TRAVERSE traverse, void* param) {
     assert(tr != NULL);
     if (rbtree_empty(tr)) {
         return;
     }
-    STACK* st = open_stack(100);
+    STACK* st = open_stack(log2(rbtree_len(tr)+1)*2);
     struct rbnode* top = tr->root;
     stack_push(st, ptr_value(top));
     while (stack_len(st) > 0) {
@@ -457,14 +457,15 @@ void rbtree_ldr(RBTREE* tr) {
         }
         do {
             top = (struct rbnode*)stack_pop(st, NULL).ptr_value;
-            printf("%ld ", top->value.int_value);
-            fflush(stdout);
+            if (traverse(top->value, param)) {
+                close_stack(st);
+                return;
+            }
         } while (top->right == tr->leaf && stack_len(st) > 0);
         if (top->right != tr->leaf) {
             top = top->right;
             stack_push(st, ptr_value(top));
         }
     }
-    printf("\n");
     close_stack(st);
 }

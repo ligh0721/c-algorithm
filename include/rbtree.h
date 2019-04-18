@@ -19,6 +19,9 @@ VALUE rbtree_get(RBTREE* tr, VALUE key, int* ok);
 void rbtree_set(RBTREE *tr, VALUE value);
 VALUE rbtree_pop(RBTREE* tr, VALUE key, int* ok);
 
+typedef int (*RBTREE_TRAVERSE)(VALUE value, void* param);
+void rbtree_ldr(RBTREE* tr, RBTREE_TRAVERSE traverse, void* param);
+
 typedef struct rbnode RBNODE;
 RBNODE* rbtree_open_node(RBTREE* tr, VALUE value, RBNODE* parent);
 void rbtree_close_node(RBTREE* tr, RBNODE* node);

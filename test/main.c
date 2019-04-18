@@ -241,47 +241,55 @@ void deque_test() {
     printf("\n");
 }
 
+int traverse(VALUE value, void* param) {
+    printf("%ld ", value.int_value);
+    return 0;
+}
+
 void rbtree_test() {
-    extern void rbtree_ldr(RBTREE* tr);
+    printf("=== rbtree test ===\n");
 
     RBTREE* tr = open_rbtree(asc_order_int);
-    rbtree_set(tr, int_value(5));
-    rbtree_set(tr, int_value(5));
-    rbtree_set(tr, int_value(8));
-    rbtree_set(tr, int_value(3));
-    rbtree_set(tr, int_value(1));
-    rbtree_set(tr, int_value(-6));
-    rbtree_set(tr, int_value(7));
+//    rbtree_set(tr, int_value(5));
+//    rbtree_set(tr, int_value(5));
+//    rbtree_set(tr, int_value(8));
+//    rbtree_set(tr, int_value(3));
+//    rbtree_set(tr, int_value(1));
+//    rbtree_set(tr, int_value(-6));
+//    rbtree_set(tr, int_value(7));
     srand((int)time(0));
-    for (int i=0; i<1000; ++i) {
-        rbtree_set(tr, int_value(rand() % 100));
+    for (int i=0; i<10485760; ++i) {
+        rbtree_set(tr, int_value(rand()));
     }
 
-    int ok;
-    RBNODE* search = *rbtree_fast_get(tr, int_value(5), NULL);
-    rbtree_fast_pop(tr, search);
+//    int ok;
+//    RBNODE* search = *rbtree_fast_get(tr, int_value(5), NULL);
+//    rbtree_fast_pop(tr, search);
+//
+//    VALUE res = rbtree_pop(tr, int_value(1), &ok);
+//    printf("%ld %d\n", res.int_value, ok);
 
-    VALUE res = rbtree_pop(tr, int_value(1), &ok);
-    printf("%ld %d\n", res.int_value, ok);
-
-    rbtree_ldr(tr);
+    rbtree_ldr(tr, traverse, NULL);
+    printf("\n");
     close_rbtree(tr);
+    printf("\n");
 }
 
 void test() {
     printf("=== test ===\n");
-
     printf("\n");
 }
 
 int main(int argc, char* argv[]) {
-    sort_test();
-    stack_test();
-    array_test();
-    heap_test();
-    deque_test();
-    rbtree_test();
-    test();
+//    sort_test();
+//    stack_test();
+//    array_test();
+//    heap_test();
+//    deque_test();
+//    rbtree_test();
+    extern void skiplist_test();
+    skiplist_test();
+//    test();
 
     return 0;
 }

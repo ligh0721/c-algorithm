@@ -10,6 +10,7 @@ set(TEST_TARGET algorithm_test)
 set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_C_FLAGS_DEBUG "$ENV{CFLAGS} -O0 -Wall -g -ggdb")
 set(CMAKE_C_FLAGS_RELEASE "$ENV{CFLAGS} -O3 -Wall")
+set(LIB_LIST "m")
 
 # 设置执行文件输出目录
 set(EXECUTABLE_OUTPUT_PATH bin)
@@ -28,6 +29,7 @@ aux_source_directory(test TEST_SRCS)
 
 # 目标文件
 add_library(${LIB_TARGET} ${SRCS})
+target_link_libraries(${LIB_TARGET} ${LIB_LIST})
 add_executable(${TEST_TARGET} ${TEST_SRCS})
 target_link_libraries(${TEST_TARGET} ${LIB_TARGET})
 
