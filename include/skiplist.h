@@ -14,8 +14,10 @@ typedef struct skiplist SKIPLIST;
 SKIPLIST* open_skiplist(COMPARE compare1, COMPARE compare2);
 void close_skiplist(SKIPLIST* sl);
 void skiplist_clear(SKIPLIST* sl);
+long skiplist_len(SKIPLIST* sl);
 void skiplist_set(SKIPLIST* sl, VALUE value);
 VALUE skiplist_get(SKIPLIST* sl, VALUE key, int* ok);
 void skiplist_range(SKIPLIST* sl, SLICE* data, VALUE key1, VALUE key2, long limit);
+long skiplist_remove(SKIPLIST* sl, VALUE key1, VALUE key2);
 
 #endif //ALGORITHM_SKIPLIST_H

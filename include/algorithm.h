@@ -25,16 +25,18 @@ extern VALUE NULL_VALUE;
 #define RENEW2(p, TYPE, append) ((TYPE*)realloc((p), sizeof(TYPE)+(append)))
 #define DELETE(p) free((p))
 
-typedef int (*COMPARE)(VALUE, VALUE);
-
 inline void swap(VALUE* a, VALUE* b) {
     VALUE t = *a;
     *a = *b;
     *b = t;
 }
 
+typedef int (*COMPARE)(VALUE, VALUE);
+
 int asc_order_int(VALUE a, VALUE b);
 int desc_order_int(VALUE a, VALUE b);
 void print_array_int(VALUE arr[], long size);
+
+typedef void (*PRINT_VALUE)(VALUE value);
 
 #endif //ALGORITHM_ALGORITHM_H

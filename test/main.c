@@ -15,7 +15,7 @@
 #include "main.h"
 
 
-typedef struct {
+typedef struct ITEM {
     int key;
     char msg[256];
 } ITEM;
@@ -57,6 +57,38 @@ int desc_order_item(VALUE a, VALUE b) {
     ITEM* ela = (ITEM*)a.ptr_value;
     ITEM* elb = (ITEM*)b.ptr_value;
     return elb->key - ela->key;
+}
+
+void save_data() {
+    int len = 0xfffff;
+    int* data = (int*)malloc(sizeof(int)*len);
+    for (int i=0; i<len; ++i) {
+        data[i] = rand();
+    }
+
+    int* data2 = (int*)malloc(sizeof(int)*len);
+    for (int i=0; i<len; ++i) {
+        data2[i] = data[rand()%len];
+    }
+    FILE* fp = fopen("data.dat", "wb");
+    fwrite(&len, sizeof(len), 1, fp);
+    fwrite(data, sizeof(data[0]), len, fp);
+    fwrite(&len, sizeof(len), 1, fp);
+    fwrite(data2, sizeof(data2[0]), len, fp);
+    fclose(fp);
+    free(data);
+    free(data2);
+}
+
+void load_data(int** data, int** data2, int* len) {
+    FILE* fp = fopen("data.dat", "rb");
+    fread(len, sizeof(int), 1, fp);
+    *data = (int*)malloc(sizeof(int)*(*len));
+    fread(*data, sizeof(int), *len, fp);
+    fread(len, sizeof(int), 1, fp);
+    *data2 = (int*)malloc(sizeof(int)*(*len));
+    fread(*data2, sizeof(int), *len, fp);
+    fclose(fp);
 }
 
 void sort_test() {
@@ -283,6 +315,8 @@ void rbtree_test() {
 }
 
 void skiplist_test() {
+    extern void skiplist_debug(SKIPLIST* sl, PRINT_VALUE print);
+
     printf("=== skiplist test ===\n");
     SKIPLIST* sl = open_skiplist(asc_order_item, asc_order_item2);
     skiplist_set(sl, new_item(22, "22aa"));
@@ -296,9 +330,21 @@ void skiplist_test() {
     skiplist_set(sl, new_item(11, "11a"));
     skiplist_set(sl, new_item(26, "26aa"));
 
-    for (int i=0; i<1000; ++i) {
-        skiplist_set(sl, new_item(rand()%10000, "rand"));
-    }
+    skiplist_debug(sl, print_item);
+
+//    for (int i=0; i<1000; ++i) {
+//        skiplist_set(sl, new_item(rand()%10000, "rand"));
+//    }
+
+    printf("%ld removed\n", skiplist_remove(sl, new_item(30, ""), new_item(1, "")));
+    skiplist_debug(sl, print_item);
+
+    skiplist_set(sl, new_item(11, "11aa"));
+    skiplist_set(sl, new_item(11, "11ab"));
+    skiplist_set(sl, new_item(11, "11abc"));
+    skiplist_set(sl, new_item(11, "11a"));
+    skiplist_set(sl, new_item(26, "26aa"));
+    skiplist_debug(sl, print_item);
 
     SLICE* sli = open_slice(0, 100);
     skiplist_range(sl, sli, new_item(2, ""), new_item(30, ""), 5);
@@ -311,38 +357,6 @@ void skiplist_test() {
     close_skiplist(sl);
 
     printf("\n");
-}
-
-void save_data() {
-    int len = 0xfffff;
-    int* data = (int*)malloc(sizeof(int)*len);
-    for (int i=0; i<len; ++i) {
-        data[i] = rand();
-    }
-
-    int* data2 = (int*)malloc(sizeof(int)*len);
-    for (int i=0; i<len; ++i) {
-        data2[i] = data[rand()%len];
-    }
-    FILE* fp = fopen("data.dat", "wb");
-    fwrite(&len, sizeof(len), 1, fp);
-    fwrite(data, sizeof(data[0]), len, fp);
-    fwrite(&len, sizeof(len), 1, fp);
-    fwrite(data2, sizeof(data2[0]), len, fp);
-    fclose(fp);
-    free(data);
-    free(data2);
-}
-
-void load_data(int** data, int** data2, int* len) {
-    FILE* fp = fopen("data.dat", "rb");
-    fread(len, sizeof(int), 1, fp);
-    *data = (int*)malloc(sizeof(int)*(*len));
-    fread(*data, sizeof(int), *len, fp);
-    fread(len, sizeof(int), 1, fp);
-    *data2 = (int*)malloc(sizeof(int)*(*len));
-    fread(*data2, sizeof(int), *len, fp);
-    fclose(fp);
 }
 
 void test() {

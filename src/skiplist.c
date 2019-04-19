@@ -20,7 +20,7 @@ struct slnode {
 
 struct skiplist {
     struct slnode* head;
-    struct slnode* tail;
+//    struct slnode* tail;
     long length;
     int level;
     COMPARE compare;
@@ -32,7 +32,7 @@ SKIPLIST* open_skiplist(COMPARE compare, COMPARE compare2) {
     assert(ret != NULL);
     ret->head = NEW2(struct slnode, sizeof(struct slnode*)*SKIP_LIST_MAX_LEVEL);
     memset(ret->head, 0, sizeof(struct slnode)+sizeof(struct slnode*)*SKIP_LIST_MAX_LEVEL);
-    ret->tail = ret->head;
+//    ret->tail = ret->head;
     ret->length = 0;
     ret->level = 1;
     ret->compare = compare;
@@ -64,13 +64,15 @@ void skiplist_clear(SKIPLIST* sl) {
     sl->length = 0;
     sl->level = 1;
     memset(sl->head, 0, sizeof(struct slnode)+sizeof(struct slnode*)*SKIP_LIST_MAX_LEVEL);
-    sl->tail = sl->head;
+//    sl->tail = sl->head;
+}
+
+long skiplist_len(SKIPLIST* sl) {
+    assert(sl != NULL);
+    return sl->length;
 }
 
 static inline int skiplist_random_level() {
-//    static int i = 0;
-//    int dbg_level[] = {1, 2, 4, 1, 3, 1, 1};
-//    return dbg_level[i++];
     int level;
     for (level=1; rand()%100<100*SKIP_LIST_P && level<SKIP_LIST_MAX_LEVEL; ++level);
     return level;
@@ -86,21 +88,21 @@ static inline struct slnode* skiplist_fast_get(SKIPLIST* sl, VALUE key, int reve
     assert(sl != NULL);
     register COMPARE compare = sl->compare;
     struct slnode* prev = sl->head;
-    register struct slnode* next;
+    register struct slnode* node;
     for (int l=sl->level-1; l>=0; --l) {
-        for (next=prev->next[l]; next!=NULL; next=prev->next[l]) {
-            int cmp = compare(next->value, key);
+        for (node=prev->next[l]; node!=NULL; node=prev->next[l]) {
+            int cmp = compare(node->value, key);
             if (cmp < 0) {
-                prev = next;
+                prev = node;
             }
             else if (cmp > 0) {
                 break;
             } else {
-                return next;
+                return node;
             }
         }
     }
-    return reverse ? prev : next;
+    return reverse ? prev : node;
 }
 
 void skiplist_set(SKIPLIST* sl, VALUE value) {
@@ -111,26 +113,26 @@ void skiplist_set(SKIPLIST* sl, VALUE value) {
     prev[sl->level] = sl->head;
     for (int l=sl->level-1; l>=0; --l) {
         prev[l] = prev[l+1];
-        for (register struct slnode* next=prev[l]->next[l]; next!=NULL; next=prev[l]->next[l]) {
-            int cmp = compare(next->value, value);
+        for (register struct slnode* node=prev[l]->next[l]; node!=NULL; node=prev[l]->next[l]) {
+            int cmp = compare(node->value, value);
             if (cmp < 0) {
-                prev[l] = next;
+                prev[l] = node;
             }
             else if (cmp > 0) {
                 break;
             } else {
                 if (compare2) {
-                    cmp = compare2(next->value, value);
+                    cmp = compare2(node->value, value);
                     if (cmp < 0) {
-                        prev[l] = next;
+                        prev[l] = node;
                     } else if (cmp > 0) {
                         break;
                     } else {
-                        next->value = value;
+                        node->value = value;
                         return;
                     }
                 } else {
-                    next->value = value;
+                    node->value = value;
                     return;
                 }
             }
@@ -146,7 +148,7 @@ void skiplist_set(SKIPLIST* sl, VALUE value) {
     if (prev[0]->next[0] != NULL) {
         prev[0]->next[0]->prev = node;
     } else {
-        sl->tail = node;
+//        sl->tail = node;
     }
 
     // link next
@@ -166,6 +168,7 @@ void skiplist_set(SKIPLIST* sl, VALUE value) {
         }
         sl->level = level;
     }
+    sl->length++;
 }
 
 VALUE skiplist_get(SKIPLIST* sl, VALUE key, int* ok) {
@@ -173,10 +176,10 @@ VALUE skiplist_get(SKIPLIST* sl, VALUE key, int* ok) {
     register COMPARE compare = sl->compare;
     struct slnode* prev = sl->head;
     for (int l=sl->level-1; l>=0; --l) {
-        for (register struct slnode* next=prev->next[l]; next!=NULL; next=prev->next[l]) {
-            int cmp = compare(next->value, key);
+        for (register struct slnode* node=prev->next[l]; node!=NULL; node=prev->next[l]) {
+            int cmp = compare(node->value, key);
             if (cmp < 0) {
-                prev = next;
+                prev = node;
             }
             else if (cmp > 0) {
                 break;
@@ -184,7 +187,7 @@ VALUE skiplist_get(SKIPLIST* sl, VALUE key, int* ok) {
                 if (ok) {
                     *ok = 1;
                 }
-                return next->value;
+                return node->value;
             }
         }
     }
@@ -213,3 +216,73 @@ void skiplist_range(SKIPLIST* sl, SLICE* data, VALUE key1, VALUE key2, long limi
         }
     }
 }
+
+#include <stdio.h>
+void skiplist_debug(SKIPLIST* sl, PRINT_VALUE print) {
+    printf("===== skiplist debug =====\n");
+    for (int l=sl->level-1; l>=0; --l) {
+        printf("L%02d ", l+1);
+        for (struct slnode* node=sl->head->next[l]; node!=NULL; node=node->next[l]) {
+            print(node->value);
+        }
+        printf("\n");
+    }
+    printf("===== len: %ld =====\n", sl->length);
+}
+
+long skiplist_remove(SKIPLIST* sl, VALUE key1, VALUE key2) {
+    assert(sl != NULL);
+    register COMPARE compare = sl->compare;
+    if (compare(key1, key2) > 0) {
+        VALUE tmp = key1;
+        key1 = key2;
+        key2 = tmp;
+    }
+    int level = -1;
+    struct slnode* prev[SKIP_LIST_MAX_LEVEL+1] = {};
+    prev[sl->level] = sl->head;
+    for (int l=sl->level-1; l>=0; --l) {
+        prev[l] = prev[l+1];
+        for (register struct slnode* node=prev[l]->next[l]; node!=NULL; node=prev[l]->next[l]) {
+            int cmp = compare(node->value, key1);
+            if (cmp < 0) {
+                prev[l] = node;
+            } else {
+                if (level == -1) {
+                    level = l;
+                }
+                break;
+            }
+        }
+    }
+
+    for (int l=level; l>0; --l) {
+        for (struct slnode* pre=prev[l]; pre->next[l]!=NULL && compare(pre->next[l]->value, key2)<=0; ) {
+            pre->next[l] = pre->next[l]->next[l];
+            if (pre->next[l] == NULL) {
+                break;
+            }
+        }
+        if (sl->head->next[l] == NULL && l + 1 == sl->level) {
+            sl->level--;
+        }
+    }
+    int ret = 0;
+    for (struct slnode* pre=prev[0]; pre->next[0]!=NULL && compare(pre->next[0]->value, key2)<=0; ) {
+        struct slnode* remove = pre->next[0];
+        if (remove->next[0] != NULL) {
+            remove->next[0]->prev = pre;
+        } else {
+//            sl->tail = prev;
+        }
+        pre->next[0] = remove->next[0];
+        ++ret;
+        DELETE(remove);
+        if (pre->next[0] == NULL) {
+            break;
+        }
+    }
+    sl->length -= ret;
+    return ret;
+}
+
