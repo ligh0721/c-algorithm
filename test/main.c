@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <skiplist.h>
 #include "sort.h"
 #include "stack.h"
 #include "array.h"
@@ -275,8 +276,79 @@ void rbtree_test() {
     printf("\n");
 }
 
+void gen_data() {
+    int len = 0xfffff;
+    int* data = (int*)malloc(sizeof(int)*len);
+    for (int i=0; i<len; ++i) {
+        data[i] = rand();
+    }
+
+    int* data2 = (int*)malloc(sizeof(int)*len);
+    for (int i=0; i<len; ++i) {
+        data2[i] = data[rand()%len];
+    }
+    FILE* fp = fopen("data.dat", "wb");
+    fwrite(&len, sizeof(len), 1, fp);
+    fwrite(data, sizeof(data[0]), len, fp);
+    fwrite(&len, sizeof(len), 1, fp);
+    fwrite(data2, sizeof(data2[0]), len, fp);
+    fclose(fp);
+    free(data);
+    free(data2);
+}
+
+void load_data(int** data, int** data2, int* len) {
+    FILE* fp = fopen("data.dat", "rb");
+    fread(len, sizeof(int), 1, fp);
+    *data = (int*)malloc(sizeof(int)*(*len));
+    fread(*data, sizeof(int), *len, fp);
+    fread(len, sizeof(int), 1, fp);
+    *data2 = (int*)malloc(sizeof(int)*(*len));
+    fread(*data2, sizeof(int), *len, fp);
+    fclose(fp);
+}
+
 void test() {
     printf("=== test ===\n");
+
+    int* data;
+    int* data2;
+    int len;
+    load_data(&data, &data2, &len);
+
+    RBTREE* tr = open_rbtree(asc_order_int);
+    SKIPLIST* sl = open_skiplist(asc_order_int);
+
+    int start;
+    VALUE res;
+    int ok;
+
+    start = clock();
+    for (int i=0; i<len; ++i) {
+        skiplist_set(sl, int_value(data[i]));
+    }
+    printf("skiplist_set, %d: %ld ticks\n", len, clock()-start);
+
+    start = clock();
+    for (int i=0; i<len; ++i) {
+        res = skiplist_get(sl, int_value(data2[i]), &ok);
+    }
+    printf("skiplist_get, %d: %ld ticks\n", len, clock()-start);
+
+    start = clock();
+    for (int i=0; i<len; ++i) {
+        rbtree_set(tr, int_value(data[i]));
+    }
+    printf("tbtree_set, %d: %ld ticks\n", len, clock()-start);
+
+    start = clock();
+    for (int i=0; i<len; ++i) {
+        res = rbtree_get(tr, int_value(data2[i]), &ok);
+    }
+    printf("tbtree_get, %d: %ld ticks\n", len, clock()-start);
+
+
+
     printf("\n");
 }
 
@@ -289,7 +361,7 @@ int main(int argc, char* argv[]) {
 //    rbtree_test();
     extern void skiplist_test();
     skiplist_test();
-//    test();
+    test();
 
     return 0;
 }
