@@ -22,7 +22,7 @@ set(LIBRARY_OUTPUT_PATH lib)
 # 头文件搜索目录
 include_directories(include)
 # 链接库搜索路径
-link_directories(lib)
+#link_directories(lib)
 
 # 添加源码
 aux_source_directory(src SRCS)
