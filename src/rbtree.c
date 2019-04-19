@@ -94,9 +94,38 @@ long rbtree_len(RBTREE* tr) {
     return tr->length;
 }
 
+static inline int rbtree_empty(RBTREE* tr) {
+    return tr->root == tr->leaf;
+}
+
 void rbtree_clear(RBTREE* tr) {
     assert(tr != NULL);
     // FIXME: unimplemented
+    if (rbtree_empty(tr)) {
+        return;
+    }
+    STACK* st = open_stack(log2(rbtree_len(tr)+1)*2);
+    struct rbnode* top = tr->root;
+    struct rbnode* right;
+    stack_push(st, ptr_value(top));
+    while (stack_len(st) > 0) {
+        while (top->left != tr->leaf) {
+            top = top->left;
+            stack_push(st, ptr_value(top));
+        }
+        do {
+            top = (struct rbnode*)stack_pop(st, NULL).ptr_value;
+            right = top->right;
+            close_rbnode(top);
+        } while (right == tr->leaf && stack_len(st) > 0);
+        if (right != tr->leaf) {
+            top = right;
+            stack_push(st, ptr_value(top));
+        }
+    }
+    close_stack(st);
+    tr->root = NULL;
+    tr->length = 0;
 }
 
 // default red
@@ -110,10 +139,6 @@ inline RBNODE* rbtree_open_node(RBTREE* tr, VALUE value, RBNODE* parent) {
 
 inline void rbtree_close_node(RBTREE* tr, RBNODE* node) {
     DELETE(node);
-}
-
-static inline int rbtree_empty(RBTREE* tr) {
-    return tr->root == tr->leaf;
 }
 
 static inline void rbtree_left_rotate(RBTREE* tr, struct rbnode* node) {

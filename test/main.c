@@ -5,13 +5,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <skiplist.h>
 #include "sort.h"
 #include "stack.h"
 #include "array.h"
 #include "heap.h"
 #include "deque.h"
 #include "rbtree.h"
+#include "skiplist.h"
 #include "main.h"
 
 
@@ -45,6 +45,12 @@ int asc_order_item(VALUE a, VALUE b) {
     ITEM* ela = (ITEM*)a.ptr_value;
     ITEM* elb = (ITEM*)b.ptr_value;
     return ela->key - elb->key;
+}
+
+int asc_order_item2(VALUE a, VALUE b) {
+    ITEM* ela = (ITEM*)a.ptr_value;
+    ITEM* elb = (ITEM*)b.ptr_value;
+    return strcmp(ela->msg, elb->msg);
 }
 
 int desc_order_item(VALUE a, VALUE b) {
@@ -276,7 +282,38 @@ void rbtree_test() {
     printf("\n");
 }
 
-void gen_data() {
+void skiplist_test() {
+    printf("=== skiplist test ===\n");
+    SKIPLIST* sl = open_skiplist(asc_order_item, asc_order_item2);
+    skiplist_set(sl, new_item(22, "22aa"));
+    skiplist_set(sl, new_item(19, "19aa"));
+    skiplist_set(sl, new_item(7, "7aa"));
+    skiplist_set(sl, new_item(3, "3aa"));
+    skiplist_set(sl, new_item(37, "37aa"));
+    skiplist_set(sl, new_item(11, "11aa"));
+    skiplist_set(sl, new_item(11, "11ab"));
+    skiplist_set(sl, new_item(11, "11abc"));
+    skiplist_set(sl, new_item(11, "11a"));
+    skiplist_set(sl, new_item(26, "26aa"));
+
+    for (int i=0; i<1000; ++i) {
+        skiplist_set(sl, new_item(rand()%10000, "rand"));
+    }
+
+    SLICE* sli = open_slice(0, 100);
+    skiplist_range(sl, sli, new_item(2, ""), new_item(30, ""), 5);
+    for (int i=0; i<slice_len(sli); ++i) {
+        print_item(slice_get(sli, i));
+    }
+    printf("\n");
+    close_slice(sli);
+
+    close_skiplist(sl);
+
+    printf("\n");
+}
+
+void save_data() {
     int len = 0xfffff;
     int* data = (int*)malloc(sizeof(int)*len);
     for (int i=0; i<len; ++i) {
@@ -310,6 +347,7 @@ void load_data(int** data, int** data2, int* len) {
 
 void test() {
     printf("=== test ===\n");
+//    save_data();
 
     int* data;
     int* data2;
@@ -317,10 +355,9 @@ void test() {
     load_data(&data, &data2, &len);
 
     RBTREE* tr = open_rbtree(asc_order_int);
-    SKIPLIST* sl = open_skiplist(asc_order_int);
+    SKIPLIST* sl = open_skiplist(asc_order_int, NULL);
 
     int start;
-    VALUE res;
     int ok;
 
     start = clock();
@@ -331,7 +368,7 @@ void test() {
 
     start = clock();
     for (int i=0; i<len; ++i) {
-        res = skiplist_get(sl, int_value(data2[i]), &ok);
+        skiplist_get(sl, int_value(data2[i]), &ok);
     }
     printf("skiplist_get, %d: %ld ticks\n", len, clock()-start);
 
@@ -343,11 +380,12 @@ void test() {
 
     start = clock();
     for (int i=0; i<len; ++i) {
-        res = rbtree_get(tr, int_value(data2[i]), &ok);
+        rbtree_get(tr, int_value(data2[i]), &ok);
     }
     printf("tbtree_get, %d: %ld ticks\n", len, clock()-start);
 
-
+    close_rbtree(tr);
+    close_skiplist(sl);
 
     printf("\n");
 }
@@ -359,9 +397,8 @@ int main(int argc, char* argv[]) {
 //    heap_test();
 //    deque_test();
 //    rbtree_test();
-    extern void skiplist_test();
     skiplist_test();
-    test();
+//    test();
 
     return 0;
 }
