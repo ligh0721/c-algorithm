@@ -100,7 +100,6 @@ static inline int rbtree_empty(RBTREE* tr) {
 
 void rbtree_clear(RBTREE* tr) {
     assert(tr != NULL);
-    // FIXME: unimplemented
     if (rbtree_empty(tr)) {
         return;
     }
