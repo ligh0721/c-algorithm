@@ -435,7 +435,8 @@ struct Statement_tag {
 // interpreter
 typedef enum {
     CRB_FILE_INPUT_MODE = 1,
-    CRB_STRING_INPUT_MODE
+    CRB_STRING_INPUT_MODE,
+    CRB_READLINE_INPUT_MODE
 } CRB_InputMode;
 
 typedef struct GlobalVariableRef_tag {

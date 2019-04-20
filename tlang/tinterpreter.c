@@ -97,7 +97,19 @@ static void show_error_stack_trace(CRB_Interpreter *inter) {
 }
 
 static void do_compile(CRB_Interpreter *inter) {
-    // TODO:
+    extern int yyparse(void);
+    if ((setjmp(inter->current_recovery_environment.environment)) == 0) {
+        if (yyparse()) {
+            fprintf(stderr, "Error ! Error ! Error !\n");
+            exit(1);
+        }
+    } else {
+        show_error_stack_trace(inter);
+
+        crb_set_stack_pointer(inter, 0);
+        inter->current_exception.type = CRB_NULL_VALUE;
+    }
+    crb_garbage_collect(inter);
 }
 
 void CRB_compile(CRB_Interpreter *interpreter, FILE *fp) {
@@ -118,6 +130,17 @@ void CRB_compile_string(CRB_Interpreter *interpreter, const char** lines) {
     crb_set_source_string(lines);
     interpreter->current_line_number = 1;
     interpreter->input_mode = CRB_STRING_INPUT_MODE;
+
+    do_compile(interpreter);
+
+    crb_reset_string_literal_buffer();
+}
+
+void CRB_compile_readline(CRB_Interpreter* interpreter, READLINE_FUNC readline, void* param) {
+    crb_set_current_interpreter(interpreter);
+    crb_set_readline(readline, param);
+    interpreter->current_line_number = 1;
+    interpreter->input_mode = CRB_READLINE_INPUT_MODE;
 
     do_compile(interpreter);
 

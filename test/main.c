@@ -12,7 +12,7 @@
 #include "deque.h"
 #include "rbtree.h"
 #include "skiplist.h"
-#include "main.h"
+#include "tlang.h"
 
 
 typedef struct ITEM {

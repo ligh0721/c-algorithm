@@ -18,6 +18,7 @@ CRB_Char* crb_close_string_literal(void);
 #define increment_line_number() (crb_get_current_interpreter()->current_line_number++)
 
 void crb_set_source_string(const char** source);
+void crb_set_readline(READLINE_FUNC readline, void* param);
 int my_yyinput(char *buf, int max_size);
 
 

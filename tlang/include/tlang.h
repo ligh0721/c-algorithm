@@ -8,13 +8,18 @@
 #include <stdio.h>
 #include <wchar.h>
 
+#define UTF_8_SOURCE
+
 
 // tinterpreter
 typedef struct CRB_Interpreter_tag CRB_Interpreter;
 
+typedef char* (*READLINE_FUNC)(void* param);
+
 CRB_Interpreter *CRB_create_interpreter(void);
 void CRB_compile(CRB_Interpreter* interpreter, FILE *fp);
 void CRB_compile_string(CRB_Interpreter* interpreter, const char** lines);
+void CRB_compile_readline(CRB_Interpreter* interpreter, READLINE_FUNC readline, void* param);
 void CRB_set_command_line_args(CRB_Interpreter* interpreter, int argc, char** argv);
 void CRB_interpret(CRB_Interpreter* interpreter);
 void CRB_dispose_interpreter(CRB_Interpreter* interpreter);

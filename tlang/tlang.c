@@ -8,16 +8,13 @@
 #include "tlang.h"
 
 
-int line_mode(int argc, char* argv[]) {
+int readline_mode(int argc, char* argv[]) {
     char ps[] = ">> ";
     CRB_Interpreter* interpreter = CRB_create_interpreter();
     CRB_set_command_line_args(interpreter, argc-1, &argv[1]);
 
-    for (char* line=readline(ps); line!=NULL; line=readline(ps)) {
-        printf("%s\n", line);
-//        CRB_compile_string(interpreter, )
-//        CRB_interpret(interpreter);
-    }
+    CRB_compile_readline(interpreter, (READLINE_FUNC)readline, ps);
+    CRB_interpret(interpreter);
     printf("\n");
 
     CRB_dispose_interpreter(interpreter);
@@ -44,7 +41,7 @@ int file_mode(int argc, char* argv[]) {
 
 int main(int argc, char* argv[]) {
     if (argc == 1) {
-        return line_mode(argc, argv);
+        return readline_mode(argc, argv);
     } else {
         return file_mode(argc, argv);
     }

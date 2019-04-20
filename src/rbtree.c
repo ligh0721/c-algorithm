@@ -123,7 +123,7 @@ void rbtree_clear(RBTREE* tr) {
         }
     }
     close_stack(st);
-    tr->root = NULL;
+    tr->root = tr->leaf;
     tr->length = 0;
 }
 

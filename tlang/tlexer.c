@@ -27,9 +27,7 @@ void crb_add_string_literal(int letter) {
     ++st_string_literal_buffer_size;
 }
 
-void
-crb_reset_string_literal_buffer(void)
-{
+void crb_reset_string_literal_buffer(void) {
     MEM_free(st_string_literal_buffer);
     st_string_literal_buffer = NULL;
     st_string_literal_buffer_size = 0;
@@ -37,18 +35,14 @@ crb_reset_string_literal_buffer(void)
 }
 
 CRB_Char* crb_close_string_literal(void) {
-    CRB_Char *new_str;
-    int new_str_len;
-
     crb_add_string_literal('\0');
-    new_str_len = CRB_mbstowcs_len(st_string_literal_buffer);
+    int new_str_len = CRB_mbstowcs_len(st_string_literal_buffer);
     if (new_str_len < 0) {
         crb_compile_error(BAD_MULTIBYTE_CHARACTER_IN_COMPILE_ERR,
                           CRB_MESSAGE_ARGUMENT_END);
     }
-    new_str = crb_malloc(sizeof(CRB_Char) * (new_str_len+1));
+    CRB_Char* new_str = crb_malloc(sizeof(CRB_Char) * (new_str_len+1));
     CRB_mbstowcs(st_string_literal_buffer, new_str);
-
     return new_str;
 }
 
@@ -62,6 +56,7 @@ char* crb_create_identifier(char *str) {
 extern FILE* yyin;
 extern char* yytext;
 
+// file mode
 static int file_input(char *buf, int max_size) {
     if (feof(yyin)) {
         return 0;
@@ -77,6 +72,7 @@ static int file_input(char *buf, int max_size) {
     return 0;
 }
 
+// string mode
 static const char** st_source_string;
 static int st_current_source_line;
 static int st_current_char_index;
@@ -107,6 +103,42 @@ static int string_input(char *buf, int max_size) {
     return len;
 }
 
+// readline mode
+static READLINE_FUNC st_readline;
+static void* st_readline_param;
+static char* st_readline_string;
+static int st_readline_current_char_index;
+
+void crb_set_readline(READLINE_FUNC readline, void* param) {
+    st_readline = readline;
+    st_readline_param = param;
+    st_readline_string = "";
+    st_readline_current_char_index = 0;
+}
+
+static int readline_input(char* buf, int max_size) {
+    if (st_readline_string[st_readline_current_char_index] == 0) {
+        st_readline_string = st_readline(st_readline_param);
+        if (strlen(st_readline_string) == 0) {
+            st_readline_string = "\n";
+        }
+        st_readline_current_char_index = 0;
+    }
+
+    if (st_readline_string == NULL) {
+        return 0;
+    }
+
+    int len = smaller(strlen(st_readline_string) - st_readline_current_char_index, max_size);
+    strncpy(buf, st_readline_string + st_readline_current_char_index, len);
+    st_readline_current_char_index += len;
+    if (st_readline_string[st_readline_current_char_index] == 0 && st_readline_string[st_readline_current_char_index-1] != '\n') {
+        st_readline_string = "\n";
+        st_readline_current_char_index = 0;
+    }
+    return len;
+}
+
 int my_yyinput(char *buf, int max_size) {
     int result;
     switch (crb_get_current_interpreter()->input_mode) {
@@ -116,10 +148,12 @@ int my_yyinput(char *buf, int max_size) {
         case CRB_STRING_INPUT_MODE:
             result = string_input(buf, max_size);
             break;
+        case CRB_READLINE_INPUT_MODE:
+            result = readline_input(buf, max_size);
+            break;
         default:
             DBG_panic(("bad default. input_mode..%d\n", crb_get_current_interpreter()->input_mode));
     }
-
     return result;
 }
 

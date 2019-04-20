@@ -55,7 +55,7 @@ static void
 assert_func(FILE *fp, char *file, int line, char *expression,
             char *fmt,  va_list ap)
 {
-    fprintf(fp, "Assertion failure (%s) file..%s line..%d\n",
+    fprintf(fp, "Assertion failure (%s)\n%s:%d\n",
             expression, file, line);
     if (fmt) {
         vfprintf(fp, fmt, ap);
@@ -82,7 +82,7 @@ DBG_assert_func(char *fmt, ...)
 static void
 panic_func(FILE *fp, char *file, int line, char *fmt,  va_list ap)
 {
-    fprintf(fp, "Panic!! file..%s line..%d\n", file, line);
+    fprintf(fp, "Panic!!\n%s:%d\n", file, line);
     if (fmt) {
         vfprintf(fp, fmt, ap);
     }
