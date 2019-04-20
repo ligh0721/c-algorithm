@@ -3,7 +3,10 @@
 #define YY_INPUT(buf, result, max_size) (result = my_yyinput(buf, max_size))
 #include <stdio.h>
 #include <string.h>
-#include "tlang.h"
+#include "tinterpreter.h"
+#include "tlexer.h"
+#include "tcode.h"
+#include "terror.h"
 #include "y.tab.h"
 
 
@@ -67,13 +70,13 @@
     return IDENTIFIER;
 }
 <INITIAL>[1-9][0-9]* {
-    //Expression  *expression = crb_alloc_expression(INT_EXPRESSION);
-    //sscanf(yytext, "%d", &expression->u.int_value);
-    //yylval.expression = expression;
+    Expression  *expression = crb_alloc_expression(INT_EXPRESSION);
+    sscanf(yytext, "%d", &expression->u.int_value);
+    yylval.expression = expression;
     return INT_LITERAL;
 }
 <INITIAL>"0" {
-    Expression  *expression = crb_alloc_expression(INT_EXPRESSION);
+    Expression* expression = crb_alloc_expression(INT_EXPRESSION);
     expression->u.int_value = 0;
     yylval.expression = expression;
     return INT_LITERAL;
@@ -119,16 +122,5 @@
 <STRING_LITERAL_STATE>.         {
     Encoding enc = crb_get_current_interpreter()->source_encoding;
     crb_add_string_literal(yytext[0]);
-    if (enc == SHIFT_JIS_ENCODING
-        && ((((unsigned char*)yytext)[0] >= 0x81
-             && ((unsigned char*)yytext)[0] <= 0x9e)
-            || (((unsigned char*)yytext)[0] >= 0xe0
-                && ((unsigned char*)yytext)[0] <= 0xef))) {
-        BEGIN SHIFT_JIS_2ND_CHAR;
-     }
-}
-<SHIFT_JIS_2ND_CHAR>. {
-    crb_add_string_literal(yytext[0]);
-    BEGIN STRING_LITERAL_STATE;
 }
 %%

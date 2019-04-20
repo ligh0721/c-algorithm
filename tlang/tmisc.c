@@ -3,6 +3,8 @@
 //
 
 #include <string.h>
+#include <wchar.h>
+#include <limits.h>
 #include "tmisc.h"
 
 
@@ -35,11 +37,40 @@ CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, char *identifier, CRB
     return &new_var->value;
 }
 
-
-
-
-
 void* CRB_object_get_native_pointer(CRB_Object *obj) {
     DBG_assert(obj->type == NATIVE_POINTER_OBJECT, ("obj->type..%d\n", obj->type));
     return obj->u.native_pointer.pointer;
+}
+
+// char
+int CRB_mbstowcs_len(const char *src) {
+    int status;
+    mbstate_t ps;
+
+    memset(&ps, 0, sizeof(mbstate_t));
+    int src_idx, dest_idx;
+    for (src_idx = dest_idx = 0; src[src_idx] != '\0'; ) {
+        status = mbrtowc(NULL, &src[src_idx], MB_LEN_MAX, &ps);
+        if (status < 0) {
+            return status;
+        }
+        dest_idx++;
+        src_idx += status;
+    }
+
+    return dest_idx;
+}
+
+void CRB_mbstowcs(const char *src, CRB_Char *dest) {
+    int src_idx, dest_idx;
+    int status;
+    mbstate_t ps;
+
+    memset(&ps, 0, sizeof(mbstate_t));
+    for (src_idx = dest_idx = 0; src[src_idx] != '\0'; ) {
+        status = mbrtowc(&dest[dest_idx], &src[src_idx], MB_LEN_MAX, &ps);
+        dest_idx++;
+        src_idx += status;
+    }
+    dest[dest_idx] = L'\0';
 }

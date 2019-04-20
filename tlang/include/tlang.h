@@ -116,6 +116,11 @@ typedef enum {
     CRB_MESSAGE_ARGUMENT_END
 } CRB_MessageArgumentType;
 
+typedef struct {
+    char *format;
+    char *class_name;
+} CRB_ErrorDefinition;
+
 
 // theap
 CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, char *member_name);
@@ -126,7 +131,8 @@ CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, i
 // tmisc
 CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, char *identifier, CRB_Value *value, CRB_Boolean is_final);
 void* CRB_object_get_native_pointer(CRB_Object *obj);
-
+int CRB_mbstowcs_len(const char *src);
+void CRB_mbstowcs(const char *src, CRB_Char *dest);
 
 
 

@@ -1,7 +1,12 @@
 %{
 #include <stdio.h>
-#include "tlang.h"
+#include "tinterpreter.h"
+#include "terror.h"
 #define YYDEBUG 1
+
+extern int yylex();
+extern int yyerror(char const *str);
+
 %}
 %union {
     char                *identifier;

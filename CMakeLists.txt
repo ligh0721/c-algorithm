@@ -43,13 +43,13 @@ set(TLANG_TARGET tlang)
 # bison and flex
 find_package(BISON)
 find_package(FLEX)
-#bison_target(YACC_TARGET tlang/tlang.y ${CMAKE_CURRENT_BINARY_DIR}/y.tab.c
-#        DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/y.tab.h
-#        )
-#flex_target(LEX_TARGET tlang/tlang.l ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.c)
-#
-## default header file is y.tab.h
-#add_flex_bison_dependency(LEX_TARGET YACC_TARGET)
+bison_target(YACC_TARGET tlang/tlang.y ${CMAKE_CURRENT_BINARY_DIR}/y.tab.c
+        DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/y.tab.h
+        )
+flex_target(LEX_TARGET tlang/tlang.l ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.c)
+
+# default header file is y.tab.h
+add_flex_bison_dependency(LEX_TARGET YACC_TARGET)
 
 include_directories(tlang tlang/include ${CMAKE_CURRENT_BINARY_DIR})
 aux_source_directory(tlang TLANG_SRCS)

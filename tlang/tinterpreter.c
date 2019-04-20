@@ -6,6 +6,7 @@
 #include "tinterpreter.h"
 #include "tnative.h"
 #include "tmisc.h"
+#include "tlexer.h"
 #include "theap.h"
 #include "texecute.h"
 #include "terror.h"
@@ -41,8 +42,7 @@ CRB_Interpreter* CRB_create_interpreter(void) {
     interpreter->current_line_number = 1;
     interpreter->stack.stack_alloc_size = 0;
     interpreter->stack.stack_pointer = 0;
-    interpreter->stack.stack
-            = MEM_malloc(sizeof(CRB_Value) * STACK_ALLOC_SIZE);
+    interpreter->stack.stack = MEM_malloc(sizeof(CRB_Value) * STACK_ALLOC_SIZE);
     interpreter->heap.current_heap_size = 0;
     interpreter->heap.current_threshold = HEAP_THRESHOLD_SIZE;
     interpreter->heap.header = NULL;
@@ -183,27 +183,4 @@ CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, ch
 //    interpreter->function_list = fd;
 
     return fd;
-}
-
-
-// lex string
-static char* st_string_literal_buffer = NULL;
-static int st_string_literal_buffer_size = 0;
-static int st_string_literal_buffer_alloc_size = 0;
-
-void crb_reset_string_literal_buffer(void) {
-    MEM_free(st_string_literal_buffer);
-    st_string_literal_buffer = NULL;
-    st_string_literal_buffer_size = 0;
-    st_string_literal_buffer_alloc_size = 0;
-}
-
-static const char** st_source_string;
-static int st_current_source_line;
-static int st_current_char_index;
-
-void crb_set_source_string(const char** source) {
-    st_source_string = source;
-    st_current_source_line = 0;
-    st_current_char_index = 0;
 }

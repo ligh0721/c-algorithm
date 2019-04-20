@@ -9,6 +9,9 @@
 #include <setjmp.h>
 #include "tlang.h"
 
+#define smaller(a, b) ((a) < (b) ? (a) : (b))
+#define larger(a, b) ((a) > (b) ? (a) : (b))
+
 #define STACK_ALLOC_SIZE        (256)
 #define HEAP_THRESHOLD_SIZE     (1024 * 256)
 
@@ -495,10 +498,6 @@ struct CRB_Interpreter_tag {
 
 CRB_Interpreter *crb_get_current_interpreter(void);
 void crb_set_current_interpreter(CRB_Interpreter *inter);
-
-// lex string
-void crb_reset_string_literal_buffer(void);
-void crb_set_source_string(const char** source);
 
 // others
 typedef struct {
