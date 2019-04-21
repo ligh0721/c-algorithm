@@ -169,7 +169,7 @@ void slice_grow(SLICE* sli, long mincap) {
         new_cap = mincap > ARRAY_MAX_SIZE ? LONG_MAX : ARRAY_MAX_SIZE;
     }
     ARRAY* new_arr = open_array(new_cap);
-    memcpy(new_arr->data, sli->data->data, sizeof(VALUE)*new_cap);
+    memcpy(new_arr->data, sli->data->data, sizeof(VALUE)*old_cap);
     close_array(sli->data);
     sli->data = new_arr;
 //    printf("@slice_grow: cap: %ld -> %ld\n", old_cap, new_cap);

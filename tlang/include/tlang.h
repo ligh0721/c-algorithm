@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <wchar.h>
+#include <link.h>
 
 #define UTF_8_SOURCE
 
@@ -51,7 +52,7 @@ typedef struct CRB_Object_tag CRB_Object;
 typedef struct CRB_Array_tag CRB_Array;
 typedef struct CRB_String_tag CRB_String;
 typedef struct CRB_Assoc_tag CRB_Assoc;
-typedef struct CRB_ParameterList_tag CRB_ParameterList;
+typedef LLIST CRB_ParameterList;
 typedef struct CRB_Block_tag CRB_Block;
 typedef struct CRB_FunctionDefinition_tag CRB_FunctionDefinition;
 typedef struct CRB_LocalEnvironment_tag CRB_LocalEnvironment;

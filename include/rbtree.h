@@ -11,6 +11,7 @@
 typedef struct rbtree RBTREE;
 
 RBTREE* open_rbtree(COMPARE compare);
+RBTREE* open_rbtree_with_allocator(COMPARE compare, ALLOCATOR allocator);
 void close_rbtree(RBTREE* tr);
 long rbtree_len(RBTREE* tr);
 void rbtree_clear(RBTREE* tr);
@@ -19,8 +20,7 @@ VALUE rbtree_get(RBTREE* tr, VALUE key, int* ok);
 void rbtree_set(RBTREE *tr, VALUE value);
 VALUE rbtree_pop(RBTREE* tr, VALUE key, int* ok);
 
-typedef int (*RBTREE_TRAVERSE)(VALUE value, void* param);
-void rbtree_ldr(RBTREE* tr, RBTREE_TRAVERSE traverse, void* param);
+void rbtree_ldr(RBTREE* tr, TRAVERSE traverse, void* param);
 
 typedef struct rbnode RBNODE;
 RBNODE* rbtree_open_node(RBTREE* tr, VALUE value, RBNODE* parent);

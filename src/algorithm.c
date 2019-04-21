@@ -24,7 +24,7 @@ VALUE ptr_value(void* value) {
     return ret;
 }
 
-VALUE NULL_VALUE = {0};
+const VALUE NULL_VALUE = {};
 
 int asc_order_int(VALUE a, VALUE b) {
     return a.int_value - b.int_value;
@@ -34,9 +34,4 @@ int desc_order_int(VALUE a, VALUE b) {
     return b.int_value - a.int_value;
 }
 
-void print_array_int(VALUE arr[], long size) {
-    for (long i=0; i<size; ++i) {
-        printf("%ld ", arr[i].int_value);
-    }
-    printf("\n");
-}
+const ALLOCATOR NULL_ALLOCATOR = {};

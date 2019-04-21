@@ -23,16 +23,16 @@ struct rbnode {
 } __attribute__((aligned(sizeof(long))));
 
 
-static inline RBNODE* open_rbnode(VALUE value) {
-    struct rbnode* ret = NEW(struct rbnode);
-    ret->value = value;
-    ret->left = ret->right = NULL;
-    return ret;
-}
+//static inline RBNODE* open_rbnode(VALUE value) {
+//    struct rbnode* ret = NEW(struct rbnode);
+//    ret->value = value;
+//    ret->left = ret->right = NULL;
+//    return ret;
+//}
 
-static inline void close_rbnode(RBNODE* node) {
-    DELETE(node);
-}
+//static inline void close_rbnode(RBNODE* node) {
+//    DELETE(node);
+//}
 
 static inline struct rbnode* rbnode_parent(struct rbnode* node) {
     return (struct rbnode*)((node)->parent_and_color & ~1);
@@ -66,27 +66,55 @@ static inline void rbnode_copy_color(struct rbnode *node, struct rbnode *src) {
 
 struct rbtree {
     struct rbnode* root;
-    struct rbnode* leaf;
+    struct rbnode leaf;
     COMPARE compare;
     long length;
+    ALLOCATOR allocator;
 };
+
+static inline void* new(RBTREE* tr, size_t size) {
+    return tr->allocator.alloc != NULL ? tr->allocator.alloc(size) : NEW0(size);
+}
+
+static inline void delete(RBTREE* tr, void* p) {
+    if (tr->allocator.free != NULL) {
+        tr->allocator.free(p);
+    } else if (tr->allocator.alloc == NULL) {
+        DELETE(p);
+    }
+}
 
 RBTREE* open_rbtree(COMPARE compare) {
     struct rbtree* ret = NEW(struct rbtree);
     assert(ret != NULL);
-    ret->leaf = open_rbnode(NULL_VALUE);
-    ret->leaf->parent_and_color = RB_BLACK;
-    ret->root = ret->leaf;
+    ret->leaf.value = NULL_VALUE;
+    ret->leaf.parent_and_color = RB_BLACK;
+    ret->leaf.left = ret->leaf.right = NULL;
+    ret->root = &ret->leaf;
     ret->compare = compare;
     ret->length = 0;
+    ret->allocator = NULL_ALLOCATOR;
+    return ret;
+}
+
+RBTREE* open_rbtree_with_allocator(COMPARE compare, ALLOCATOR allocator) {
+    assert(allocator.alloc != NULL);
+    struct rbtree* ret = (struct rbtree*)allocator.alloc(sizeof(struct rbtree));
+    assert(ret != NULL);
+    ret->leaf.value = NULL_VALUE;
+    ret->leaf.parent_and_color = RB_BLACK;
+    ret->leaf.left = ret->leaf.right = NULL;
+    ret->root = &ret->leaf;
+    ret->compare = compare;
+    ret->length = 0;
+    ret->allocator = allocator;
     return ret;
 }
 
 void close_rbtree(RBTREE* tr) {
     assert(tr != NULL);
     rbtree_clear(tr);
-    close_rbnode(tr->leaf);
-    DELETE(tr);
+    delete(tr, tr);
 }
 
 long rbtree_len(RBTREE* tr) {
@@ -95,7 +123,7 @@ long rbtree_len(RBTREE* tr) {
 }
 
 static inline int rbtree_empty(RBTREE* tr) {
-    return tr->root == tr->leaf;
+    return tr->root == &tr->leaf;
 }
 
 void rbtree_clear(RBTREE* tr) {
@@ -108,45 +136,45 @@ void rbtree_clear(RBTREE* tr) {
     struct rbnode* right;
     stack_push(st, ptr_value(top));
     while (stack_len(st) > 0) {
-        while (top->left != tr->leaf) {
+        while (top->left != &tr->leaf) {
             top = top->left;
             stack_push(st, ptr_value(top));
         }
         do {
             top = (struct rbnode*)stack_pop(st, NULL).ptr_value;
             right = top->right;
-            close_rbnode(top);
-        } while (right == tr->leaf && stack_len(st) > 0);
-        if (right != tr->leaf) {
+            rbtree_close_node(tr, top);
+        } while (right == &tr->leaf && stack_len(st) > 0);
+        if (right != &tr->leaf) {
             top = right;
             stack_push(st, ptr_value(top));
         }
     }
     close_stack(st);
-    tr->root = tr->leaf;
+    tr->root = &tr->leaf;
     tr->length = 0;
 }
 
 // default red
 inline RBNODE* rbtree_open_node(RBTREE* tr, VALUE value, RBNODE* parent) {
-    struct rbnode* ret = NEW(struct rbnode);
+    struct rbnode* ret = (struct rbnode*)new(tr, sizeof(struct rbnode));
     ret->value = value;
     ret->parent_and_color = (unsigned long)parent;
-    ret->left = ret->right = tr->leaf;
+    ret->left = ret->right = &tr->leaf;
     return ret;
 }
 
 inline void rbtree_close_node(RBTREE* tr, RBNODE* node) {
-    DELETE(node);
+    delete(tr, node);
 }
 
 static inline void rbtree_left_rotate(RBTREE* tr, struct rbnode* node) {
-    assert(node->right != tr->leaf);
+    assert(node->right != &tr->leaf);
     struct rbnode* right = node->right;
     struct rbnode* parent = rbnode_parent(node);
 
     node->right = right->left;
-    if (right->left != tr->leaf) {
+    if (right->left != &tr->leaf) {
         rbnode_set_parent(right->left, node);
     }
 
@@ -163,12 +191,12 @@ static inline void rbtree_left_rotate(RBTREE* tr, struct rbnode* node) {
 }
 
 static inline void rbtree_right_rotate(RBTREE* tr, struct rbnode* node) {
-    assert(node->left != tr->leaf);
+    assert(node->left != &tr->leaf);
     struct rbnode* left = node->left;
     struct rbnode* parent = rbnode_parent(node);
 
     node->left = left->right;
-    if (left->right != tr->leaf) {
+    if (left->right != &tr->leaf) {
         rbnode_set_parent(left->right, node);
     }
 
@@ -189,7 +217,7 @@ static inline void rbtree_right_rotate(RBTREE* tr, struct rbnode* node) {
  */
 inline RBNODE** rbtree_fast_get(RBTREE *tr, const VALUE key, RBNODE** parent) {
     struct rbnode** ret = &tr->root;
-    struct rbnode* leaf = tr->leaf;
+    struct rbnode* leaf = &tr->leaf;
     if (*ret == leaf) {
         if (parent) {
             *parent = NULL;
@@ -219,7 +247,7 @@ inline RBNODE** rbtree_fast_get(RBTREE *tr, const VALUE key, RBNODE** parent) {
 
 void rbtree_fast_set(RBTREE *tr, RBNODE** where, RBNODE* node) {
     assert(tr != NULL);
-    assert(*where == tr->leaf);
+    assert(*where == &tr->leaf);
     *where = node;
     tr->length++;
     if (where == &tr->root) {
@@ -283,7 +311,7 @@ VALUE rbtree_fast_pop(RBTREE *tr, RBNODE *node) {
     assert(tr != NULL);
     assert(node != NULL);
     VALUE ret = node->value;
-    struct rbnode* leaf = tr->leaf;
+    struct rbnode* leaf = &tr->leaf;
     struct rbnode* temp;
     struct rbnode* subst;
 
@@ -423,7 +451,7 @@ VALUE rbtree_fast_pop(RBTREE *tr, RBNODE *node) {
 
 VALUE rbtree_get(RBTREE* tr, const VALUE key, int* ok) {
     RBNODE* where = *rbtree_fast_get(tr, key, NULL);
-    if (where == tr->leaf) {
+    if (where == &tr->leaf) {
         if (ok) {
             *ok = 0;
         }
@@ -437,7 +465,7 @@ VALUE rbtree_get(RBTREE* tr, const VALUE key, int* ok) {
 
 void rbtree_set(RBTREE *tr, const VALUE value) {
     assert(tr != NULL);
-    struct rbnode* leaf = tr->leaf;
+    struct rbnode* leaf = &tr->leaf;
     struct rbnode* node;
     RBNODE* parent;
     RBNODE** where = rbtree_fast_get(tr, value, &parent);
@@ -452,7 +480,7 @@ void rbtree_set(RBTREE *tr, const VALUE value) {
 VALUE rbtree_pop(RBTREE* tr, const VALUE key, int* ok) {
     assert(tr != NULL);
     RBNODE* search = *rbtree_fast_get(tr, key, NULL);
-    if (search == NULL || search == tr->leaf) {
+    if (search == NULL || search == &tr->leaf) {
         if (ok) {
             *ok = 0;
         }
@@ -462,11 +490,11 @@ VALUE rbtree_pop(RBTREE* tr, const VALUE key, int* ok) {
         *ok = 1;
     }
     VALUE ret = rbtree_fast_pop(tr, search);
-    close_rbnode(search);
+    rbtree_close_node(tr, search);
     return ret;
 }
 
-void rbtree_ldr(RBTREE* tr, RBTREE_TRAVERSE traverse, void* param) {
+void rbtree_ldr(RBTREE* tr, TRAVERSE traverse, void* param) {
     assert(tr != NULL);
     if (rbtree_empty(tr)) {
         return;
@@ -475,7 +503,7 @@ void rbtree_ldr(RBTREE* tr, RBTREE_TRAVERSE traverse, void* param) {
     struct rbnode* top = tr->root;
     stack_push(st, ptr_value(top));
     while (stack_len(st) > 0) {
-        while (top->left != tr->leaf) {
+        while (top->left != &tr->leaf) {
             top = top->left;
             stack_push(st, ptr_value(top));
         }
@@ -485,8 +513,8 @@ void rbtree_ldr(RBTREE* tr, RBTREE_TRAVERSE traverse, void* param) {
                 close_stack(st);
                 return;
             }
-        } while (top->right == tr->leaf && stack_len(st) > 0);
-        if (top->right != tr->leaf) {
+        } while (top->right == &tr->leaf && stack_len(st) > 0);
+        if (top->right != &tr->leaf) {
             top = top->right;
             stack_push(st, ptr_value(top));
         }

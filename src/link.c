@@ -4,52 +4,155 @@
 
 #include <stdlib.h>
 #include <assert.h>
-#include "algorithm.h"
 #include "link.h"
 
 
-struct linked_node* open_linked_node(VALUE value, struct linked_node* next) {
-    struct linked_node* ret = NEW(struct linked_node);
-    ret->value = value;
-    ret->next = next;
-    return ret;
-}
-
-struct dlinked_node* open_dlinked_node(VALUE value, struct dlinked_node* prev, struct dlinked_node* next) {
-    struct dlinked_node* ret = NEW(struct dlinked_node);
-    ret->value = value;
-    ret->next = next;
-    ret->prev = prev;
-    return ret;
-}
-
-void close_dlinked_node(struct dlinked_node* node) {
-    if (node->next != NULL) {
-        node->next->prev = node->prev;
-    }
-    if (node->prev != NULL) {
-        node->prev->next = node->next;
-    }
-    DELETE(node);
-}
-
-struct dlinked_list {
-    struct dlinked_node* head;
-    struct dlinked_node* tail;
+// linked list
+struct llist {
+    struct lnode head;
+    struct lnode* tail;
+    long length;
+    ALLOCATOR allocator;
 };
 
-DLINKED_LIST* open_dlinked_list() {
-    struct dlinked_list* ret = NEW(struct dlinked_list);
+static inline void* new(LLIST* lst, size_t size) {
+    return lst->allocator.alloc != NULL ? lst->allocator.alloc(size) : NEW0(size);
+}
+
+static inline void delete(LLIST* lst, void* p) {
+    if (lst->allocator.free != NULL) {
+        lst->allocator.free(p);
+    } else if (lst->allocator.alloc == NULL) {
+        DELETE(p);
+    }
+}
+
+LLIST* open_llist() {
+    struct llist* ret = NEW(struct llist);
     assert(ret != NULL);
-    ret->tail = ret->head = NULL;
+    ret->head.value = NULL_VALUE;
+    ret->head.next = NULL;
+    ret->tail = &ret->head;
+    ret->length = 0;
+    ret->allocator = NULL_ALLOCATOR;
     return ret;
 }
 
-void close_dlinked_list(DLINKED_LIST* lst) {
+LLIST* open_llist_with_allocator(ALLOCATOR allocator) {
+    assert(allocator.alloc != NULL);
+    struct llist* ret = (struct llist*)allocator.alloc(sizeof(struct llist));
+    assert(ret != NULL);
+    ret->head.value = NULL_VALUE;
+    ret->head.next = NULL;
+    ret->tail = &ret->head;
+    ret->length = 0;
+    ret->allocator = allocator;
+    return ret;
+}
+
+void close_llist(LLIST *lst) {
     assert(lst != NULL);
-    struct dlinked_node* next;
-    for (struct dlinked_node* p=lst->head; p!=NULL; p=next) {
-        next = p->next;
-        DELETE(p);
+    llist_clear(lst);
+    delete(lst, lst);
+}
+
+void llist_clear(LLIST* lst) {
+    assert(lst != NULL);
+    for (struct lnode* node=lst->head.next; node!=NULL; ) {
+        struct lnode* del = node;
+        node = node->next;
+        delete(lst, del);
     }
+    lst->head.next = NULL;
+    lst->tail = &lst->head;
+    lst->length = 0;
+}
+
+long llist_len(LLIST* lst) {
+    assert(lst != NULL);
+    return lst->length;
+}
+
+void llist_traversal(LLIST* lst, TRAVERSE traverse, void* param) {
+    for (struct lnode* node=lst->head.next; node!=NULL; node=node->next) {
+        if (traverse(node->value, param)) {
+            break;
+        }
+    }
+}
+
+void llist_push_back(LLIST* lst, VALUE value) {
+    assert(lst != NULL);
+    struct lnode* node = (struct lnode*)new(lst, sizeof(struct lnode));
+    node->value = value;
+    node->next = NULL;
+    lst->tail = lst->tail->next = node;
+    lst->length++;
+}
+
+// double linked list
+struct dllist {
+    struct dlnode head;
+    struct dlnode* tail;
+    long length;
+};
+
+DLLIST* open_dllist() {
+    struct dllist* ret = NEW(struct dllist);
+    assert(ret != NULL);
+    ret->head.value = NULL_VALUE;
+    ret->head.prev = &ret->head;
+    ret->head.next = NULL;
+    ret->tail = &ret->head;
+    ret->length = 0;
+    return ret;
+}
+
+void close_dllist(DLLIST *lst) {
+    assert(lst != NULL);
+    dllist_clear(lst);
+    DELETE(lst);
+}
+
+void dllist_clear(DLLIST* lst) {
+    assert(lst != NULL);
+    for (struct dlnode* node=lst->head.next; node!=NULL; ) {
+        struct dlnode* del = node;
+        node = node->next;
+        DELETE(del);
+    }
+    lst->head.next = NULL;
+    lst->tail = &lst->head;
+    lst->length = 0;
+}
+
+long dllist_len(DLLIST* lst) {
+    assert(lst != NULL);
+    return lst->length;
+}
+
+void dlist_traversal(DLLIST* lst, int reverse, TRAVERSE traverse, void* param) {
+    if (reverse) {
+        for (struct dlnode* node=lst->tail; node!=&lst->head; node=node->prev) {
+            if (traverse(node->value, param)) {
+                break;
+            }
+        }
+    } else {
+        for (struct dlnode* node=lst->head.next; node!=NULL; node=node->next) {
+            if (traverse(node->value, param)) {
+                break;
+            }
+        }
+    }
+}
+
+void dllist_push_back(DLLIST* lst, VALUE value) {
+    assert(lst != NULL);
+    struct dlnode* node = NEW(struct dlnode);
+    node->value = value;
+    node->next = NULL;
+    node->prev = lst->tail;
+    lst->tail = lst->tail->next = node;
+    lst->length++;
 }

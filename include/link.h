@@ -8,27 +8,34 @@
 #include "algorithm.h"
 
 
-struct linked_node {
+struct lnode {
     VALUE value;
-    struct linked_node* next;
+    struct lnode* next;
 };
 
-struct linked_node* open_linked_node(VALUE value, struct linked_node* next);
+typedef struct llist LLIST;
 
+LLIST* open_llist();
+LLIST* open_llist_with_allocator(ALLOCATOR allocator);
+void close_llist(LLIST *lst);
+void llist_clear(LLIST* lst);
+long llist_len(LLIST* lst);
+void llist_traversal(LLIST* lst, TRAVERSE traverse, void* param);
+void llist_push_back(LLIST* lst, VALUE value);
 
-struct dlinked_node {
+struct dlnode {
     VALUE value;
-    struct dlinked_node* next;
-    struct dlinked_node* prev;
+    struct dlnode* next;
+    struct dlnode* prev;
 };
 
-struct dlinked_node* open_dlinked_node(VALUE value, struct dlinked_node* prev, struct dlinked_node* next);
-void close_dlinked_node(struct dlinked_node* node);
+typedef struct dllist DLLIST;
 
-
-typedef struct dlinked_list DLINKED_LIST;
-
-DLINKED_LIST* open_dlinked_list();
-void close_dlinked_list(DLINKED_LIST* lst);
+DLLIST* open_dllist();
+void close_dllist(DLLIST *lst);
+void dllist_clear(DLLIST* lst);
+long dllist_len(DLLIST* lst);
+void dlist_traversal(DLLIST* lst, int reverse, TRAVERSE traverse, void* param);
+void dllist_push_back(DLLIST* lst, VALUE value);
 
 #endif //ALGORITHM_LINK_H

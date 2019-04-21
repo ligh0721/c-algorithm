@@ -55,6 +55,12 @@ CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, char *identifier, CRB
     return &new_var->value;
 }
 
+Variable* crb_search_global_variable(CRB_Interpreter *inter, char *identifier) {
+    NamedItemEntry key = {identifier};
+    VALUE res = rbtree_get(inter->variables, ptr_value(&key), NULL);
+    return (Variable*)res.ptr_value;
+}
+
 CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, char *identifier) {
     int ok;
     NamedItemEntry key = {identifier};

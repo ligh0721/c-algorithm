@@ -6,6 +6,7 @@
 #define TLANG_TINTERPRETER_H
 
 #include <rbtree.h>
+#include <link.h>
 #include <setjmp.h>
 #include "tlang.h"
 
@@ -237,10 +238,12 @@ typedef enum {
 #define crb_is_logical_operator(operator) \
   ((operator) == LOGICAL_AND_EXPRESSION || (operator) == LOGICAL_OR_EXPRESSION)
 
-typedef struct ArgumentList_tag {
-    Expression *expression;
-    struct ArgumentList_tag *next;
-} ArgumentList;
+
+typedef LLIST ArgumentList;
+//typedef struct ArgumentList_tag {
+//    Expression *expression;
+//    struct ArgumentList_tag *next;
+//} ArgumentList;
 
 typedef struct {
     Expression  *left;
@@ -273,10 +276,11 @@ typedef struct {
     ArgumentList        *argument;
 } FunctionCallExpression;
 
-typedef struct ExpressionList_tag {
-    Expression          *expression;
-    struct ExpressionList_tag   *next;
-} ExpressionList;
+//typedef struct ExpressionList_tag {
+//    ExpressionListNode head;
+//    ExpressionListNode* tail;
+//} ExpressionList;
+typedef LLIST ExpressionList;
 
 typedef struct {
     Expression  *array;
@@ -345,19 +349,21 @@ typedef enum {
 
 typedef struct Statement_tag Statement;
 
-typedef struct StatementList_tag {
-    Statement   *statement;
-    struct StatementList_tag    *next;
-} StatementList;
+typedef LLIST StatementList;  // LLIST<statement>
+//typedef struct StatementList_tag {
+//    Statement   *statement;
+//    struct StatementList_tag    *next;
+//} StatementList;
 
 struct CRB_Block_tag {
     StatementList       *statement_list;
 };
 
-typedef struct IdentifierList_tag {
-    char        *name;
-    struct IdentifierList_tag   *next;
-} IdentifierList;
+typedef RBTREE IdentifierList;  // RBTREE<char*>
+//typedef struct IdentifierList_tag {
+//    char        *name;
+//    struct IdentifierList_tag   *next;
+//} IdentifierList;
 
 typedef struct {
     IdentifierList      *identifier_list;

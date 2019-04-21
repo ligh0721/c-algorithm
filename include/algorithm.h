@@ -18,9 +18,10 @@ VALUE int_value(long value);
 VALUE float_value(double value);
 VALUE ptr_value(void* value);
 
-extern VALUE NULL_VALUE;
+extern const VALUE NULL_VALUE;
 
 #define NEW(TYPE) ((TYPE*)malloc(sizeof(TYPE)))
+#define NEW0(size) (malloc(size))
 #define NEW2(TYPE, append) ((TYPE*)malloc(sizeof(TYPE)+(append)))
 #define NEW3(TYPE, count) ((TYPE*)malloc(sizeof(TYPE)*(count)))
 #define RENEW2(p, TYPE, append) ((TYPE*)realloc((p), sizeof(TYPE)+(append)))
@@ -37,8 +38,18 @@ typedef int (*COMPARE)(VALUE, VALUE);
 
 int asc_order_int(VALUE a, VALUE b);
 int desc_order_int(VALUE a, VALUE b);
-void print_array_int(VALUE arr[], long size);
 
 typedef void (*PRINT_VALUE)(VALUE value);
+
+typedef int (*TRAVERSE)(VALUE value, void* param);
+
+typedef void* (*ALLOC)(size_t size);
+typedef void (*FREE)(void* p);
+typedef struct ALLOCATOR {
+    ALLOC alloc;
+    FREE free;
+} ALLOCATOR;
+
+extern const ALLOCATOR NULL_ALLOCATOR;
 
 #endif //ALGORITHM_ALGORITHM_H

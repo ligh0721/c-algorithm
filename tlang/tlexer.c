@@ -125,6 +125,7 @@ static int readline_input(char* buf, int max_size) {
     if (st_readline_string == NULL) {
         return 0;
     } else if (st_readline_string[0] == 0) {
+        free(st_readline_string);
         st_readline_string = "\n";
     }
 
@@ -132,8 +133,11 @@ static int readline_input(char* buf, int max_size) {
     strncpy(buf, st_readline_string+st_readline_current_char_index, len);
     st_readline_current_char_index += len;
     if (st_readline_string[st_readline_current_char_index] == 0 && st_readline_string[st_readline_current_char_index-1] != '\n') {
+        free(st_readline_string);
         if (len < max_size) {
             buf[len++] = '\n';
+            st_readline_string = "";
+            st_readline_current_char_index = 0;
         } else {
             st_readline_string = "\n";
             st_readline_current_char_index = 0;

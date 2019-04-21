@@ -13,6 +13,7 @@
 #include "rbtree.h"
 #include "skiplist.h"
 #include "wstring.h"
+#include "link.h"
 #include "main.h"
 
 
@@ -26,8 +27,12 @@ struct item_node {
     struct item_node* next;
 };
 
-struct item_node g_root = {};
-struct item_node* g_tail = &g_root;
+static LLIST* g_item_list;
+
+static int close_every_item(VALUE value, void* param) {
+    DELETE(value.ptr_value);
+    return 0;
+}
 
 VALUE open_item(int key, const char *msg) {
     ITEM* obj = NEW(ITEM);
@@ -36,20 +41,8 @@ VALUE open_item(int key, const char *msg) {
     VALUE ret;
     ret.ptr_value = obj;
 
-    struct item_node* node = NEW(struct item_node);
-    node->item = obj;
-    node->next = NULL;
-    g_tail = g_tail->next = node;
+    llist_push_back(g_item_list, ret);
     return ret;
-}
-
-void close_all_items() {
-    for (struct item_node* prev=&g_root; prev->next!=NULL;) {
-        struct item_node* del = prev->next;
-        prev->next = del->next;
-        DELETE(del->item);
-        DELETE(del);
-    }
 }
 
 void print_item(VALUE value) {
@@ -293,11 +286,11 @@ void deque_test() {
     printf("\n");
 
 
-    ARRAY* arr = _deque_data(q);
-    for (int i=0; i<array_cap(arr); ++i) {
-        printf("%ld ", array_get(arr, i).int_value);
-    }
-    printf("_deque_data\n");
+//    ARRAY* arr = _deque_data(q);
+//    for (int i=0; i<array_cap(arr); ++i) {
+//        printf("%ld ", array_get(arr, i).int_value);
+//    }
+//    printf("_deque_data\n");
 
     close_deque(q);
     printf("\n");
@@ -320,8 +313,8 @@ void rbtree_test() {
 //    rbtree_set(tr, int_value(-6));
 //    rbtree_set(tr, int_value(7));
     srand((int)time(0));
-    for (int i=0; i<10485760; ++i) {
-        rbtree_set(tr, int_value(rand()));
+    for (int i=0; i<1024; ++i) {
+        rbtree_set(tr, int_value(rand()%1000));
     }
 
 //    int ok;
@@ -388,11 +381,11 @@ void wstring_test() {
     WSTRING* s2 = open_wstring_with_data(L"abc");
     WSTRING* s3 = open_wstring_with_data(L"abcd");
 
-    printf("s3, s2: %d\n", wstring_cmp(s3, s2));
+//    printf("s3, s2: %d\n", wstring_cmp(s3, s2));
     wstring_cpy(s2, s3);
 
-//    WSTRING* ss = open_wstring_with_format(L"abc%d", 1);
-//    close_wstring(ss);
+    WSTRING* ss = open_wstring_with_format(L"abc%d", 1);
+    close_wstring(ss);
 
     close_wstring(s2);
     close_wstring(s3);
@@ -445,16 +438,19 @@ void test() {
 }
 
 int main(int argc, char* argv[]) {
-//    sort_test();
-//    stack_test();
-//    array_test();
-//    heap_test();
-//    deque_test();
-//    rbtree_test();
-    skiplist_test();
-//    wstring_test();
-//    test();
-    close_all_items();
+    g_item_list = open_llist();
 
+    sort_test();
+    stack_test();
+    array_test();
+    heap_test();
+    deque_test();
+    rbtree_test();
+    skiplist_test();
+    wstring_test();
+//    test();
+
+    llist_traversal(g_item_list, close_every_item, NULL);
+    close_llist(g_item_list);
     return 0;
 }

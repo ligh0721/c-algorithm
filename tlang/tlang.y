@@ -60,10 +60,8 @@ definition_or_statement
         : function_definition
         | statement
         {
-//            CRB_Interpreter *inter = crb_get_current_interpreter();
-//
-//            inter->statement_list
-//                = crb_chain_statement_list(inter->statement_list, $1);
+            CRB_Interpreter *inter = crb_get_current_interpreter();
+            inter->statement_list = crb_chain_statement_list(inter->statement_list, $1);
         }
         ;
 
@@ -72,42 +70,50 @@ function_definition
         {
 //            crb_function_define($2, $4, $6);
         }
-        | FUNCTION IDENTIFIER LP RP block
-        {
-//            crb_function_define($2, NULL, $5);
-        }
         ;
 
 parameter_list
-        : IDENTIFIER
+	: /* empty */
         {
-//            $$ = crb_create_parameter($1);
+            $$ = NULL;
+        }
+        | IDENTIFIER
+        {
+            $$ = crb_create_parameter($1);
         }
         | parameter_list COMMA IDENTIFIER
         {
-//            $$ = crb_chain_parameter($1, $3);
+            $$ = crb_chain_parameter($1, $3);
         }
         ;
 
 argument_list
-        : assignment_expression
+        : /* empty */
         {
-//            $$ = crb_create_argument_list($1);
+            $$ = NULL;
+        }
+        | assignment_expression
+        {
+            $$ = crb_create_argument_list($1);
         }
         | argument_list COMMA assignment_expression
         {
-//            $$ = crb_chain_argument_list($1, $3);
+            $$ = crb_chain_argument_list($1, $3);
         }
         ;
 
 statement_list
-        : statement
+        : /* empty */
         {
-//            $$ = crb_create_statement_list($1);
+            $$ = NULL;
+        }
+        | statement
+        {
+            $$ = crb_create_statement_list($1);
         }
         | statement_list statement
         {
-//            $$ = crb_chain_statement_list($1, $2);
+            $$ = crb_chain_statement_list($1, $2);
         }
         ;
 
@@ -258,11 +264,7 @@ postfix_expression
         }
         | postfix_expression LP argument_list RP
         {
-//            $$ = crb_create_function_call_expression($1, $3);
-        }
-        | postfix_expression LP RP
-        {
-//            $$ = crb_create_function_call_expression($1, NULL);
+            $$ = crb_create_function_call_expression($1, $3);
         }
         | postfix_expression INCREMENT
         {
@@ -281,22 +283,22 @@ primary_expression
         }
         | IDENTIFIER
         {
-//            $$ = crb_create_identifier_expression($1);
+            $$ = crb_create_identifier_expression($1);
         }
         | INT_LITERAL
         | DOUBLE_LITERAL
         | STRING_LITERAL
         | TRUE_T
         {
-//            $$ = crb_create_boolean_expression(CRB_TRUE);
+            $$ = crb_create_boolean_expression(CRB_TRUE);
         }
         | FALSE_T
         {
-//            $$ = crb_create_boolean_expression(CRB_FALSE);
+            $$ = crb_create_boolean_expression(CRB_FALSE);
         }
         | NULL_T
         {
-//            $$ = crb_create_null_expression();
+            $$ = crb_create_null_expression();
         }
         | array_literal
         | closure_definition
@@ -305,30 +307,22 @@ primary_expression
 array_literal
         : LC expression_list RC
         {
-//            $$ = crb_create_array_expression($2);
+            $$ = crb_create_array_expression($2);
         }
         | LC expression_list COMMA RC
         {
-//            $$ = crb_create_array_expression($2);
+            $$ = crb_create_array_expression($2);
         }
         ;
 
 closure_definition
         : CLOSURE IDENTIFIER LP parameter_list RP block
         {
-//            $$ = crb_create_closure_definition($2, $4, $6);
-        }
-        | CLOSURE IDENTIFIER LP RP block
-        {
-//            $$ = crb_create_closure_definition($2, NULL, $5);
+            $$ = crb_create_closure_definition($2, $4, $6);
         }
         | CLOSURE LP parameter_list RP block
         {
-//            $$ = crb_create_closure_definition(NULL, $3, $5);
-        }
-        | CLOSURE LP RP block
-        {
-//            $$ = crb_create_closure_definition(NULL, NULL, $4);
+            $$ = crb_create_closure_definition(NULL, $3, $5);
         }
         ;
 
@@ -339,18 +333,18 @@ expression_list
         }
         | assignment_expression
         {
-//            $$ = crb_create_expression_list($1);
+            $$ = crb_create_expression_list($1);
         }
         | expression_list COMMA assignment_expression
         {
-//            $$ = crb_chain_expression_list($1, $3);
+            $$ = crb_chain_expression_list($1, $3);
         }
         ;
 
 statement
         : expression SEMICOLON
         {
-//          $$ = crb_create_expression_statement($1);
+            $$ = crb_create_expression_statement($1);
         }
         | global_statement
         | if_statement
@@ -367,18 +361,18 @@ statement
 global_statement
         : GLOBAL_T identifier_list SEMICOLON
         {
-//            $$ = crb_create_global_statement($2);
+            $$ = crb_create_global_statement($2);
         }
         ;
 
 identifier_list
         : IDENTIFIER
         {
-//            $$ = crb_create_global_identifier($1);
+            $$ = crb_create_global_identifier($1);
         }
         | identifier_list COMMA IDENTIFIER
         {
-//            $$ = crb_chain_identifier($1, $3);
+            $$ = crb_chain_identifier($1, $3);
         }
         ;
 
@@ -509,11 +503,7 @@ throw_statement
 block
         : LC statement_list RC
         {
-//            $$ = crb_create_block($2);
-        }
-        | LC RC
-        {
-//            $$ = crb_create_block(NULL);
+            $$ = crb_create_block($2);
         }
         ;
 %%

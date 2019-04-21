@@ -12,7 +12,7 @@ struct stack {
     SLICE* data;
 };
 
-//extern struct dlinked_node* open_link_node(VALUE value, struct dlinked_node *next);
+//extern struct dlnode* open_link_node(VALUE value, struct dlnode *next);
 
 STACK* open_stack(long cap) {
     struct stack* ret = NEW(struct stack);
