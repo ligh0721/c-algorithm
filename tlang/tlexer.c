@@ -119,22 +119,25 @@ void crb_set_readline(READLINE_FUNC readline, void* param) {
 static int readline_input(char* buf, int max_size) {
     if (st_readline_string[st_readline_current_char_index] == 0) {
         st_readline_string = st_readline(st_readline_param);
-        if (strlen(st_readline_string) == 0) {
-            st_readline_string = "\n";
-        }
         st_readline_current_char_index = 0;
     }
 
     if (st_readline_string == NULL) {
         return 0;
+    } else if (st_readline_string[0] == 0) {
+        st_readline_string = "\n";
     }
 
     int len = smaller(strlen(st_readline_string) - st_readline_current_char_index, max_size);
-    strncpy(buf, st_readline_string + st_readline_current_char_index, len);
+    strncpy(buf, st_readline_string+st_readline_current_char_index, len);
     st_readline_current_char_index += len;
     if (st_readline_string[st_readline_current_char_index] == 0 && st_readline_string[st_readline_current_char_index-1] != '\n') {
-        st_readline_string = "\n";
-        st_readline_current_char_index = 0;
+        if (len < max_size) {
+            buf[len++] = '\n';
+        } else {
+            st_readline_string = "\n";
+            st_readline_current_char_index = 0;
+        }
     }
     return len;
 }

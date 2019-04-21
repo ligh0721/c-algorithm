@@ -96,6 +96,7 @@
 //}
 
 void crb_compile_error(CompileError id, ...) {
+    fprintf(stderr, "compile_error: %d\n", (int)id);
     // TODO:
 //    va_list     ap;
 //    VString     message;
@@ -166,6 +167,7 @@ void crb_compile_error(CompileError id, ...) {
 //}
 
 void crb_runtime_error(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, RuntimeError id, ...) {
+    fprintf(stderr, "runtime_error: %d\n", (int)id);
     exit(1);
     // TODO:
 //    va_list     ap;
