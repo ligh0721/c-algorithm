@@ -50,7 +50,7 @@ void close_array(ARRAY* arr) {
     assert(arr != NULL);
     assert(arr->ref > 0);
     if (--(arr->ref) == 0) {
-        printf("@free array data\n");
+//        printf("@free array data\n");
         DELETE(arr);
     }
 }
@@ -172,7 +172,7 @@ void slice_grow(SLICE* sli, long mincap) {
     memcpy(new_arr->data, sli->data->data, sizeof(VALUE)*new_cap);
     close_array(sli->data);
     sli->data = new_arr;
-    printf("slice_grow: cap: %ld -> %ld\n", old_cap, new_cap);
+//    printf("@slice_grow: cap: %ld -> %ld\n", old_cap, new_cap);
 }
 
 void slice_append(SLICE* sli, VALUE value) {

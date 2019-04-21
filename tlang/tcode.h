@@ -9,5 +9,6 @@
 
 
 Expression* crb_alloc_expression(ExpressionType type);
+Expression* crb_create_assign_expression(CRB_Boolean is_final, Expression *left, AssignmentOperator operator, Expression *operand);
 
 #endif //TLANG_TCODE_H

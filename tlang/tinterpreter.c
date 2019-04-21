@@ -23,12 +23,8 @@ void crb_set_current_interpreter(CRB_Interpreter *inter) {
     st_current_interpreter = inter;
 }
 
-struct named_item_entry {
-    const char* name;
-};
-
 static int asc_order_named_item(VALUE a, VALUE b) {
-    return strcmp(((struct named_item_entry*)a.ptr_value)->name, ((struct named_item_entry*)b.ptr_value)->name);
+    return strcmp(((NamedItemEntry*)a.ptr_value)->name, ((NamedItemEntry*)b.ptr_value)->name);
 }
 
 CRB_Interpreter* CRB_create_interpreter(void) {
@@ -186,6 +182,7 @@ void CRB_dispose_interpreter(CRB_Interpreter *interpreter) {
         MEM_dispose_storage(interpreter->execute_storage);
     }
     close_rbtree(interpreter->variables);
+    interpreter->variables = NULL;
     crb_garbage_collect(interpreter);
     DBG_assert(interpreter->heap.current_heap_size == 0, ("%d bytes leaked.\n", interpreter->heap.current_heap_size));
     MEM_free(interpreter->stack.stack);

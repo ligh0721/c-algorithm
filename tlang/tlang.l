@@ -13,7 +13,7 @@
 %}
 %start COMMENT STRING_LITERAL_STATE REGEXP_LITERAL_STATE SHIFT_JIS_2ND_CHAR
 %%
-<INITIAL>"function"     return FUNCTION;
+<INITIAL>"func"     return FUNCTION;
 <INITIAL>"if"           return IF;
 <INITIAL>"else"         return ELSE;
 <INITIAL>"elsif"        return ELSIF;
@@ -81,7 +81,7 @@
     yylval.expression = expression;
     return INT_LITERAL;
 }
-<INITIAL>[0-9]+\.[0-9]+ {
+<INITIAL>((?:[1-9][0-9]*)|0)\.[0-9]+ {
     Expression  *expression = crb_alloc_expression(DOUBLE_EXPRESSION);
     sscanf(yytext, "%lf", &expression->u.double_value);
     yylval.expression = expression;
@@ -120,7 +120,7 @@
 <STRING_LITERAL_STATE>\\t       crb_add_string_literal('\t');
 <STRING_LITERAL_STATE>\\\\      crb_add_string_literal('\\');
 <STRING_LITERAL_STATE>.         {
-    Encoding enc = crb_get_current_interpreter()->source_encoding;
+    //Encoding enc = crb_get_current_interpreter()->source_encoding;
     crb_add_string_literal(yytext[0]);
 }
 %%

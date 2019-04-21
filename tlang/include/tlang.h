@@ -26,7 +26,7 @@ void CRB_dispose_interpreter(CRB_Interpreter* interpreter);
 
 
 // development
-typedef wchar_t CRB_Char;
+typedef wchar_t CRB_Char;  // TODO: use wchar_t
 
 typedef enum {
     CRB_FALSE = 0,
@@ -135,9 +135,19 @@ CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, i
 
 // tmisc
 CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, char *identifier, CRB_Value *value, CRB_Boolean is_final);
+CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, char *identifier);
 void* CRB_object_get_native_pointer(CRB_Object *obj);
+
+#define CRB_wcslen(s) wcslen(s)
+#define CRB_wcscpy(s, d) wcscpy(s, d)
 int CRB_mbstowcs_len(const char *src);
 void CRB_mbstowcs(const char *src, CRB_Char *dest);
+CRB_Char* CRB_mbstowcs_alloc(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const char *src);
+int CRB_wcstombs_len(const CRB_Char *src);
+void CRB_wcstombs(const CRB_Char *src, char *dest);
+char CRB_wctochar(CRB_Char src);
+int CRB_print_wcs(FILE *fp, CRB_Char *str);
+int CRB_print_wcs_ln(FILE *fp, CRB_Char *str);
 
 
 

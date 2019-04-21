@@ -12,9 +12,16 @@
 #define smaller(a, b) ((a) < (b) ? (a) : (b))
 #define larger(a, b) ((a) > (b) ? (a) : (b))
 
+#define MESSAGE_ARGUMENT_MAX    (256)
+#define LINE_BUF_SIZE           (1024)
 #define STACK_ALLOC_SIZE        (256)
 #define HEAP_THRESHOLD_SIZE     (1024 * 256)
+#define LONGJMP_ARG             (1)
 
+
+typedef struct {
+    const char* name;
+} NamedItemEntry;
 
 typedef struct {
     char* name;
@@ -103,6 +110,7 @@ struct CRB_Object_tag {
 
 // Error
 #define EXCEPTION_MEMBER_PRINT_STACK_TRACE      ("print_stack_trace")
+#define EXCEPTION_CREATE_METHOD_NAME    ("create")
 
 typedef enum {
     PARSE_ERR = 1,

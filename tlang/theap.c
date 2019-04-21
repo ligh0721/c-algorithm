@@ -119,7 +119,9 @@ static void gc_mark_objects(CRB_Interpreter *inter) {
         gc_reset_mark(obj);
     }
 
-    rbtree_ldr(inter->variables, _every_variable_gc_mark_value, NULL);
+    if (inter->variables != NULL) {
+        rbtree_ldr(inter->variables, _every_variable_gc_mark_value, NULL);
+    }
 //    for (Variable* v = inter->variable; v; v = v->next) {
 //        gc_mark_value(&v->value);
 //    }
@@ -144,7 +146,7 @@ static void gc_dispose_object(CRB_Interpreter *inter, CRB_Object *obj) {
             break;
         case STRING_OBJECT:
             if (!obj->u.string.is_literal) {
-                inter->heap.current_heap_size -= sizeof(CRB_Char) * (wcslen(obj->u.string.string) + 1);
+                inter->heap.current_heap_size -= sizeof(CRB_Char) * (CRB_wcslen(obj->u.string.string) + 1);
                 MEM_free(obj->u.string.string);
             }
             break;
