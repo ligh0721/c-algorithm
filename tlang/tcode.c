@@ -115,7 +115,6 @@ CRB_ParameterList* crb_chain_parameter(CRB_ParameterList *list, char *identifier
 }
 
 IdentifierList* crb_create_global_identifier(char *identifier) {
-    RBTREE* list = open_rbtree()
     return crb_create_list(identifier);
 }
 

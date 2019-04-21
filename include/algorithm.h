@@ -38,6 +38,8 @@ typedef int (*COMPARE)(VALUE, VALUE);
 
 int asc_order_int(VALUE a, VALUE b);
 int desc_order_int(VALUE a, VALUE b);
+int asc_order_str(VALUE a, VALUE b);
+int desc_order_str(VALUE a, VALUE b);
 
 typedef void (*PRINT_VALUE)(VALUE value);
 

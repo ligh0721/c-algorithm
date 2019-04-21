@@ -20,6 +20,7 @@ LLIST* open_llist_with_allocator(ALLOCATOR allocator);
 void close_llist(LLIST *lst);
 void llist_clear(LLIST* lst);
 long llist_len(LLIST* lst);
+struct lnode* llist_front_node(LLIST* lst);
 void llist_traversal(LLIST* lst, TRAVERSE traverse, void* param);
 void llist_push_back(LLIST* lst, VALUE value);
 

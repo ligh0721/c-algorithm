@@ -73,7 +73,13 @@ long llist_len(LLIST* lst) {
     return lst->length;
 }
 
+struct lnode* llist_front_node(LLIST* lst) {
+    assert(lst != NULL);
+    return lst->head.next;
+}
+
 void llist_traversal(LLIST* lst, TRAVERSE traverse, void* param) {
+    assert(lst != NULL);
     for (struct lnode* node=lst->head.next; node!=NULL; node=node->next) {
         if (traverse(node->value, param)) {
             break;
@@ -132,6 +138,7 @@ long dllist_len(DLLIST* lst) {
 }
 
 void dlist_traversal(DLLIST* lst, int reverse, TRAVERSE traverse, void* param) {
+    assert(lst != NULL);
     if (reverse) {
         for (struct dlnode* node=lst->tail; node!=&lst->head; node=node->prev) {
             if (traverse(node->value, param)) {

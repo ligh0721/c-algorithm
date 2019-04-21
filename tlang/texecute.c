@@ -5,6 +5,7 @@
 #include "texecute.h"
 #include "terror.h"
 #include "tmisc.h"
+#include "teval.h"
 
 
 static StatementResult execute_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Statement *statement);
@@ -18,35 +19,29 @@ static StatementResult execute_expression_statement(CRB_Interpreter *inter, CRB_
 }
 
 static StatementResult execute_global_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Statement *statement) {
-    IdentifierList *pos;
+    IdentifierList*pos;
     StatementResult result;
     result.type = NORMAL_STATEMENT_RESULT;
 
     if (env == NULL) {
         crb_runtime_error(inter, env, statement->line_number, GLOBAL_STATEMENT_IN_TOPLEVEL_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
-    for (pos = statement->u.global_s.identifier_list; pos; pos = pos->next) {
-        GlobalVariableRef *ref_pos;
-        GlobalVariableRef *new_ref;
-        Variable *variable;
-        for (ref_pos = env->global_variable; ref_pos;
-             ref_pos = ref_pos->next) {
-            if (!strcmp(ref_pos->name, pos->name))
-                goto NEXT_IDENTIFIER;
-        }
-        variable = crb_search_global_variable(inter, pos->name);
-        if (variable == NULL) {
-            crb_runtime_error(inter, env, statement->line_number, GLOBAL_VARIABLE_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", pos->name, CRB_MESSAGE_ARGUMENT_END);
-        }
-        new_ref = MEM_malloc(sizeof(GlobalVariableRef));
-        new_ref->name = pos->name;
-        new_ref->variable = variable;
-        new_ref->next = env->global_variable;
-        env->global_variable = new_ref;
-        NEXT_IDENTIFIER:
-        ;
-    }
 
+    RBTREE* global_identifiers = statement->u.global_s.identifier_list;
+    for (struct lnode* node=llist_front_node(global_identifiers); node!=NULL; node=node->next) {
+        char* identifier_name = (char*)node->value.ptr_value;
+        int ok;
+        NamedItemEntry key = {identifier_name};
+        rbtree_get(env->global_variable, ptr_value(&key), &ok);
+        if (ok) {
+            continue;
+        }
+        Variable* variable = crb_search_global_variable(inter, identifier_name);
+        if (variable == NULL) {
+            crb_runtime_error(inter, env, statement->line_number, GLOBAL_VARIABLE_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", identifier_name, CRB_MESSAGE_ARGUMENT_END);
+        }
+        rbtree_set(env->global_variable, ptr_value(variable));  // TODO: use fast
+    }
     return result;
 }
 

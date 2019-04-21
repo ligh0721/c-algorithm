@@ -8,4 +8,6 @@
 #include "tinterpreter.h"
 
 
+CRB_Value crb_eval_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr);
+
 #endif //TLANG_TEVAL_H

@@ -349,7 +349,7 @@ typedef enum {
 
 typedef struct Statement_tag Statement;
 
-typedef LLIST StatementList;  // LLIST<statement>
+typedef LLIST StatementList;  // LLIST<Statement*>
 //typedef struct StatementList_tag {
 //    Statement   *statement;
 //    struct StatementList_tag    *next;
@@ -359,7 +359,7 @@ struct CRB_Block_tag {
     StatementList       *statement_list;
 };
 
-typedef RBTREE IdentifierList;  // RBTREE<char*>
+typedef LLIST IdentifierList;  // LLIST<char*>
 //typedef struct IdentifierList_tag {
 //    char        *name;
 //    struct IdentifierList_tag   *next;
@@ -453,11 +453,11 @@ typedef enum {
     CRB_READLINE_INPUT_MODE
 } CRB_InputMode;
 
-typedef struct GlobalVariableRef_tag {
-    char        *name;
-    Variable    *variable;
-    struct GlobalVariableRef_tag *next;
-} GlobalVariableRef;
+//typedef struct GlobalVariableRef_tag {
+//    char        *name;
+//    Variable    *variable;
+//    struct GlobalVariableRef_tag *next;
+//} GlobalVariableRef;
 
 typedef struct RefInNativeFunc_tag {
     CRB_Object  *object;
@@ -468,7 +468,7 @@ struct CRB_LocalEnvironment_tag {
     char                *current_function_name;
     int                 caller_line_number;
     CRB_Object          *variable;      /* ScopeChain */
-    GlobalVariableRef   *global_variable;
+    RBTREE              *global_variable;  // RBTREE<Variable*>
     RefInNativeFunc     *ref_in_native_method;
     struct CRB_LocalEnvironment_tag     *next;
 };
