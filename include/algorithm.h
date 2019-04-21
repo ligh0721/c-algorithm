@@ -22,9 +22,9 @@ extern VALUE NULL_VALUE;
 
 #define NEW(TYPE) ((TYPE*)malloc(sizeof(TYPE)))
 #define NEW2(TYPE, append) ((TYPE*)malloc(sizeof(TYPE)+(append)))
-#define NEW3(TYPE, size) ((TYPE*)malloc(size))
+#define NEW3(TYPE, count) ((TYPE*)malloc(sizeof(TYPE)*(count)))
 #define RENEW2(p, TYPE, append) ((TYPE*)realloc((p), sizeof(TYPE)+(append)))
-#define RENEW3(p, TYPE, size) ((TYPE*)realloc((p), (size)))
+#define RENEW3(p, TYPE, count) ((TYPE*)realloc((p), sizeof(TYPE)*(count)))
 #define DELETE(p) free((p))
 
 inline void swap(VALUE* a, VALUE* b) {

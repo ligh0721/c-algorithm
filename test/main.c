@@ -21,13 +21,35 @@ typedef struct ITEM {
     char msg[256];
 } ITEM;
 
-VALUE new_item(int key, const char* msg) {
+struct item_node {
+    ITEM* item;
+    struct item_node* next;
+};
+
+struct item_node g_root = {};
+struct item_node* g_tail = &g_root;
+
+VALUE open_item(int key, const char *msg) {
     ITEM* obj = NEW(ITEM);
     obj->key = key;
     strcpy(obj->msg, msg);
     VALUE ret;
     ret.ptr_value = obj;
+
+    struct item_node* node = NEW(struct item_node);
+    node->item = obj;
+    node->next = NULL;
+    g_tail = g_tail->next = node;
     return ret;
+}
+
+void close_all_items() {
+    for (struct item_node* prev=&g_root; prev->next!=NULL;) {
+        struct item_node* del = prev->next;
+        prev->next = del->next;
+        DELETE(del->item);
+        DELETE(del);
+    }
 }
 
 void print_item(VALUE value) {
@@ -95,17 +117,17 @@ void load_data(int** data, int** data2, int* len) {
 void sort_test() {
     printf("=== sort test ===\n");
     VALUE arr[] = {
-            new_item(6, "six"),
-            new_item(8, "eight"),
-            new_item(1, "one"),
-            new_item(2, "two"),
-            new_item(-3, "-three"),
-            new_item(4, "four"),
-            new_item(4, "four2"),
-            new_item(9, "nine"),
-            new_item(5, "five"),
-            new_item(6, "six2"),
-            new_item(6, "six3")
+            open_item(6, "six"),
+            open_item(8, "eight"),
+            open_item(1, "one"),
+            open_item(2, "two"),
+            open_item(-3, "-three"),
+            open_item(4, "four"),
+            open_item(4, "four2"),
+            open_item(9, "nine"),
+            open_item(5, "five"),
+            open_item(6, "six2"),
+            open_item(6, "six3")
     };
     long size = sizeof(arr)/sizeof(arr[0]);
     print_array_item(arr, size);
@@ -117,10 +139,10 @@ void sort_test() {
 void stack_test() {
     printf("=== stack test ===\n");
     STACK* st = open_stack(0);
-    stack_push(st, new_item(9, "nine"));
-    stack_push(st, new_item(8, "eight"));
-    stack_push(st, new_item(7, "seven"));
-    stack_push(st, new_item(6, "six"));
+    stack_push(st, open_item(9, "nine"));
+    stack_push(st, open_item(8, "eight"));
+    stack_push(st, open_item(7, "seven"));
+    stack_push(st, open_item(6, "six"));
     int empty = 0;
     for (VALUE i=stack_pop(st, &empty); !empty; i=stack_pop(st, &empty)) {
         print_item(i);
@@ -133,12 +155,12 @@ void stack_test() {
 void array_test() {
     printf("=== array test ===\n");
     VALUE org_arr[] = {
-            new_item(0, "zero"),
-            new_item(1, "one"),
-            new_item(2, "two"),
-            new_item(3, "three"),
-            new_item(4, "four"),
-            new_item(5, "five"),
+            open_item(0, "zero"),
+            open_item(1, "one"),
+            open_item(2, "two"),
+            open_item(3, "three"),
+            open_item(4, "four"),
+            open_item(5, "five"),
     };
     long size = sizeof(org_arr)/sizeof(org_arr[0]);
 
@@ -152,11 +174,11 @@ void array_test() {
     printf("sl2 len: %ld cap: %ld\n", slice_len(sl2), slice_cap(sl2));
 
 
-    slice_append(sl2, new_item(6, "six"));
+    slice_append(sl2, open_item(6, "six"));
     slice_pop(sl2, slice_len(sl2) - 1);
 //    slice_pop(sl2, 0);
 
-    slice_set(sl2, 0, new_item(-3, "-three"));
+    slice_set(sl2, 0, open_item(-3, "-three"));
 //    merge_sort(slice_data(sl2), slice_len(sl2), desc_order_item);
 
     for (int i=0; i<slice_len(sl1); ++i) {
@@ -197,14 +219,14 @@ void array_test() {
 void heap_test() {
     printf("=== heap test ===\n");
     HEAP* hp = open_heap(asc_order_item, 3);
-    heap_push(hp, new_item(5, "five"));
-    heap_push(hp, new_item(8, "eight"));
-    heap_push(hp, new_item(3, "three"));
-    heap_push(hp, new_item(1, "one"));
-    heap_push(hp, new_item(6, "six"));
-    heap_push(hp, new_item(9, "nine"));
-    heap_push(hp, new_item(2, "two"));
-    heap_push(hp, new_item(1, "one2"));
+    heap_push(hp, open_item(5, "five"));
+    heap_push(hp, open_item(8, "eight"));
+    heap_push(hp, open_item(3, "three"));
+    heap_push(hp, open_item(1, "one"));
+    heap_push(hp, open_item(6, "six"));
+    heap_push(hp, open_item(9, "nine"));
+    heap_push(hp, open_item(2, "two"));
+    heap_push(hp, open_item(1, "one2"));
 
     heap_pop(hp, NULL);
     heap_pop(hp, NULL);
@@ -219,17 +241,17 @@ void heap_test() {
 
 
     VALUE arr[] = {
-            new_item(6, "six"),
-            new_item(8, "eight"),
-            new_item(1, "one"),
-            new_item(2, "two"),
-            new_item(-3, "-three"),
-            new_item(4, "four"),
-            new_item(4, "four2"),
-            new_item(9, "nine"),
-            new_item(5, "five"),
-            new_item(6, "six2"),
-            new_item(6, "six3")
+            open_item(6, "six"),
+            open_item(8, "eight"),
+            open_item(1, "one"),
+            open_item(2, "two"),
+            open_item(-3, "-three"),
+            open_item(4, "four"),
+            open_item(4, "four2"),
+            open_item(9, "nine"),
+            open_item(5, "five"),
+            open_item(6, "six2"),
+            open_item(6, "six3")
     };
     long size = sizeof(arr)/sizeof(arr[0]);
     hp = open_heap_by_data(asc_order_item, arr, size);
@@ -320,35 +342,35 @@ void skiplist_test() {
 
     printf("=== skiplist test ===\n");
     SKIPLIST* sl = open_skiplist(asc_order_item, asc_order_item2);
-    skiplist_set(sl, new_item(22, "22aa"));
-    skiplist_set(sl, new_item(19, "19aa"));
-    skiplist_set(sl, new_item(7, "7aa"));
-    skiplist_set(sl, new_item(3, "3aa"));
-    skiplist_set(sl, new_item(37, "37aa"));
-    skiplist_set(sl, new_item(11, "11aa"));
-    skiplist_set(sl, new_item(11, "11ab"));
-    skiplist_set(sl, new_item(11, "11abc"));
-    skiplist_set(sl, new_item(11, "11a"));
-    skiplist_set(sl, new_item(26, "26aa"));
+    skiplist_set(sl, open_item(22, "22aa"));
+    skiplist_set(sl, open_item(19, "19aa"));
+    skiplist_set(sl, open_item(7, "7aa"));
+    skiplist_set(sl, open_item(3, "3aa"));
+    skiplist_set(sl, open_item(37, "37aa"));
+    skiplist_set(sl, open_item(11, "11aa"));
+    skiplist_set(sl, open_item(11, "11ab"));
+    skiplist_set(sl, open_item(11, "11abc"));
+    skiplist_set(sl, open_item(11, "11a"));
+    skiplist_set(sl, open_item(26, "26aa"));
 
     skiplist_debug(sl, print_item);
 
 //    for (int i=0; i<1000; ++i) {
-//        skiplist_set(sl, new_item(rand()%10000, "rand"));
+//        skiplist_set(sl, open_item(rand()%10000, "rand"));
 //    }
 
-    printf("%ld removed\n", skiplist_remove(sl, new_item(30, ""), new_item(1, "")));
+    printf("%ld removed\n", skiplist_remove(sl, open_item(30, ""), open_item(1, "")));
     skiplist_debug(sl, print_item);
 
-    skiplist_set(sl, new_item(11, "11aa"));
-    skiplist_set(sl, new_item(11, "11ab"));
-    skiplist_set(sl, new_item(11, "11abc"));
-    skiplist_set(sl, new_item(11, "11a"));
-    skiplist_set(sl, new_item(26, "26aa"));
+    skiplist_set(sl, open_item(11, "11aa"));
+    skiplist_set(sl, open_item(11, "11ab"));
+    skiplist_set(sl, open_item(11, "11abc"));
+    skiplist_set(sl, open_item(11, "11a"));
+    skiplist_set(sl, open_item(26, "26aa"));
     skiplist_debug(sl, print_item);
 
     SLICE* sli = open_slice(0, 100);
-    skiplist_range(sl, sli, new_item(2, ""), new_item(30, ""), 5);
+    skiplist_range(sl, sli, open_item(2, ""), open_item(30, ""), 5);
     for (int i=0; i<slice_len(sli); ++i) {
         print_item(slice_get(sli, i));
     }
@@ -363,18 +385,15 @@ void skiplist_test() {
 void wstring_test() {
     printf("=== wstring test ===\n");
 
-    WSTRING* s = open_wstring();
     WSTRING* s2 = open_wstring_with_data(L"abc");
     WSTRING* s3 = open_wstring_with_data(L"abcd");
 
-    printf("s, s2: %d\n", wstring_cmp(s, s2));
     printf("s3, s2: %d\n", wstring_cmp(s3, s2));
-    wstring_cpy(s, s3);
-    printf("s, s2: %d\n", wstring_cmp(s, s2));
+    wstring_cpy(s2, s3);
 
-    WSTRING* ss = open_wstring_with_format(L"abc%d", 1);
+//    WSTRING* ss = open_wstring_with_format(L"abc%d", 1);
+//    close_wstring(ss);
 
-    close_wstring(s);
     close_wstring(s2);
     close_wstring(s3);
     printf("\n");
@@ -432,9 +451,10 @@ int main(int argc, char* argv[]) {
 //    heap_test();
 //    deque_test();
 //    rbtree_test();
-//    skiplist_test();
-    wstring_test();
+    skiplist_test();
+//    wstring_test();
 //    test();
+    close_all_items();
 
     return 0;
 }
