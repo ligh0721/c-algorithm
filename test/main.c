@@ -12,7 +12,8 @@
 #include "deque.h"
 #include "rbtree.h"
 #include "skiplist.h"
-#include "tlang.h"
+#include "wstring.h"
+#include "main.h"
 
 
 typedef struct ITEM {
@@ -359,6 +360,26 @@ void skiplist_test() {
     printf("\n");
 }
 
+void wstring_test() {
+    printf("=== wstring test ===\n");
+
+    WSTRING* s = open_wstring();
+    WSTRING* s2 = open_wstring_with_data(L"abc");
+    WSTRING* s3 = open_wstring_with_data(L"abcd");
+
+    printf("s, s2: %d\n", wstring_cmp(s, s2));
+    printf("s3, s2: %d\n", wstring_cmp(s3, s2));
+    wstring_cpy(s, s3);
+    printf("s, s2: %d\n", wstring_cmp(s, s2));
+
+    WSTRING* ss = open_wstring_with_format(L"abc%d", 1);
+
+    close_wstring(s);
+    close_wstring(s2);
+    close_wstring(s3);
+    printf("\n");
+}
+
 void test() {
     printf("=== test ===\n");
 //    save_data();
@@ -411,7 +432,8 @@ int main(int argc, char* argv[]) {
 //    heap_test();
 //    deque_test();
 //    rbtree_test();
-    skiplist_test();
+//    skiplist_test();
+    wstring_test();
 //    test();
 
     return 0;
