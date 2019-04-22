@@ -28,5 +28,6 @@ void rbtree_close_node(RBTREE* tr, RBNODE* node);
 RBNODE** rbtree_fast_get(RBTREE *tr, VALUE key, RBNODE** parent);
 void rbtree_fast_set(RBTREE *tr, RBNODE** where, RBNODE* node);
 VALUE rbtree_fast_pop(RBTREE *tr, RBNODE *node);
+int rbtree_node_not_found(RBTREE* tr, RBNODE** where);
 
 #endif //ALGORITHM_RBTREE_H

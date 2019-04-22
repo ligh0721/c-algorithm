@@ -7,21 +7,6 @@
 #include "theap.h"
 
 
-CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, char *member_name) {
-    CRB_Value *ret = NULL;
-    if (assoc->u.assoc.member_count == 0) {
-        return NULL;
-    }
-
-    for (int i = 0; i < assoc->u.assoc.member_count; i++) {
-        if (!strcmp(assoc->u.assoc.member[i].name, member_name)) {
-            ret = &assoc->u.assoc.member[i].value;
-            break;
-        }
-    }
-    return ret;
-}
-
 static void check_gc(CRB_Interpreter *inter) {
 #if 0
     crb_garbage_collect(inter);
@@ -35,6 +20,7 @@ static void check_gc(CRB_Interpreter *inter) {
     }
 }
 
+// object
 static CRB_Object* alloc_object(CRB_Interpreter *inter, ObjectType type) {
     check_gc(inter);
     CRB_Object* ret = MEM_malloc(sizeof(CRB_Object));
@@ -50,6 +36,35 @@ static CRB_Object* alloc_object(CRB_Interpreter *inter, ObjectType type) {
     return ret;
 }
 
+// string object
+static void add_ref_in_native_method(CRB_LocalEnvironment *env, CRB_Object *obj) {
+    RefInNativeFunc* new_ref = MEM_malloc(sizeof(RefInNativeFunc));
+    new_ref->object = obj;
+    new_ref->next = env->ref_in_native_method;
+    env->ref_in_native_method = new_ref;
+}
+
+CRB_Object* crb_literal_to_crb_string_i(CRB_Interpreter *inter, CRB_Char *str) {
+    CRB_Object* ret = alloc_object(inter, STRING_OBJECT);
+    ret->u.string.string = str;
+    ret->u.string.is_literal = CRB_TRUE;
+    return ret;
+}
+
+CRB_Object* crb_create_crowbar_string_i(CRB_Interpreter *inter, CRB_Char *str) {
+    CRB_Object* ret = alloc_object(inter, STRING_OBJECT);
+    ret->u.string.string = str;
+    inter->heap.current_heap_size += sizeof(CRB_Char) * (CRB_wcslen(str) + 1);
+    ret->u.string.is_literal = CRB_FALSE;
+    return ret;
+}
+
+CRB_Object* CRB_create_crowbar_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Char *str) {
+    CRB_Object* ret = crb_create_crowbar_string_i(inter, str);
+    add_ref_in_native_method(env, ret);
+    return ret;
+}
+
 CRB_Object* crb_create_native_pointer_i(CRB_Interpreter *inter, void *pointer, CRB_NativePointerInfo *info) {
     CRB_Object* ret = alloc_object(inter, NATIVE_POINTER_OBJECT);
     ret->u.native_pointer.pointer = pointer;
@@ -57,6 +72,36 @@ CRB_Object* crb_create_native_pointer_i(CRB_Interpreter *inter, void *pointer, C
     return ret;
 }
 
+// member object
+CRB_Value* CRB_add_assoc_member(CRB_Interpreter *inter, CRB_Object *assoc, char *name, CRB_Value *value, CRB_Boolean is_final) {
+    check_gc(inter);
+    AssocMember* member_p = MEM_realloc(assoc->u.assoc.member, sizeof(AssocMember) * (assoc->u.assoc.member_count+1));
+    member_p[assoc->u.assoc.member_count].name = name;
+    member_p[assoc->u.assoc.member_count].value = *value;
+    member_p[assoc->u.assoc.member_count].is_final = is_final;
+    assoc->u.assoc.member = member_p;
+    assoc->u.assoc.member_count++;
+    inter->heap.current_heap_size += sizeof(AssocMember);
+
+    return &member_p[assoc->u.assoc.member_count-1].value;
+}
+
+CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, CRB_Boolean* is_final) {
+    if (assoc->u.assoc.member_count == 0) {
+        return NULL;
+    }
+
+    for (int i = 0; i < assoc->u.assoc.member_count; i++) {
+        if (!strcmp(assoc->u.assoc.member[i].name, member_name)) {
+            AssocMember* ret = assoc->u.assoc.member+i;
+            if (is_final) {
+                *is_final = ret->is_final;
+            }
+            return &ret->value;
+        }
+    }
+    return NULL;
+}
 
 // gc
 static void gc_mark_value(CRB_Value *v);

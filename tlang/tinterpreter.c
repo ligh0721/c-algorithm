@@ -78,7 +78,7 @@ static void show_error_stack_trace(CRB_Interpreter *inter) {
             crb_runtime_error(inter, NULL, 0, EXCEPTION_IS_NOT_ASSOC_ERR, CRB_MESSAGE_ARGUMENT_END);
         }
         exception = inter->current_exception.u.object;
-        func = CRB_search_assoc_member(exception, EXCEPTION_MEMBER_PRINT_STACK_TRACE);
+        func = CRB_search_assoc_member(exception, EXCEPTION_MEMBER_PRINT_STACK_TRACE, NULL);
         if (func == NULL) {
             crb_runtime_error(inter, NULL, 0, EXCEPTION_HAS_NO_PRINT_STACK_TRACE_METHOD_ERR, CRB_MESSAGE_ARGUMENT_END);
         }

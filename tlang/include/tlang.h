@@ -49,9 +49,9 @@ typedef enum {
 } CRB_ValueType;
 
 typedef struct CRB_Object_tag CRB_Object;
-typedef struct CRB_Array_tag CRB_Array;
-typedef struct CRB_String_tag CRB_String;
-typedef struct CRB_Assoc_tag CRB_Assoc;
+typedef struct CRB_Array_tag CRB_Array;  // TODO:
+typedef struct CRB_String_tag CRB_String;  // TODO:
+typedef struct CRB_Assoc_tag CRB_Assoc;  // TODO:
 typedef LLIST CRB_ParameterList;
 typedef struct CRB_Block_tag CRB_Block;
 typedef struct CRB_FunctionDefinition_tag CRB_FunctionDefinition;
@@ -129,18 +129,25 @@ typedef struct {
 
 
 // theap
-CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, char *member_name);
+CRB_Object* CRB_create_crowbar_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Char *str);
+
+CRB_Value* CRB_add_assoc_member(CRB_Interpreter *inter, CRB_Object *assoc, char *name, CRB_Value *value, CRB_Boolean is_final);
+CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, CRB_Boolean* is_final);
 
 // teval
 CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *func, int arg_count, CRB_Value *args);
 
 // tmisc
-CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, char *identifier, CRB_Value *value, CRB_Boolean is_final);
-CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, char *identifier);
+CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Value *value, CRB_Boolean is_final);
+CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Boolean *is_final);
+CRB_Value* CRB_add_local_variable(CRB_Interpreter *inter, CRB_LocalEnvironment *env, char *identifier, CRB_Value *value, CRB_Boolean is_final);
+CRB_Value* CRB_search_local_variable(CRB_LocalEnvironment *env, const char *identifier, CRB_Boolean *is_final);
+CRB_FunctionDefinition* CRB_search_function(CRB_Interpreter *inter, const char *name);
 void* CRB_object_get_native_pointer(CRB_Object *obj);
 
 #define CRB_wcslen(s) wcslen(s)
 #define CRB_wcscpy(s, d) wcscpy(s, d)
+#define CRB_wcscat(s, s2) wcscat(s, s2)
 int CRB_mbstowcs_len(const char *src);
 void CRB_mbstowcs(const char *src, CRB_Char *dest);
 CRB_Char* CRB_mbstowcs_alloc(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const char *src);
@@ -149,7 +156,7 @@ void CRB_wcstombs(const CRB_Char *src, char *dest);
 char CRB_wctochar(CRB_Char src);
 int CRB_print_wcs(FILE *fp, CRB_Char *str);
 int CRB_print_wcs_ln(FILE *fp, CRB_Char *str);
-
+CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *value);
 
 
 

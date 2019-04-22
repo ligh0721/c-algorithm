@@ -7,6 +7,9 @@
 
 #include "tinterpreter.h"
 
+// string object
+CRB_Object* crb_literal_to_crb_string_i(CRB_Interpreter *inter, CRB_Char *str);
+CRB_Object* crb_create_crowbar_string_i(CRB_Interpreter *inter, CRB_Char *str);
 
 CRB_Object* crb_create_native_pointer_i(CRB_Interpreter *inter, void *pointer, CRB_NativePointerInfo *info);
 void crb_garbage_collect(CRB_Interpreter* inter);

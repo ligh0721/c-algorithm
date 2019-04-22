@@ -14,6 +14,6 @@ void crb_vstr_clear(VString *v);
 void crb_vstr_append_string(VString *v, CRB_Char *str);
 void crb_vstr_append_character(VString *v, CRB_Char ch);
 
-Variable* crb_search_global_variable(CRB_Interpreter *inter, char *identifier);
+Variable* crb_search_global_variable(CRB_Interpreter *inter, const char *identifier);
 
 #endif //TLANG_TMISC_H

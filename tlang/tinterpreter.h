@@ -95,7 +95,7 @@ struct CRB_Object_tag {
     union {
         CRB_Array       array;
         CRB_String      string;
-        CRB_Assoc       assoc;
+        CRB_Assoc*      assoc;
         ScopeChain      scope_chain;
         NativePointer   native_pointer;
     } u;
@@ -458,6 +458,7 @@ typedef enum {
 //    Variable    *variable;
 //    struct GlobalVariableRef_tag *next;
 //} GlobalVariableRef;
+typedef RBTREE GlobalVariableRef;
 
 typedef struct RefInNativeFunc_tag {
     CRB_Object  *object;
@@ -468,7 +469,7 @@ struct CRB_LocalEnvironment_tag {
     char                *current_function_name;
     int                 caller_line_number;
     CRB_Object          *variable;      /* ScopeChain */
-    RBTREE              *global_variable;  // RBTREE<Variable*>
+    GlobalVariableRef   *global_variable;  // RBTREE<Variable*>
     RefInNativeFunc     *ref_in_native_method;
     struct CRB_LocalEnvironment_tag     *next;
 };
@@ -497,8 +498,8 @@ typedef enum {
 struct CRB_Interpreter_tag {
     MEM_Storage         interpreter_storage;
     MEM_Storage         execute_storage;
-    RBTREE*             variables;  // Variable
-    RBTREE*             functions;  // CRB_FunctionDefinition
+    RBTREE*             variables;  // RBTREE<Variable*>
+    RBTREE*             functions;  // RBTREE<CRB_FunctionDefinition*>
     StatementList       *statement_list;
     int                 current_line_number;
     Stack               stack;

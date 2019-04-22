@@ -43,7 +43,7 @@ void crb_vstr_append_character(VString *v, CRB_Char ch) {
     v->string[current_len+1] = L'\0';
 }
 
-CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, char *identifier, CRB_Value *value, CRB_Boolean is_final) {
+CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Value *value, CRB_Boolean is_final) {
     Variable* new_var = crb_execute_malloc(inter, sizeof(Variable));
     new_var->is_final = is_final;
     new_var->name = crb_execute_malloc(inter, strlen(identifier) + 1);
@@ -55,18 +55,22 @@ CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, char *identifier, CRB
     return &new_var->value;
 }
 
-Variable* crb_search_global_variable(CRB_Interpreter *inter, char *identifier) {
+Variable* crb_search_global_variable(CRB_Interpreter *inter, const char *identifier) {
     NamedItemEntry key = {identifier};
     VALUE res = rbtree_get(inter->variables, ptr_value(&key), NULL);
     return (Variable*)res.ptr_value;
 }
 
-CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, char *identifier) {
+CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Boolean *is_final) {
     int ok;
     NamedItemEntry key = {identifier};
     VALUE res = rbtree_get(inter->variables, ptr_value(&key), &ok);
     if (ok) {
-        return &((Variable*)res.ptr_value)->value;
+        Variable* var = (Variable*)res.ptr_value;
+        if (is_final) {
+            *is_final = var->is_final;
+        }
+        return &var->value;
     }
     return NULL;
 //    Variable* pos;
@@ -79,6 +83,40 @@ CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, char *identifier) 
 //    } else {
 //        return &pos->value;
 //    }
+}
+
+CRB_Value* CRB_add_local_variable(CRB_Interpreter *inter, CRB_LocalEnvironment *env, char *identifier, CRB_Value *value, CRB_Boolean is_final) {
+    DBG_assert(env->variable->type == SCOPE_CHAIN_OBJECT, ("type..%d\n", env->variable->type));
+    CRB_Value* ret = CRB_add_assoc_member(inter, env->variable->u.scope_chain.frame, identifier, value, is_final);
+    return ret;
+}
+
+CRB_Value* CRB_search_local_variable(CRB_LocalEnvironment *env, const char *identifier, CRB_Boolean *is_final) {
+    if (env == NULL) {
+        return NULL;
+    }
+    DBG_assert(env->variable->type == SCOPE_CHAIN_OBJECT, ("type..%d\n", env->variable->type));
+
+    CRB_Value *value;
+    for (CRB_Object* sc = env->variable; sc; sc = sc->u.scope_chain.next) {
+        DBG_assert(sc->type == SCOPE_CHAIN_OBJECT, ("sc->type..%d\n", sc->type));
+        value = CRB_search_assoc_member(sc->u.scope_chain.frame, identifier, is_final);
+        if (value) {
+            break;
+        }
+    }
+    return value;
+}
+
+CRB_FunctionDefinition* CRB_search_function(CRB_Interpreter *inter, const char *name) {
+    NamedItemEntry key = {name};
+    VALUE res = rbtree_get(inter->functions, ptr_value(&key), NULL);
+    return (CRB_FunctionDefinition*)res.ptr_value;
+//    for (CRB_FunctionDefinition *pos = inter->function_list; pos; pos = pos->next) {
+//        if (!strcmp(pos->name, name))
+//            break;
+//    }
+//    return pos;
 }
 
 void* CRB_object_get_native_pointer(CRB_Object *obj) {
@@ -175,4 +213,116 @@ int CRB_print_wcs_ln(FILE *fp, CRB_Char *str) {
     int result = CRB_print_wcs(fp, str);
     fprintf(fp, "\n");
     return result;
+}
+
+CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *value) {
+    VString     vstr;
+    char        buf[LINE_BUF_SIZE];
+    CRB_Char    wc_buf[LINE_BUF_SIZE];
+    int         i;
+
+    crb_vstr_clear(&vstr);
+
+    switch (value->type) {
+        case CRB_BOOLEAN_VALUE:
+            if (value->u.boolean_value) {
+                CRB_mbstowcs("true", wc_buf);
+            } else {
+                CRB_mbstowcs("false", wc_buf);
+            }
+            crb_vstr_append_string(&vstr, wc_buf);
+            break;
+        case CRB_INT_VALUE:
+            sprintf(buf, "%d", value->u.int_value);
+            CRB_mbstowcs(buf, wc_buf);
+            crb_vstr_append_string(&vstr, wc_buf);
+            break;
+        case CRB_DOUBLE_VALUE:
+            sprintf(buf, "%f", value->u.double_value);
+            CRB_mbstowcs(buf, wc_buf);
+            crb_vstr_append_string(&vstr, wc_buf);
+            break;
+        case CRB_STRING_VALUE:
+            crb_vstr_append_string(&vstr, value->u.object->u.string.string);
+            break;
+        case CRB_NATIVE_POINTER_VALUE:
+            sprintf(buf, "%s(%p)", value->u.object->u.native_pointer.info->name, value->u.object->u.native_pointer.pointer);
+            CRB_mbstowcs(buf, wc_buf);
+            crb_vstr_append_string(&vstr, wc_buf);
+            break;
+        case CRB_NULL_VALUE:
+            CRB_mbstowcs("null", wc_buf);
+            crb_vstr_append_string(&vstr, wc_buf);
+            break;
+        case CRB_ARRAY_VALUE:
+            CRB_mbstowcs("(", wc_buf);
+            crb_vstr_append_string(&vstr, wc_buf);
+            for (i = 0; i < value->u.object->u.array.size; i++) {
+                CRB_Char *new_str;
+                if (i > 0) {
+                    CRB_mbstowcs(", ", wc_buf);
+                    crb_vstr_append_string(&vstr, wc_buf);
+                }
+                new_str = CRB_value_to_string(inter, env, line_number, &value->u.object->u.array.array[i]);
+                crb_vstr_append_string(&vstr, new_str);
+                MEM_free(new_str);
+            }
+            CRB_mbstowcs(")", wc_buf);
+            crb_vstr_append_string(&vstr, wc_buf);
+            break;
+        case CRB_ASSOC_VALUE:
+            CRB_mbstowcs("(", wc_buf);
+            crb_vstr_append_string(&vstr, wc_buf);
+            for (i = 0; i < value->u.object->u.assoc.member_count; i++) {
+                if (i > 0) {
+                    CRB_mbstowcs(", ", wc_buf);
+                    crb_vstr_append_string(&vstr, wc_buf);
+                }
+                CRB_Char* new_str = CRB_mbstowcs_alloc(inter, env, line_number, value->u.object->u.assoc.member[i].name);
+                DBG_assert(new_str != NULL, ("new_str is null.\n"));
+                crb_vstr_append_string(&vstr, new_str);
+                MEM_free(new_str);
+
+                CRB_mbstowcs("=>", wc_buf);
+                crb_vstr_append_string(&vstr, wc_buf);
+                new_str = CRB_value_to_string(inter, env, line_number, &value->u.object->u.assoc.member[i].value);
+                crb_vstr_append_string(&vstr, new_str);
+                MEM_free(new_str);
+            }
+            CRB_mbstowcs(")", wc_buf);
+            crb_vstr_append_string(&vstr, wc_buf);
+            break;
+        case CRB_CLOSURE_VALUE:
+            CRB_mbstowcs("closure(", wc_buf);
+            crb_vstr_append_string(&vstr, wc_buf);
+            if (value->u.closure.function->name == NULL) {
+                CRB_mbstowcs("null", wc_buf);
+                crb_vstr_append_string(&vstr, wc_buf);
+            } else {
+                CRB_Char* new_str = CRB_mbstowcs_alloc(inter, env, line_number, value->u.closure.function->name);
+                DBG_assert(new_str != NULL, ("new_str is null.\n"));
+                crb_vstr_append_string(&vstr, new_str);
+                MEM_free(new_str);
+            }
+            CRB_mbstowcs(")", wc_buf);
+            crb_vstr_append_string(&vstr, wc_buf);
+            break;
+        case CRB_FAKE_METHOD_VALUE:
+            CRB_mbstowcs("fake_method(", wc_buf);
+            crb_vstr_append_string(&vstr, wc_buf);
+            {
+                CRB_Char* new_str = CRB_mbstowcs_alloc(inter, env, line_number, value->u.fake_method.method_name);
+                DBG_assert(new_str != NULL, ("new_str is null.\n"));
+                crb_vstr_append_string(&vstr, new_str);
+                MEM_free(new_str);
+            }
+            CRB_mbstowcs(")", wc_buf);
+            crb_vstr_append_string(&vstr, wc_buf);
+            break;
+        case CRB_SCOPE_CHAIN_VALUE: /* FALLTHRU*/
+        default:
+            DBG_panic(("value->type..%d\n", value->type));
+    }
+
+    return vstr.string;
 }

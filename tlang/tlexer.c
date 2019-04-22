@@ -38,8 +38,7 @@ CRB_Char* crb_close_string_literal(void) {
     crb_add_string_literal('\0');
     int new_str_len = CRB_mbstowcs_len(st_string_literal_buffer);
     if (new_str_len < 0) {
-        crb_compile_error(BAD_MULTIBYTE_CHARACTER_IN_COMPILE_ERR,
-                          CRB_MESSAGE_ARGUMENT_END);
+        crb_compile_error(BAD_MULTIBYTE_CHARACTER_IN_COMPILE_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
     CRB_Char* new_str = crb_malloc(sizeof(CRB_Char) * (new_str_len+1));
     CRB_mbstowcs(st_string_literal_buffer, new_str);

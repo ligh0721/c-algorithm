@@ -449,6 +449,11 @@ VALUE rbtree_fast_pop(RBTREE *tr, RBNODE *node) {
     return ret;
 }
 
+int rbtree_node_not_found(RBTREE* tr, RBNODE** where) {
+    assert(tr != NULL);
+    return *where == &tr->leaf;
+}
+
 VALUE rbtree_get(RBTREE* tr, const VALUE key, int* ok) {
     RBNODE* where = *rbtree_fast_get(tr, key, NULL);
     if (where == &tr->leaf) {
@@ -465,15 +470,14 @@ VALUE rbtree_get(RBTREE* tr, const VALUE key, int* ok) {
 
 void rbtree_set(RBTREE *tr, const VALUE value) {
     assert(tr != NULL);
-    struct rbnode* leaf = &tr->leaf;
-    struct rbnode* node;
     RBNODE* parent;
     RBNODE** where = rbtree_fast_get(tr, value, &parent);
-    if (*where != leaf) {
+    // !rbtree_node_not_found(tr, where)
+    if (*where != &tr->leaf) {
         (*where)->value = value;
         return;
     }
-    node = rbtree_open_node(tr, value, parent);
+    struct rbnode* node = rbtree_open_node(tr, value, parent);
     rbtree_fast_set(tr, where, node);
 }
 
