@@ -437,6 +437,15 @@ void test() {
     printf("\n");
 }
 
+typedef int int_VALUE;
+
+#include "rbtree_tpl.h"
+NULL_VALUE_DEF(int, 0)
+COMPARE_DEF(int)
+TRAVERSE_DEF(int)
+RBTREE_DECL(int)
+RBTREE_DEF(int)
+
 int main(int argc, char* argv[]) {
     g_item_list = open_llist();
 
@@ -448,6 +457,8 @@ int main(int argc, char* argv[]) {
     rbtree_test();
     skiplist_test();
     wstring_test();
+    int_RBTREE* tr = open_int_rbtree(NULL);
+    close_int_rbtree(tr);
 //    test();
 
     llist_traversal(g_item_list, close_every_item, NULL);

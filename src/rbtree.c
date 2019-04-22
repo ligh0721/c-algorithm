@@ -7,6 +7,8 @@
 #include "rbtree.h"
 #include "stack.h"
 
+#define RB_RED      0
+#define RB_BLACK    1
 
 struct rbnode {
     VALUE value;
@@ -16,8 +18,6 @@ struct rbnode {
             unsigned long color:1;
         };
     };
-#define RB_RED      0
-#define RB_BLACK    1
     struct rbnode* right;
     struct rbnode* left;
 } __attribute__((aligned(sizeof(long))));
@@ -215,7 +215,7 @@ static inline void rbtree_right_rotate(RBTREE* tr, struct rbnode* node) {
  *  if *ret == leaf, not found (ret == &root)
  *  else found
  */
-inline RBNODE** rbtree_fast_get(RBTREE *tr, const VALUE key, RBNODE** parent) {
+inline RBNODE** rbtree_fast_get(RBTREE *tr, VALUE key, RBNODE** parent) {
     struct rbnode** ret = &tr->root;
     struct rbnode* leaf = &tr->leaf;
     if (*ret == leaf) {
@@ -454,7 +454,7 @@ int rbtree_node_not_found(RBTREE* tr, RBNODE** where) {
     return *where == &tr->leaf;
 }
 
-VALUE rbtree_get(RBTREE* tr, const VALUE key, int* ok) {
+VALUE rbtree_get(RBTREE* tr, VALUE key, int* ok) {
     RBNODE* where = *rbtree_fast_get(tr, key, NULL);
     if (where == &tr->leaf) {
         if (ok) {
@@ -468,7 +468,7 @@ VALUE rbtree_get(RBTREE* tr, const VALUE key, int* ok) {
     return where->value;
 }
 
-void rbtree_set(RBTREE *tr, const VALUE value) {
+void rbtree_set(RBTREE *tr, VALUE value) {
     assert(tr != NULL);
     RBNODE* parent;
     RBNODE** where = rbtree_fast_get(tr, value, &parent);
@@ -481,7 +481,7 @@ void rbtree_set(RBTREE *tr, const VALUE value) {
     rbtree_fast_set(tr, where, node);
 }
 
-VALUE rbtree_pop(RBTREE* tr, const VALUE key, int* ok) {
+VALUE rbtree_pop(RBTREE* tr, VALUE key, int* ok) {
     assert(tr != NULL);
     RBNODE* search = *rbtree_fast_get(tr, key, NULL);
     if (search == NULL || search == &tr->leaf) {

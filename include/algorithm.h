@@ -12,6 +12,7 @@ typedef union VALUE {
     long int_value;
     double float_value;
     void* ptr_value;
+    char pads[8];
 } VALUE;
 
 VALUE int_value(long value);

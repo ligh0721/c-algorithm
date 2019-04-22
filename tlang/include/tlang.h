@@ -49,9 +49,9 @@ typedef enum {
 } CRB_ValueType;
 
 typedef struct CRB_Object_tag CRB_Object;
-typedef struct CRB_Array_tag CRB_Array;  // TODO:
-typedef struct CRB_String_tag CRB_String;  // TODO:
-typedef struct CRB_Assoc_tag CRB_Assoc;  // TODO:
+typedef struct CRB_Array_tag CRB_Array;
+typedef struct CRB_String_tag CRB_String;
+typedef struct CRB_Assoc_tag CRB_Assoc;
 typedef LLIST CRB_ParameterList;
 typedef struct CRB_Block_tag CRB_Block;
 typedef struct CRB_FunctionDefinition_tag CRB_FunctionDefinition;

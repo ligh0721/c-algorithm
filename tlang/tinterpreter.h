@@ -7,6 +7,8 @@
 
 #include <rbtree.h>
 #include <link.h>
+#include <array.h>
+#include <wstring.h>
 #include <setjmp.h>
 #include "tlang.h"
 
@@ -49,14 +51,16 @@ typedef struct {
 
 // object
 struct CRB_Array_tag {
-    int         size;
-    int         alloc_size;
-    CRB_Value   *array;
+    ARRAY* array;  //  ARRAY<CRB_Value>
+//    int         size;
+//    int         alloc_size;
+//    CRB_Value   *array;
 };
 
 struct CRB_String_tag {
     CRB_Boolean is_literal;
-    CRB_Char    *string;
+    WSTRING* string;
+//    CRB_Char    *string;
 };
 
 typedef struct {
@@ -66,8 +70,9 @@ typedef struct {
 } AssocMember;
 
 struct CRB_Assoc_tag {
-    int         member_count;
-    AssocMember *member;
+    RBTREE* members;  // RBTREE<AssocMember*>
+//    int         member_count;
+//    AssocMember *member;
 };
 
 typedef struct {
@@ -95,7 +100,7 @@ struct CRB_Object_tag {
     union {
         CRB_Array       array;
         CRB_String      string;
-        CRB_Assoc*      assoc;
+        CRB_Assoc       assoc;
         ScopeChain      scope_chain;
         NativePointer   native_pointer;
     } u;

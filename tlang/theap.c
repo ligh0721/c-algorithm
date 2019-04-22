@@ -5,6 +5,7 @@
 #include <wchar.h>
 #include <string.h>
 #include "theap.h"
+#include "tinterpreter.h"
 
 
 static void check_gc(CRB_Interpreter *inter) {
@@ -72,35 +73,52 @@ CRB_Object* crb_create_native_pointer_i(CRB_Interpreter *inter, void *pointer, C
     return ret;
 }
 
-// member object
+// assoc object
 CRB_Value* CRB_add_assoc_member(CRB_Interpreter *inter, CRB_Object *assoc, char *name, CRB_Value *value, CRB_Boolean is_final) {
     check_gc(inter);
-    AssocMember* member_p = MEM_realloc(assoc->u.assoc.member, sizeof(AssocMember) * (assoc->u.assoc.member_count+1));
+    AssocMember* member = (AssocMember*)MEM_malloc(sizeof(AssocMember));
+    member->name = name;
+    member->value = *value;
+    member->is_final = is_final;
+    rbtree_set(assoc->u.assoc.members, ptr_value(member));
+    inter->heap.current_heap_size += sizeof(AssocMember);
+    return &member->value;
+    AssocMember* member_p = MEM_realloc(assoc->u.assoc.members, sizeof(AssocMember) * (assoc->u.assoc.member_count+1));
     member_p[assoc->u.assoc.member_count].name = name;
     member_p[assoc->u.assoc.member_count].value = *value;
     member_p[assoc->u.assoc.member_count].is_final = is_final;
     assoc->u.assoc.member = member_p;
     assoc->u.assoc.member_count++;
     inter->heap.current_heap_size += sizeof(AssocMember);
-
     return &member_p[assoc->u.assoc.member_count-1].value;
 }
 
 CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, CRB_Boolean* is_final) {
-    if (assoc->u.assoc.member_count == 0) {
-        return NULL;
-    }
-
-    for (int i = 0; i < assoc->u.assoc.member_count; i++) {
-        if (!strcmp(assoc->u.assoc.member[i].name, member_name)) {
-            AssocMember* ret = assoc->u.assoc.member+i;
-            if (is_final) {
-                *is_final = ret->is_final;
-            }
-            return &ret->value;
+    NamedItemEntry key = {member_name};
+    int ok;
+    VALUE res = rbtree_get(assoc->u.assoc.members, ptr_value(&key), &ok);
+    if (ok) {
+        AssocMember* member = (AssocMember*)res.ptr_value;
+        if (is_final) {
+            *is_final = member->is_final;
         }
+        return &member->value;
     }
     return NULL;
+//    if (assoc->u.assoc.member_count == 0) {
+//        return NULL;
+//    }
+//
+//    for (int i = 0; i < assoc->u.assoc.member_count; i++) {
+//        if (!strcmp(assoc->u.assoc.member[i].name, member_name)) {
+//            AssocMember* ret = assoc->u.assoc.member+i;
+//            if (is_final) {
+//                *is_final = ret->is_final;
+//            }
+//            return &ret->value;
+//        }
+//    }
+//    return NULL;
 }
 
 // gc
@@ -116,13 +134,16 @@ static void gc_mark(CRB_Object *obj) {
     obj->marked = CRB_TRUE;
 
     if (obj->type == ARRAY_OBJECT) {
-        int i;
-        for (i = 0; i < obj->u.array.size; i++) {
-            gc_mark_value(&obj->u.array.array[i]);
+        long len = array_len(obj->u.array.array);
+        VALUE* data = array_data(obj->u.array.array);
+        for (long i=0; i<len; ++i) {
+            gc_mark_value(&data)
         }
+//        for (int i = 0; i < obj->u.array.size; i++) {
+//            gc_mark_value(&obj->u.array.array[i]);
+//        }
     } else if (obj->type == ASSOC_OBJECT) {
-        int i;
-        for (i = 0; i < obj->u.assoc.member_count; i++) {
+        for (int i = 0; i < obj->u.assoc.member_count; i++) {
             gc_mark_value(&obj->u.assoc.member[i].value);
         }
     } else if (obj->type == SCOPE_CHAIN_OBJECT) {
