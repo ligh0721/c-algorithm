@@ -24,7 +24,6 @@ VALUE* array_data(ARRAY* arr);
 VALUE array_get(ARRAY *arr, long index);
 VALUE array_set(ARRAY *arr, long index, VALUE value);
 
-
 typedef struct slice SLICE;
 
 SLICE* open_slice(long len, long cap);
