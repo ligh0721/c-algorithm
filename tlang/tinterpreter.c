@@ -145,7 +145,25 @@ void CRB_compile_readline(CRB_Interpreter* interpreter, ReadLineModeParams* para
 }
 
 void CRB_set_command_line_args(CRB_Interpreter *interpreter, int argc, char **argv) {
-    // TODO:
+    CRB_Value args;
+    args.type = CRB_ARRAY_VALUE;
+    args.u.object = crb_create_array_i(interpreter, argc);
+    CRB_push_value(interpreter, &args);
+
+    CRB_Value elem;
+    for (int i=0; i<argc; ++i) {
+        CRB_Char* wc_str = CRB_mbstowcs_alloc(interpreter, NULL, 0, argv[i]);
+        if (wc_str == NULL) {
+            fprintf(stderr, "bad command line argument(%dth)", i);
+            return;
+        }
+        elem.type = CRB_STRING_VALUE;
+        elem.u.object = crb_create_crowbar_string_i(interpreter, wc_str);
+        CRB_array_set(interpreter, NULL, args.u.object, i, &elem);
+    }
+    CRB_add_global_variable(interpreter, "ARGS", &args, CRB_TRUE);
+
+    CRB_pop_value(interpreter);
 }
 
 void CRB_interpret(CRB_Interpreter *interpreter) {
