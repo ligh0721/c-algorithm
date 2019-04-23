@@ -112,12 +112,13 @@ static int st_readline_current_char_index;
 void crb_set_readline(READLINE_FUNC readline, void* param) {
     st_readline = readline;
     st_readline_param = param;
-    st_readline_string = "";
+    st_readline_string = "print(\"Hello.\");\n";
     st_readline_current_char_index = 0;
 }
 
 static int readline_input(char* buf, int max_size) {
     if (st_readline_string[st_readline_current_char_index] == 0) {
+        CRB_interpret(crb_get_current_interpreter());
         st_readline_string = st_readline(st_readline_param);
         st_readline_current_char_index = 0;
     }

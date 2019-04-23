@@ -540,7 +540,7 @@ static void call_crowbar_function(CRB_Interpreter *inter, CRB_LocalEnvironment *
     CRB_Value   value;
     StatementResult     result;
 
-
+    // FIXME: NULL args or params
     ArgumentList* arg_p = expr->u.function_call_expression.argument;  // 实参
     CRB_ParameterList* param_p = func->u.closure.function->u.crowbar_f.parameter;  // 形参
     struct lnode* arg_node = llist_front_node(arg_p);
@@ -593,10 +593,15 @@ static void call_crowbar_function(CRB_Interpreter *inter, CRB_LocalEnvironment *
  */
 static void call_native_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_LocalEnvironment *caller_env, Expression *expr, CRB_NativeFunctionProc *proc) {
     ArgumentList* arg_list = expr->u.function_call_expression.argument;
-    int arg_count = (int)llist_len(arg_list);
-    for (struct lnode* arg_node=llist_front_node(arg_list); arg_node!=NULL; arg_node=arg_node->next) {
-        Expression* arg = (Expression*)arg_node->value.ptr_value;
-        eval_expression(inter, caller_env, arg);
+    int arg_count;
+    if (arg_list != NULL) {
+        arg_count = (int)llist_len(arg_list);
+        for (struct lnode* arg_node=llist_front_node(arg_list); arg_node!=NULL; arg_node=arg_node->next) {
+            Expression* arg = (Expression*)arg_node->value.ptr_value;
+            eval_expression(inter, caller_env, arg);
+        }
+    } else {
+        arg_count = 0;
     }
 
 //    ArgumentList        *arg_p;

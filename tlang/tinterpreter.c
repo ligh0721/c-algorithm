@@ -191,9 +191,7 @@ void CRB_dispose_interpreter(CRB_Interpreter *interpreter) {
 }
 
 CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, char *name, CRB_NativeFunctionProc *proc) {
-    CRB_FunctionDefinition *fd;
-
-    fd = crb_malloc(sizeof(CRB_FunctionDefinition));
+    CRB_FunctionDefinition* fd = crb_malloc(sizeof(CRB_FunctionDefinition));
     fd->name = name;
     fd->type = CRB_NATIVE_FUNCTION_DEFINITION;
     fd->is_closure = CRB_FALSE;
