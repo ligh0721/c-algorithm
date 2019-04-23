@@ -12,12 +12,7 @@ int readline_mode(int argc, char* argv[]) {
     char ps[] = ">> ";
     CRB_Interpreter* interpreter = CRB_create_interpreter();
     CRB_set_command_line_args(interpreter, argc-1, &argv[1]);
-
     CRB_compile_readline(interpreter, (READLINE_FUNC)readline, ps);
-    CRB_interpret(interpreter);
-    rl_cleanup_after_signal();
-    printf("\n");
-
     CRB_dispose_interpreter(interpreter);
     MEM_dump_blocks(stdout);
 

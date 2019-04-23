@@ -78,6 +78,21 @@ struct lnode* llist_front_node(LLIST* lst) {
     return lst->head.next;
 }
 
+struct lnode* llist_back_node(LLIST* lst) {
+    assert(lst != NULL);
+    return lst->tail;
+}
+
+struct lnode* llist_before_front_node(LLIST *lst) {
+    assert(lst != NULL);
+    return &lst->head;
+}
+
+int llist_is_node_before_front(LLIST *lst, struct lnode *back) {
+    assert(lst != NULL);
+    return lst->tail == &lst->head;
+}
+
 void llist_traversal(LLIST* lst, TRAVERSE traverse, void* param) {
     assert(lst != NULL);
     for (struct lnode* node=lst->head.next; node!=NULL; node=node->next) {

@@ -28,7 +28,7 @@ static StatementResult execute_global_statement(CRB_Interpreter *inter, CRB_Loca
     }
 
     IdentifierList* global_identifiers = statement->u.global_s.identifier_list;
-    for (struct lnode* node=llist_front_node(global_identifiers); node!=NULL; node=node->next) {
+    for (struct lnode* node=global_identifiers?llist_front_node(global_identifiers):NULL; node!=NULL; node=node->next) {
         char* identifier_name = (char*)node->value.ptr_value;
         NamedItemEntry key = {identifier_name};
         GlobalVariableRef* global_ref = env->global_variable;
@@ -95,25 +95,18 @@ static StatementResult execute_statement(CRB_Interpreter *inter, CRB_LocalEnviro
     return result;
 }
 
-struct execute_params {
-    CRB_Interpreter *inter;
-    CRB_LocalEnvironment *env;
-    StatementResult *res;
-};
-
-static int _execute_every_statement(const VALUE *value, void *param) {
-    struct execute_params* params = (struct execute_params*)param;
-    *(params->res) = execute_statement(params->inter, params->env, (Statement*)value->ptr_value);
-    if (params->res->type != NORMAL_STATEMENT_RESULT) {
-        return 1;
+inline StatementResult crb_execute_statement_list_with_pos(CRB_Interpreter *inter, CRB_LocalEnvironment *env, struct lnode* last_pos) {
+    StatementResult ret;
+    ret.type = NORMAL_STATEMENT_RESULT;
+    for (struct lnode* node=last_pos->next; node!=NULL; node=node->next) {
+        ret = execute_statement(inter, env, (Statement*)node->value.ptr_value);
+        if (ret.type != NORMAL_STATEMENT_RESULT) {
+            return ret;
+        }
     }
-    return 0;
+    return ret;
 }
 
 StatementResult crb_execute_statement_list(CRB_Interpreter *inter, CRB_LocalEnvironment *env, StatementList *list) {
-    StatementResult ret;
-    ret.type = NORMAL_STATEMENT_RESULT;
-    struct execute_params params = {inter, env, &ret};
-    llist_traversal(list, _execute_every_statement, &params);
-    return ret;
+    return crb_execute_statement_list_with_pos(inter, env, llist_before_front_node(list));
 }

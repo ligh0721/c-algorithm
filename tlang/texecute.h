@@ -6,6 +6,7 @@
 #define TLANG_TEXECUTE_H
 
 
+StatementResult crb_execute_statement_list_with_pos(CRB_Interpreter *inter, CRB_LocalEnvironment *env, struct lnode* last_pos);
 StatementResult crb_execute_statement_list(CRB_Interpreter *inter, CRB_LocalEnvironment *env, StatementList *list);
 
 #endif //TLANG_TEXECUTE_H

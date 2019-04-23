@@ -114,8 +114,12 @@ struct CRB_Object_tag {
 
 
 // Error
+#define EXCEPTION_MEMBER_MESSAGE                ("message")
+#define EXCEPTION_MEMBER_STACK_TRACE            ("stack_trace")
+#define EXCEPTION_MEMBER_LINE_NUMBER            ("line_number")
+#define EXCEPTION_MEMBER_FUNCTION_NAME          ("function_name")
 #define EXCEPTION_MEMBER_PRINT_STACK_TRACE      ("print_stack_trace")
-#define EXCEPTION_CREATE_METHOD_NAME    ("create")
+#define EXCEPTION_CREATE_METHOD_NAME            ("create")
 
 typedef enum {
     PARSE_ERR = 1,
@@ -504,11 +508,12 @@ struct CRB_Interpreter_tag {
     MEM_Storage         execute_storage;
     RBTREE*             variables;  // RBTREE<Variable*>
     RBTREE*             functions;  // RBTREE<CRB_FunctionDefinition*>
-    StatementList       *statement_list;
+    StatementList*      statement_list;
+    struct lnode*       last_statement_pos;
     int                 current_line_number;
     Stack               stack;
     Heap                heap;
-    CRB_LocalEnvironment        *top_environment;
+    CRB_LocalEnvironment* top_environment;
     CRB_Value           current_exception;
     RecoveryEnvironment current_recovery_environment;
     CRB_InputMode       input_mode;

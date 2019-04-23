@@ -101,3 +101,16 @@ void crb_add_std_fp(CRB_Interpreter *inter) {
     fp_value.u.object = crb_create_native_pointer_i(inter, stderr, &st_file_type_info);
     CRB_add_global_variable(inter, "STDERR", &fp_value, CRB_TRUE);
 }
+
+void CRB_array_set(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int index, CRB_Value *value) {
+    DBG_assert(obj->type == ARRAY_OBJECT, ("obj->type..%d\n", obj->type));
+    CRB_Value_array_set(obj->u.array.array, index, *value);
+//    obj->u.array.array[index] = *value;
+}
+
+void CRB_set_function_definition(const char *name, CRB_NativeFunctionProc *proc, CRB_FunctionDefinition *fd) {
+    fd->name = name;
+    fd->type = CRB_NATIVE_FUNCTION_DEFINITION;
+    fd->is_closure = CRB_TRUE;
+    fd->u.native_f.proc = proc;
+}

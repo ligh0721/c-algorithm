@@ -21,6 +21,9 @@ void close_llist(LLIST *lst);
 void llist_clear(LLIST* lst);
 long llist_len(LLIST* lst);
 struct lnode* llist_front_node(LLIST* lst);
+struct lnode* llist_back_node(LLIST* lst);
+struct lnode* llist_before_front_node(LLIST *lst);
+int llist_is_node_before_front(LLIST *lst, struct lnode *back);
 void llist_traversal(LLIST* lst, TRAVERSE traverse, void* param);
 void llist_push_back(LLIST* lst, VALUE value);
 

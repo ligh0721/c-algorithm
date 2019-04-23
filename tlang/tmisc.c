@@ -98,6 +98,47 @@ const char* crb_get_operator_string(ExpressionType type) {
     return str;
 }
 
+const char* CRB_get_type_name(CRB_ValueType type) {
+    switch (type) {
+        case CRB_BOOLEAN_VALUE:
+            return "boolean";
+            break;
+        case CRB_INT_VALUE:
+            return "int";
+            break;
+        case CRB_DOUBLE_VALUE:
+            return "dobule";
+            break;
+        case CRB_STRING_VALUE:
+            return "string";
+            break;
+        case CRB_NATIVE_POINTER_VALUE:
+            return "native pointer";
+            break;
+        case CRB_NULL_VALUE:
+            return "null";
+            break;
+        case CRB_ARRAY_VALUE:
+            return "array";
+            break;
+        case CRB_ASSOC_VALUE:
+            return "object";
+            break;
+        case CRB_CLOSURE_VALUE:
+            return "closure";
+            break;
+        case CRB_FAKE_METHOD_VALUE:
+            return "method";
+            break;
+        case CRB_SCOPE_CHAIN_VALUE:
+            return "scope chain";
+            break;
+        default:
+            DBG_panic(("bad type..%d\n", type));
+    }
+    return NULL; /* make compiler happy */
+}
+
 // vstring
 static int my_strlen(CRB_Char* str) {
     if (str == NULL) {

@@ -35,6 +35,7 @@ CRB_Interpreter* CRB_create_interpreter(void) {
     interpreter->variables = open_rbtree(asc_order_named_item);
     interpreter->functions = open_rbtree(asc_order_named_item);
     interpreter->statement_list = NULL;
+    interpreter->last_statement_pos = NULL;
     interpreter->current_line_number = 1;
     interpreter->stack.stack_alloc_size = 0;
     interpreter->stack.stack_pointer = 0;
@@ -148,12 +149,16 @@ void CRB_set_command_line_args(CRB_Interpreter *interpreter, int argc, char **ar
 }
 
 void CRB_interpret(CRB_Interpreter *interpreter) {
-    StatementResult result;
+    if (interpreter->statement_list == NULL) {
+        return;
+    }
 
     crb_add_std_fp(interpreter);
-
     if ((setjmp(interpreter->current_recovery_environment.environment)) == 0) {
-        result = crb_execute_statement_list(interpreter, NULL, interpreter->statement_list);
+        StatementList* list = interpreter->statement_list;
+        struct lnode* last_pos = interpreter->last_statement_pos ? interpreter->last_statement_pos : llist_before_front_node(list);
+        StatementResult result = crb_execute_statement_list_with_pos(interpreter, NULL, last_pos);
+        interpreter->last_statement_pos = llist_back_node(list);
         if (result.type != NORMAL_STATEMENT_RESULT) {
             crb_runtime_error(interpreter, NULL, 0, BREAK_OR_CONTINUE_REACHED_TOPLEVEL_ERR, CRB_MESSAGE_ARGUMENT_END);
         }

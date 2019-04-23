@@ -8,6 +8,7 @@
 #include "tinterpreter.h"
 #include "tmisc.h"
 #include "terror.h"
+#include "theap.h"
 
 
 typedef struct {
@@ -175,43 +176,37 @@ void crb_compile_error(CompileError id, ...) {
 }
 
 static void throw_runtime_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Char *message, CRB_ErrorDefinition *def) {
-    fprintf(stderr, "@throw_runtime_exception");
-    exit(1);
-    // TODO:
-//    CRB_Value message_value;
-//    CRB_Value exception_value;
-//    CRB_Object *exception;
-//    int stack_count = 0;
-//    CRB_Value *exception_class;
-//    CRB_Value *create_func;
-//
-//    exception_class = CRB_search_global_variable(inter, def->class_name);
-//
-//    message_value.type = CRB_STRING_VALUE;
-//    message_value.u.object = crb_create_crowbar_string_i(inter, message);
-//    CRB_push_value(inter, &message_value);
-//    ++stack_count;
-//
-//    if (exception_class == NULL) {
-//        /* for minicrowbar */
-//        exception = CRB_create_exception(inter, env, message_value.u.object, line_number);
-//        exception_value.type = CRB_ASSOC_VALUE;
-//        exception_value.u.object = exception;
-//    } else {
-//        if (exception_class->type != CRB_ASSOC_VALUE) {
-//            crb_runtime_error(inter, env, line_number, EXCEPTION_CLASS_IS_NOT_ASSOC_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(exception_class->type), CRB_MESSAGE_ARGUMENT_END);
-//        }
-//        create_func = CRB_search_assoc_member(exception_class->u.object, EXCEPTION_CREATE_METHOD_NAME);
-//        if (create_func == NULL) {
-//            crb_runtime_error(inter, env, line_number, EXCEPTION_CLASS_HAS_NO_CREATE_METHOD_ERR, CRB_MESSAGE_ARGUMENT_END);
-//        }
-//        exception_value = CRB_call_function(inter, env, line_number, create_func, 1, &message_value);
-//    }
-//    inter->current_exception = exception_value;
-//
-//    CRB_shrink_stack(inter, stack_count);
-//
-//    longjmp(inter->current_recovery_environment.environment, LONGJMP_ARG);
+    int stack_count = 0;
+
+    CRB_Value* exception_class = CRB_search_global_variable(inter, def->class_name, NULL);
+
+    CRB_Value message_value;
+    message_value.type = CRB_STRING_VALUE;
+    message_value.u.object = crb_create_crowbar_string_i(inter, message);
+    CRB_push_value(inter, &message_value);
+    ++stack_count;
+
+    CRB_Value exception_value;
+    if (exception_class == NULL) {
+        /* for minicrowbar */
+        CRB_Object* exception = CRB_create_exception(inter, env, message_value.u.object, line_number);
+        exception_value.type = CRB_ASSOC_VALUE;
+        exception_value.u.object = exception;
+    } else {
+        if (exception_class->type != CRB_ASSOC_VALUE) {
+            crb_runtime_error(inter, env, line_number, EXCEPTION_CLASS_IS_NOT_ASSOC_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(exception_class->type), CRB_MESSAGE_ARGUMENT_END);
+        }
+        CRB_Value* create_func = CRB_search_assoc_member(exception_class->u.object, EXCEPTION_CREATE_METHOD_NAME, NULL);
+        if (create_func == NULL) {
+            crb_runtime_error(inter, env, line_number, EXCEPTION_CLASS_HAS_NO_CREATE_METHOD_ERR, CRB_MESSAGE_ARGUMENT_END);
+        }
+        exception_value = CRB_call_function(inter, env, line_number, create_func, 1, &message_value);
+    }
+    inter->current_exception = exception_value;
+
+    CRB_shrink_stack(inter, stack_count);
+
+    longjmp(inter->current_recovery_environment.environment, LONGJMP_ARG);
 }
 
 void crb_runtime_error(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, RuntimeError id, ...) {

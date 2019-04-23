@@ -23,14 +23,26 @@ static inline void push_value(CRB_Interpreter *inter, CRB_Value *value) {
     inter->stack.stack_pointer++;
 }
 
+void CRB_push_value(CRB_Interpreter *inter, CRB_Value *value) {
+    push_value(inter, value);
+}
+
 static inline CRB_Value pop_value(CRB_Interpreter *inter) {
     CRB_Value ret = inter->stack.stack[inter->stack.stack_pointer-1];
     inter->stack.stack_pointer--;
     return ret;
 }
 
+CRB_Value CRB_pop_value(CRB_Interpreter *inter) {
+    return pop_value(inter);
+}
+
 static inline CRB_Value* peek_stack(CRB_Interpreter *inter, int index) {
     return &inter->stack.stack[inter->stack.stack_pointer - index - 1];
+}
+
+CRB_Value* CRB_peek_stack(CRB_Interpreter *inter, int index) {
+    return peek_stack(inter, index);
 }
 
 inline void crb_set_stack_pointer(CRB_Interpreter *inter, int stack_pointer) {
@@ -162,7 +174,7 @@ static void eval_array_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *
     push_value(inter, &v);
 
     CRB_Value* data = CRB_Value_array_data(v.u.object->u.array.array);
-    for (struct lnode* node=llist_front_node(list); node!=NULL; node=node->next) {
+    for (struct lnode* node=list?llist_front_node(list):NULL; node!=NULL; node=node->next) {
         eval_expression(inter, env, (Expression*)node->value.ptr_value);
         *(data++) = pop_value(inter);
     }
@@ -220,15 +232,6 @@ static void eval_identifier_expression(CRB_Interpreter *inter, CRB_LocalEnvironm
 
     // 标识符不存在
     crb_runtime_error(inter, env, expr->line_number, VARIABLE_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", expr->u.identifier, CRB_MESSAGE_ARGUMENT_END);
-}
-
-/*
- * 逗号表达式求值
- */
-static void eval_comma_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
-    eval_expression(inter, env, expr->u.comma.left);
-    pop_value(inter);
-    eval_expression(inter, env, expr->u.comma.right);
 }
 
 /*
@@ -515,7 +518,9 @@ static void dispose_local_environment(CRB_Interpreter *inter) {
     CRB_LocalEnvironment *temp = inter->top_environment;
     inter->top_environment = inter->top_environment->next;
 
-    close_rbtree(temp->global_variable);
+    if (temp->global_variable != NULL) {
+        close_rbtree(temp->global_variable);
+    }
 //    while (temp->global_variable) {
 //        GlobalVariableRef* ref = temp->global_variable;
 //        temp->global_variable = ref->next;
@@ -538,13 +543,10 @@ static void call_fake_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
  */
 static void call_crowbar_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_LocalEnvironment *caller_env, Expression *expr, CRB_Value *func) {
     CRB_Value   value;
-    StatementResult     result;
-
-    // FIXME: NULL args or params
     ArgumentList* arg_p = expr->u.function_call_expression.argument;  // 实参
     CRB_ParameterList* param_p = func->u.closure.function->u.crowbar_f.parameter;  // 形参
-    struct lnode* arg_node = llist_front_node(arg_p);
-    struct lnode* param_node = llist_front_node(param_p);
+    struct lnode* arg_node = arg_p ? llist_front_node(arg_p) : NULL;
+    struct lnode* param_node = param_p ? llist_front_node(param_p) : NULL;
     while (arg_node != NULL) {
         if (param_node == NULL) {
             crb_runtime_error(inter, caller_env, expr->line_number, ARGUMENT_TOO_MANY_ERR, CRB_MESSAGE_ARGUMENT_END);
@@ -579,7 +581,7 @@ static void call_crowbar_function(CRB_Interpreter *inter, CRB_LocalEnvironment *
         return;
     }
 
-    result = crb_execute_statement_list(inter, env, func->u.closure.function->u.crowbar_f.block->statement_list);
+    StatementResult result = crb_execute_statement_list(inter, env, func->u.closure.function->u.crowbar_f.block->statement_list);
     if (result.type == RETURN_STATEMENT_RESULT) {
         value = result.u.return_value;
     } else {
@@ -688,7 +690,7 @@ static void eval_function_call_expression(CRB_Interpreter *inter, CRB_LocalEnvir
 }
 
 /*
- * 对象成员表达式
+ * 成员表达式求值
  */
 static void eval_member_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     eval_expression(inter,env, expr->u.member_expression.expression);
@@ -946,7 +948,7 @@ static CRB_Value* get_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
 }
 
 /*
- * 数组元素表达式求值
+ * 索引数组表达式求值
  */
 static void eval_index_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     CRB_Value* left = get_array_element_lvalue(inter, env, expr);
@@ -1010,6 +1012,15 @@ static void eval_assign_expression(CRB_Interpreter *inter, CRB_LocalEnvironment 
         DBG_assert(dest != NULL, ("dest == NULL.\n"));
         do_assign(inter, env, src, dest, expr->u.assign_expression.operator, expr->line_number);
     }
+}
+
+/*
+ * 逗号表达式求值
+ */
+static void eval_comma_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
+    eval_expression(inter, env, expr->u.comma.left);
+    pop_value(inter);
+    eval_expression(inter, env, expr->u.comma.right);
 }
 
 /*

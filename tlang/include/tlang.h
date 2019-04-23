@@ -141,7 +141,12 @@ CRB_Object* CRB_create_assoc(CRB_Interpreter *inter, CRB_LocalEnvironment *env);
 CRB_Value* CRB_add_assoc_member(CRB_Interpreter *inter, CRB_Object *assoc, const char *name, CRB_Value *value, CRB_Boolean is_final);
 CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, CRB_Boolean* is_final);
 
+CRB_Object* CRB_create_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *message, int line_number);
+
 // teval
+void CRB_push_value(CRB_Interpreter *inter, CRB_Value *value);
+CRB_Value CRB_pop_value(CRB_Interpreter *inter);
+CRB_Value* CRB_peek_stack(CRB_Interpreter *inter, int index);
 void CRB_shrink_stack(CRB_Interpreter *inter, int shrink_size);
 CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *func, int arg_count, CRB_Value *args);
 
