@@ -84,16 +84,6 @@ static CRB_LocalEnvironment* alloc_local_environment(CRB_Interpreter *inter, con
 static void eval_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr);
 
 /*
- * 函数调用
- */
-CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *func, int arg_count, CRB_Value *args) {
-    printf("@@call %s()\n", func->u.closure.function->name);
-    CRB_Value ret = {};
-    // TODO:
-    return ret;
-}
-
-/*
  * 在当前作用域下搜索被global关键字引用的全局变量
  */
 static CRB_Value* search_global_variable_from_env(CRB_Interpreter *inter, CRB_LocalEnvironment *env, const char *name, CRB_Boolean *is_final) {
@@ -531,6 +521,97 @@ static void dispose_local_environment(CRB_Interpreter *inter) {
     MEM_free(temp);
 }
 
+static CRB_Value call_crowbar_function_from_native(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_LocalEnvironment *caller_env, CRB_Value *func, int arg_count, CRB_Value *args) {
+    CRB_ParameterList* param_list = func->u.closure.function->u.crowbar_f.parameter;
+    struct lnode* param_node = param_list ? llist_front_node(param_list) : NULL;
+    for (int arg_idx=0; arg_idx<arg_count; ++arg_idx, param_node=param_node->next) {
+        if (param_node == NULL) {
+            crb_runtime_error(inter, caller_env, line_number, ARGUMENT_TOO_MANY_ERR, CRB_MESSAGE_ARGUMENT_END);
+        }
+        CRB_add_local_variable(inter, env, (const char*)param_node->value.ptr_value, &args[arg_idx], CRB_FALSE);
+    }
+    if (param_node != NULL) {
+        crb_runtime_error(inter, caller_env, line_number, ARGUMENT_TOO_FEW_ERR, CRB_MESSAGE_ARGUMENT_END);
+    }
+
+    CRB_Value value;
+    StatementResult result = crb_execute_statement_list(inter, env, func->u.closure.function->u.crowbar_f.block->statement_list);
+    if (result.type == RETURN_STATEMENT_RESULT) {
+        value = result.u.return_value;
+    } else {
+        value.type = CRB_NULL_VALUE;
+    }
+    return value;
+}
+
+static CRB_Value call_native_function_from_native(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_LocalEnvironment *caller_env, CRB_Value *func, int arg_count, CRB_Value *args) {
+    for (int i=0; i<arg_count; ++i) {
+        push_value(inter, &args[i]);
+    }
+    CRB_Value* arg_p = &inter->stack.stack[inter->stack.stack_pointer-arg_count];
+    CRB_Value value = func->u.closure.function->u.native_f.proc(inter, env, arg_count, arg_p);
+    shrink_stack(inter, arg_count);
+    return value;
+}
+
+static CRB_Value call_fake_method_from_native(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_LocalEnvironment *caller_env, CRB_Value *func, int arg_count, CRB_Value *args) {
+    // TODO:
+    CRB_Value value = {};
+    return value;
+}
+
+/*
+ * 函数调用
+ */
+CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *func, int arg_count, CRB_Value *args) {
+    const char* func_name;
+    CRB_Object* closure_env;
+    if (func->type == CRB_CLOSURE_VALUE) {
+        func_name = func->u.closure.function->name;
+        closure_env = func->u.closure.environment;
+    } else if (func->type == CRB_FAKE_METHOD_VALUE) {
+        func_name = func->u.fake_method.method_name;
+        closure_env = NULL;
+    } else {
+        DBG_panic(("func->type..%d\n", func->type));
+    }
+    CRB_LocalEnvironment* local_env = alloc_local_environment(inter, func_name, line_number, closure_env);
+    if (func->type == CRB_CLOSURE_VALUE && func->u.closure.function->is_closure && func->u.closure.function->name) {
+        CRB_add_assoc_member(inter, local_env->variable->u.scope_chain.frame, func->u.closure.function->name, func, CRB_TRUE);
+    }
+
+    CRB_Value ret;
+    int stack_pointer_backup = crb_get_stack_pointer(inter);
+    RecoveryEnvironment env_backup = inter->current_recovery_environment;
+    if (setjmp(inter->current_recovery_environment.environment) == 0) {
+        if (func->type == CRB_CLOSURE_VALUE) {
+            switch (func->u.closure.function->type) {
+                case CRB_CROWBAR_FUNCTION_DEFINITION:
+                    ret = call_crowbar_function_from_native(inter, local_env, line_number, env, func, arg_count, args);
+                    break;
+                case CRB_NATIVE_FUNCTION_DEFINITION:
+                    ret = call_native_function_from_native(inter, local_env, line_number, env, func, arg_count, args);
+                    break;
+                case CRB_FUNCTION_DEFINITION_TYPE_COUNT_PLUS_1:
+                default:
+                    DBG_assert(0, ("bad case..%d\n", func->u.closure.function->type));
+            }
+        } else if (func->type == CRB_FAKE_METHOD_VALUE) {
+            ret = call_fake_method_from_native(inter, local_env, line_number, env, func, arg_count, args);
+        } else {
+            DBG_panic(("func->type..%d\n", func->type));
+        }
+    } else {
+        dispose_local_environment(inter);
+        crb_set_stack_pointer(inter, stack_pointer_backup);
+        longjmp(env_backup.environment, LONGJMP_ARG);
+    }
+    inter->current_recovery_environment = env_backup;
+    dispose_local_environment(inter);
+
+    return ret;
+}
+
 /*
  * 调用成员函数
  */
@@ -542,7 +623,6 @@ static void call_fake_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
  * 调用自定义函数
  */
 static void call_crowbar_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_LocalEnvironment *caller_env, Expression *expr, CRB_Value *func) {
-    CRB_Value   value;
     ArgumentList* arg_p = expr->u.function_call_expression.argument;  // 实参
     CRB_ParameterList* param_p = func->u.closure.function->u.crowbar_f.parameter;  // 形参
     struct lnode* arg_node = arg_p ? llist_front_node(arg_p) : NULL;
@@ -581,6 +661,7 @@ static void call_crowbar_function(CRB_Interpreter *inter, CRB_LocalEnvironment *
         return;
     }
 
+    CRB_Value value;
     StatementResult result = crb_execute_statement_list(inter, env, func->u.closure.function->u.crowbar_f.block->statement_list);
     if (result.type == RETURN_STATEMENT_RESULT) {
         value = result.u.return_value;
