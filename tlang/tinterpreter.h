@@ -26,7 +26,7 @@ typedef struct {
 } NamedItemEntry;
 
 typedef struct {
-    char* name;
+    const char* name;
     CRB_Value value;
     CRB_Boolean is_final;
 } Variable;
@@ -243,7 +243,7 @@ typedef enum {
   ((operator) == LOGICAL_AND_EXPRESSION || (operator) == LOGICAL_OR_EXPRESSION)
 
 
-typedef LLIST ArgumentList;
+typedef LLIST ArgumentList;  // LLIST<Expression*>
 //typedef struct ArgumentList_tag {
 //    Expression *expression;
 //    struct ArgumentList_tag *next;
@@ -284,7 +284,7 @@ typedef struct {
 //    ExpressionListNode head;
 //    ExpressionListNode* tail;
 //} ExpressionList;
-typedef LLIST ExpressionList;
+typedef LLIST ExpressionList;  // LLIST<Expression*>
 
 typedef struct {
     Expression  *array;
@@ -319,7 +319,7 @@ struct Expression_tag {
         double                  double_value;
         CRB_Char                *string_value;
 //        CRB_Regexp              *regexp_value;
-        char                    *identifier;
+        const char                    *identifier;
         CommaExpression         comma;
         AssignExpression        assign_expression;
         BinaryExpression        binary_expression;
@@ -470,7 +470,7 @@ typedef struct RefInNativeFunc_tag {
 } RefInNativeFunc;
 
 struct CRB_LocalEnvironment_tag {
-    char                *current_function_name;
+    const char                *current_function_name;
     int                 caller_line_number;
     CRB_Object          *variable;      /* ScopeChain */
     GlobalVariableRef   *global_variable;  // RBTREE<Variable*>

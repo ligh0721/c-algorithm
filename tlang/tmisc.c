@@ -18,6 +18,86 @@ void* crb_execute_malloc(CRB_Interpreter *inter, size_t size) {
     return MEM_storage_malloc(inter->execute_storage, size);
 }
 
+const char* crb_get_operator_string(ExpressionType type) {
+    const char* str;
+
+    switch (type) {
+        case BOOLEAN_EXPRESSION:    /* FALLTHRU */
+        case INT_EXPRESSION:        /* FALLTHRU */
+        case DOUBLE_EXPRESSION:     /* FALLTHRU */
+        case STRING_EXPRESSION:     /* FALLTHRU */
+//        case REGEXP_EXPRESSION:     /* FALLTHRU */
+        case IDENTIFIER_EXPRESSION:
+            DBG_assert(0, ("bad expression type..%d\n", type));
+            str = NULL;
+            break;
+        case COMMA_EXPRESSION:
+            str = ",";
+            break;
+        case ASSIGN_EXPRESSION:
+            str = "=";
+            break;
+        case ADD_EXPRESSION:
+            str = "+";
+            break;
+        case SUB_EXPRESSION:
+            str = "-";
+            break;
+        case MUL_EXPRESSION:
+            str = "*";
+            break;
+        case DIV_EXPRESSION:
+            str = "/";
+            break;
+        case MOD_EXPRESSION:
+            str = "%";
+            break;
+        case EQ_EXPRESSION:
+            str = "==";
+            break;
+        case NE_EXPRESSION:
+            str = "!=";
+            break;
+        case GT_EXPRESSION:
+            str = "<";
+            break;
+        case GE_EXPRESSION:
+            str = "<=";
+            break;
+        case LT_EXPRESSION:
+            str = ">";
+            break;
+        case LE_EXPRESSION:
+            str = ">=";
+            break;
+        case LOGICAL_AND_EXPRESSION:
+            str = "&&";
+            break;
+        case LOGICAL_OR_EXPRESSION:
+            str = "||";
+            break;
+        case MINUS_EXPRESSION:
+            str = "-";
+            break;
+        case LOGICAL_NOT_EXPRESSION:
+            str = "!";
+            break;
+        case FUNCTION_CALL_EXPRESSION:      /* FALLTHRU */
+        case MEMBER_EXPRESSION:     /* FALLTHRU */
+        case NULL_EXPRESSION:       /* FALLTHRU */
+        case ARRAY_EXPRESSION:      /* FALLTHRU */
+        case INDEX_EXPRESSION:      /* FALLTHRU */
+        case INCREMENT_EXPRESSION:  /* FALLTHRU */
+        case DECREMENT_EXPRESSION:  /* FALLTHRU */
+        case CLOSURE_EXPRESSION:    /* FALLTHRU */
+        case EXPRESSION_TYPE_COUNT_PLUS_1:  /* FALLTHRU */
+        default:
+            DBG_assert(0, ("bad expression type..%d\n", type));
+            str = NULL;
+    }
+    return str;
+}
+
 // vstring
 static int my_strlen(CRB_Char* str) {
     if (str == NULL) {
@@ -44,11 +124,15 @@ void crb_vstr_append_character(VString *v, CRB_Char ch) {
     v->string[current_len+1] = L'\0';
 }
 
+
+
+
 CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Value *value, CRB_Boolean is_final) {
     Variable* new_var = crb_execute_malloc(inter, sizeof(Variable));
     new_var->is_final = is_final;
-    new_var->name = crb_execute_malloc(inter, strlen(identifier) + 1);
-    strcpy(new_var->name, identifier);
+    char* name = crb_execute_malloc(inter, strlen(identifier) + 1);
+    strcpy(name, identifier);
+    new_var->name = name;
     new_var->value = *value;
     rbtree_set(inter->variables, ptr_value(new_var));
 //    new_var->next = inter->variable;
@@ -86,7 +170,7 @@ CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, const char *identi
 //    }
 }
 
-CRB_Value* CRB_add_local_variable(CRB_Interpreter *inter, CRB_LocalEnvironment *env, char *identifier, CRB_Value *value, CRB_Boolean is_final) {
+CRB_Value* CRB_add_local_variable(CRB_Interpreter *inter, CRB_LocalEnvironment *env, const char *identifier, CRB_Value *value, CRB_Boolean is_final) {
     DBG_assert(env->variable->type == SCOPE_CHAIN_OBJECT, ("type..%d\n", env->variable->type));
     CRB_Value* ret = CRB_add_assoc_member(inter, env->variable->u.scope_chain.frame, identifier, value, is_final);
     return ret;
@@ -98,15 +182,19 @@ CRB_Value* CRB_search_local_variable(CRB_LocalEnvironment *env, const char *iden
     }
     DBG_assert(env->variable->type == SCOPE_CHAIN_OBJECT, ("type..%d\n", env->variable->type));
 
-    CRB_Value *value;
     for (CRB_Object* sc = env->variable; sc; sc = sc->u.scope_chain.next) {
         DBG_assert(sc->type == SCOPE_CHAIN_OBJECT, ("sc->type..%d\n", sc->type));
-        value = CRB_search_assoc_member(sc->u.scope_chain.frame, identifier, is_final);
+        CRB_Value* value = CRB_search_assoc_member(sc->u.scope_chain.frame, identifier, is_final);
         if (value) {
-            break;
+            return value;
         }
     }
-    return value;
+    return NULL;
+}
+
+CRB_FunctionDefinition* crb_search_function_in_compile(const char *name) {
+    CRB_Interpreter* inter = crb_get_current_interpreter();
+    return CRB_search_function(inter, name);
 }
 
 CRB_FunctionDefinition* CRB_search_function(CRB_Interpreter *inter, const char *name) {

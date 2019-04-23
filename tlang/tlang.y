@@ -68,7 +68,7 @@ definition_or_statement
 function_definition
         : FUNCTION IDENTIFIER LP parameter_list RP block
         {
-//            crb_function_define($2, $4, $6);
+            crb_function_define($2, $4, $6);
         }
         ;
 

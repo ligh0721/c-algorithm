@@ -10,7 +10,7 @@
 #include "theap.h"
 #include "texecute.h"
 #include "terror.h"
-#include "tstack.h"
+#include "teval.h"
 
 
 static CRB_Interpreter *st_current_interpreter;

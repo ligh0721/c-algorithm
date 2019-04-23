@@ -10,7 +10,15 @@
 
 // functions
 static CRB_Value nv_print_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args){
-    CRB_Value value = {};
+    CRB_Value value;
+    value.type = CRB_NULL_VALUE;
+
+    CRB_check_argument_count(interpreter, env, arg_count, 1);
+
+    CRB_Char* str = CRB_value_to_string(interpreter, env, __LINE__, &args[0]);
+    CRB_print_wcs(stdout, str);
+    MEM_free(str);
+
     return value;
 }
 

@@ -8,7 +8,6 @@
 #include "tinterpreter.h"
 #include "tmisc.h"
 #include "terror.h"
-#include "tstack.h"
 
 
 typedef struct {
@@ -22,7 +21,6 @@ typedef struct {
         int     character_val;
     } u;
 } MessageArgument;
-
 
 static void create_message_argument(MessageArgument *arg, va_list ap) {
     int index = 0;
@@ -227,4 +225,12 @@ void crb_runtime_error(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int li
     va_end(ap);
 
     throw_runtime_exception(inter, env, line_number, message.string, &crb_runtime_error_message_format[id]);
+}
+
+void CRB_check_argument_count_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int expected_count) {
+    if (arg_count < expected_count) {
+        crb_runtime_error(inter, env, line_number, ARGUMENT_TOO_FEW_ERR, CRB_MESSAGE_ARGUMENT_END);
+    } else if (arg_count > expected_count) {
+        crb_runtime_error(inter, env, line_number, ARGUMENT_TOO_MANY_ERR, CRB_MESSAGE_ARGUMENT_END);
+    }
 }

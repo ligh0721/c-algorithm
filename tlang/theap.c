@@ -66,14 +66,45 @@ CRB_Object* CRB_create_crowbar_string(CRB_Interpreter *inter, CRB_LocalEnvironme
     return ret;
 }
 
-CRB_Object* crb_create_native_pointer_i(CRB_Interpreter *inter, void *pointer, CRB_NativePointerInfo *info) {
-    CRB_Object* ret = alloc_object(inter, NATIVE_POINTER_OBJECT);
-    ret->u.native_pointer.pointer = pointer;
-    ret->u.native_pointer.info = info;
+// array object
+CRB_Object* crb_create_array_i(CRB_Interpreter *inter, int size) {
+    CRB_Object* ret = alloc_object(inter, ARRAY_OBJECT);
+    ret->u.array.array = open_CRB_Value_array(size);
+//    ret->u.array.size = size;
+//    ret->u.array.alloc_size = size;
+//    ret->u.array.array = MEM_malloc(sizeof(CRB_Value) * size);
+    inter->heap.current_heap_size += sizeof(CRB_Value) * size;
+    return ret;
+}
+
+CRB_Object* CRB_create_array(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int size) {
+    CRB_Object* ret = crb_create_array_i(inter, size);
+    add_ref_in_native_method(env, ret);
     return ret;
 }
 
 // assoc object
+static int _AssocMember_compare(AssocMember a, AssocMember b) {
+    return strcmp(a.name, b.name);
+}
+
+CRB_Object* crb_create_assoc_i(CRB_Interpreter *inter) {
+    CRB_Object* ret = alloc_object(inter, ASSOC_OBJECT);
+    ret->u.assoc.members = open_AssocMember_rbtree(_AssocMember_compare);
+//    ret->u.assoc.member_count = 0;
+//    ret->u.assoc.member = NULL;
+    return ret;
+}
+
+CRB_Object* CRB_create_assoc(CRB_Interpreter *inter, CRB_LocalEnvironment *env) {
+    CRB_Object *ret;
+
+    ret = crb_create_assoc_i(inter);
+    add_ref_in_native_method(env, ret);
+
+    return ret;
+}
+
 CRB_Value* CRB_add_assoc_member(CRB_Interpreter *inter, CRB_Object *assoc, const char *name, CRB_Value *value, CRB_Boolean is_final) {
     check_gc(inter);
     AssocMember_RBTREE* tr = assoc->u.assoc.members;
@@ -123,6 +154,22 @@ CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, C
 //        }
 //    }
 //    return NULL;
+}
+
+// scope chain
+CRB_Object* crb_create_scope_chain(CRB_Interpreter *inter) {
+    CRB_Object *ret = alloc_object(inter, SCOPE_CHAIN_OBJECT);
+    ret->u.scope_chain.frame = NULL;
+    ret->u.scope_chain.next = NULL;
+    return ret;
+}
+
+// native pointer
+CRB_Object* crb_create_native_pointer_i(CRB_Interpreter *inter, void *pointer, CRB_NativePointerInfo *info) {
+    CRB_Object* ret = alloc_object(inter, NATIVE_POINTER_OBJECT);
+    ret->u.native_pointer.pointer = pointer;
+    ret->u.native_pointer.info = info;
+    return ret;
 }
 
 // gc

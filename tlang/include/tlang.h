@@ -87,9 +87,10 @@ typedef enum {
 } CRB_FunctionDefinitionType;
 
 typedef CRB_Value CRB_NativeFunctionProc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args);  // TODO: *
+CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, char *name, CRB_NativeFunctionProc *proc);
 
 struct CRB_FunctionDefinition_tag {
-    char                *name;
+    const char                *name;
     CRB_FunctionDefinitionType  type;
     CRB_Boolean         is_closure;
     union {
@@ -104,7 +105,11 @@ struct CRB_FunctionDefinition_tag {
     struct CRB_FunctionDefinition_tag   *next;
 };
 
-CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, char *name, CRB_NativeFunctionProc *proc);
+void CRB_check_argument_count_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int expected_count);
+
+#define CRB_check_argument_count(inter, env, arg_count, expected_count)\
+  (CRB_check_argument_count_func(inter, env, __LINE__, \
+  arg_count, expected_count))
 
 typedef void CRB_NativePointerFinalizeProc(CRB_Interpreter *inter, CRB_Object *obj);  // TODO: *
 typedef struct {
@@ -130,16 +135,20 @@ typedef struct {
 // theap
 CRB_Object* CRB_create_crowbar_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Char *str);
 
+CRB_Object* CRB_create_array(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int size);
+
+CRB_Object* CRB_create_assoc(CRB_Interpreter *inter, CRB_LocalEnvironment *env);
 CRB_Value* CRB_add_assoc_member(CRB_Interpreter *inter, CRB_Object *assoc, const char *name, CRB_Value *value, CRB_Boolean is_final);
 CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, CRB_Boolean* is_final);
 
 // teval
+void CRB_shrink_stack(CRB_Interpreter *inter, int shrink_size);
 CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *func, int arg_count, CRB_Value *args);
 
 // tmisc
 CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Value *value, CRB_Boolean is_final);
 CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Boolean *is_final);
-CRB_Value* CRB_add_local_variable(CRB_Interpreter *inter, CRB_LocalEnvironment *env, char *identifier, CRB_Value *value, CRB_Boolean is_final);
+CRB_Value* CRB_add_local_variable(CRB_Interpreter *inter, CRB_LocalEnvironment *env, const char *identifier, CRB_Value *value, CRB_Boolean is_final);
 CRB_Value* CRB_search_local_variable(CRB_LocalEnvironment *env, const char *identifier, CRB_Boolean *is_final);
 CRB_FunctionDefinition* CRB_search_function(CRB_Interpreter *inter, const char *name);
 void* CRB_object_get_native_pointer(CRB_Object *obj);
@@ -147,6 +156,7 @@ void* CRB_object_get_native_pointer(CRB_Object *obj);
 #define CRB_wcslen(s) wcslen(s)
 #define CRB_wcscpy(s, d) wcscpy(s, d)
 #define CRB_wcscat(s, s2) wcscat(s, s2)
+#define CRB_wcscmp(s, s2) wcscmp(s, s2)
 int CRB_mbstowcs_len(const char *src);
 void CRB_mbstowcs(const char *src, CRB_Char *dest);
 CRB_Char* CRB_mbstowcs_alloc(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const char *src);
