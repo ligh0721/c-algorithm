@@ -133,9 +133,9 @@ void CRB_compile_string(CRB_Interpreter *interpreter, const char** lines) {
     crb_reset_string_literal_buffer();
 }
 
-void CRB_compile_readline(CRB_Interpreter* interpreter, READLINE_FUNC readline, void* param) {
+void CRB_compile_readline(CRB_Interpreter* interpreter, ReadLineModeParams* params) {
     crb_set_current_interpreter(interpreter);
-    crb_set_readline(readline, param);
+    crb_set_readline(params);
     interpreter->current_line_number = 1;
     interpreter->input_mode = CRB_READLINE_INPUT_MODE;
 

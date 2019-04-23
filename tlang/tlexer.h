@@ -6,7 +6,7 @@
 #define TLANG_TLEXER_H
 
 
-// string
+// string literal
 char* crb_create_identifier(char *str);
 void crb_open_string_literal(void);
 void crb_add_string_literal(int letter);
@@ -16,7 +16,8 @@ CRB_Char* crb_close_string_literal(void);
 #define increment_line_number() (crb_get_current_interpreter()->current_line_number++)
 
 void crb_set_source_string(const char** source);
-void crb_set_readline(READLINE_FUNC readline, void* param);
+
+void crb_set_readline(ReadLineModeParams* params);
 int my_yyinput(char *buf, int max_size);
 
 

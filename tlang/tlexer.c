@@ -104,14 +104,12 @@ static int string_input(char *buf, int max_size) {
 }
 
 // readline mode
-static READLINE_FUNC st_readline;
-static void* st_readline_param;
+static ReadLineModeParams* st_readline_params;
 static char* st_readline_string;
 static int st_readline_current_char_index;
 
-void crb_set_readline(READLINE_FUNC readline, void* param) {
-    st_readline = readline;
-    st_readline_param = param;
+void crb_set_readline(ReadLineModeParams* params) {
+    st_readline_params = params;
     st_readline_string = "\n";
     st_readline_current_char_index = 0;
 }
@@ -119,7 +117,7 @@ void crb_set_readline(READLINE_FUNC readline, void* param) {
 static int readline_input(char* buf, int max_size) {
     if (st_readline_string[st_readline_current_char_index] == 0) {
         CRB_interpret(crb_get_current_interpreter());
-        st_readline_string = st_readline(st_readline_param);
+        st_readline_string = st_readline_params->readline(st_readline_params->readline_params);
         st_readline_current_char_index = 0;
     }
 
@@ -134,6 +132,7 @@ static int readline_input(char* buf, int max_size) {
     strncpy(buf, st_readline_string+st_readline_current_char_index, len);
     st_readline_current_char_index += len;
     if (st_readline_string[st_readline_current_char_index] == 0 && st_readline_string[st_readline_current_char_index-1] != '\n') {
+        st_readline_params->add_history(st_readline_string, st_readline_params->add_history_params);
         free(st_readline_string);
         if (len < max_size) {
             buf[len++] = '\n';

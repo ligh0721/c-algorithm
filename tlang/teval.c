@@ -840,13 +840,12 @@ static CRB_Boolean eval_binary_null(CRB_Interpreter *inter, CRB_LocalEnvironment
  * 二元表达式求值
  */
 static void eval_binary_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, ExpressionType operator, Expression *left, Expression *right) {
-    CRB_Value   result;
-
     eval_expression(inter, env, left);
     eval_expression(inter, env, right);
     CRB_Value* left_val = peek_stack(inter, 1);
     CRB_Value* right_val = peek_stack(inter, 0);
 
+    CRB_Value result;
     if (crb_is_numeric_type(left_val->type) && crb_is_numeric_type(right_val->type)) {
         eval_binary_numeric(inter, env, operator, left_val, right_val, &result, left->line_number);
 
@@ -927,7 +926,7 @@ static void do_assign(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Val
 /*
  * 关联数组赋值
  * expr: left.right = rvalue
- * src: lvalue
+ * src: rvalue
  */
 static void assign_to_member(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr, CRB_Value *src) {
     Expression *left = expr->u.assign_expression.left;

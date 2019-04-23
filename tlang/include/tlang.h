@@ -16,11 +16,18 @@
 typedef struct CRB_Interpreter_tag CRB_Interpreter;
 
 typedef char* (*READLINE_FUNC)(void* param);
+typedef void (*ADD_HISTORY_FUNC)(const char* history, void* param);
+typedef struct {
+    READLINE_FUNC readline;
+    void* readline_params;
+    ADD_HISTORY_FUNC add_history;
+    void* add_history_params;
+} ReadLineModeParams;
 
 CRB_Interpreter *CRB_create_interpreter(void);
 void CRB_compile(CRB_Interpreter* interpreter, FILE *fp);
 void CRB_compile_string(CRB_Interpreter* interpreter, const char** lines);
-void CRB_compile_readline(CRB_Interpreter* interpreter, READLINE_FUNC readline, void* param);
+void CRB_compile_readline(CRB_Interpreter* interpreter, ReadLineModeParams* params);
 void CRB_set_command_line_args(CRB_Interpreter* interpreter, int argc, char** argv);
 void CRB_interpret(CRB_Interpreter* interpreter);
 void CRB_dispose_interpreter(CRB_Interpreter* interpreter);

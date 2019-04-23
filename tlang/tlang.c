@@ -5,14 +5,24 @@
 #include <stdio.h>
 #include <algorithm.h>
 #include <readline/readline.h>
+#include <readline/history.h>
 #include "tlang.h"
 
+
+static char* my_readline(void* param) {
+    return readline((const char*)param);
+}
+
+static void my_add_history(const char* history, void* param) {
+    return add_history(history);
+}
 
 int readline_mode(int argc, char* argv[]) {
     char ps[] = ">> ";
     CRB_Interpreter* interpreter = CRB_create_interpreter();
     CRB_set_command_line_args(interpreter, argc-1, &argv[1]);
-    CRB_compile_readline(interpreter, (READLINE_FUNC)readline, ps);
+    ReadLineModeParams params = {my_readline, ps, my_add_history, NULL};
+    CRB_compile_readline(interpreter, &params);
     CRB_dispose_interpreter(interpreter);
     MEM_dump_blocks(stdout);
 
