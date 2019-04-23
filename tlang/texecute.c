@@ -48,6 +48,17 @@ static StatementResult execute_global_statement(CRB_Interpreter *inter, CRB_Loca
     return result;
 }
 
+static StatementResult execute_return_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Statement *statement) {
+    StatementResult result;
+    result.type = RETURN_STATEMENT_RESULT;
+    if (statement->u.return_s.return_value) {
+        result.u.return_value = crb_eval_expression(inter, env, statement->u.return_s.return_value);
+    } else {
+        result.u.return_value.type = CRB_NULL_VALUE;
+    }
+    return result;
+}
+
 static StatementResult execute_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Statement *statement) {
     StatementResult result;
     result.type = NORMAL_STATEMENT_RESULT;
@@ -72,9 +83,9 @@ static StatementResult execute_statement(CRB_Interpreter *inter, CRB_LocalEnviro
 //        case FOREACH_STATEMENT:
 //            result = execute_foreach_statement(inter, env, statement);
 //            break;
-//        case RETURN_STATEMENT:
-//            result = execute_return_statement(inter, env, statement);
-//            break;
+        case RETURN_STATEMENT:
+            result = execute_return_statement(inter, env, statement);
+            break;
 //        case BREAK_STATEMENT:
 //            result = execute_break_statement(inter, env, statement);
 //            break;
