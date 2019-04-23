@@ -69,33 +69,30 @@ static void search_argument(MessageArgument *arg_list, char *arg_name, MessageAr
 }
 
 static void format_message(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_ErrorDefinition *format, VString *v, va_list ap) {
-    char        buf[LINE_BUF_SIZE];
-    CRB_Char    wc_buf[LINE_BUF_SIZE];
-    int         arg_name_index;
-    char        arg_name[LINE_BUF_SIZE];
-    MessageArgument     arg[MESSAGE_ARGUMENT_MAX];
-    MessageArgument     cur_arg;
-    CRB_Char    *wc_format;
-
+    char buf[LINE_BUF_SIZE];
+    CRB_Char wc_buf[LINE_BUF_SIZE];
+    char arg_name[LINE_BUF_SIZE];
+    MessageArgument arg[MESSAGE_ARGUMENT_MAX];
     create_message_argument(arg, ap);
 
-    wc_format = CRB_mbstowcs_alloc(inter, env, line_number, format->format);
+    CRB_Char* wc_format = CRB_mbstowcs_alloc(inter, env, line_number, format->format);
     DBG_assert(wc_format != NULL, ("wc_format is null.\n"));
 
-    for (int i = 0; wc_format[i] != L'\0'; ++i) {
+    for (int i=0; wc_format[i]!=L'\0'; ++i) {
         if (wc_format[i] != L'$') {
             crb_vstr_append_character(v, wc_format[i]);
             continue;
         }
         assert(wc_format[i+1] == L'(');
         i += 2;
-        for (arg_name_index = 0; wc_format[i] != L')';
-             arg_name_index++, i++) {
+        int arg_name_index;
+        for (arg_name_index=0; wc_format[i] != L')'; ++arg_name_index, ++i) {
             arg_name[arg_name_index] = CRB_wctochar(wc_format[i]);
         }
         arg_name[arg_name_index] = '\0';
         assert(wc_format[i] == L')');
 
+        MessageArgument cur_arg;
         search_argument(arg, arg_name, &cur_arg);
         switch (cur_arg.type) {
             case CRB_INT_MESSAGE_ARGUMENT:
