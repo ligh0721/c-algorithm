@@ -98,7 +98,7 @@ VALUE heap_pop(HEAP* hp, int* empty) {
         if (empty != NULL) {
             *empty = 1;
         }
-        return NULL_VALUE;
+        return VALUE_EMPTY;
     }
     if (len == 1) {
         return slice_pop(hp->data, len - 1);
@@ -111,7 +111,7 @@ VALUE heap_pop(HEAP* hp, int* empty) {
 VALUE heap_top(HEAP *hp) {
     assert(hp != NULL);
     if (slice_len(hp->data) == 0) {
-        return NULL_VALUE;
+        return VALUE_EMPTY;
     }
     return slice_get(hp->data, 0);
 }

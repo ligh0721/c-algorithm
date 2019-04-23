@@ -30,7 +30,7 @@ static inline void delete(LLIST* lst, void* p) {
 LLIST* open_llist() {
     struct llist* ret = NEW(struct llist);
     assert(ret != NULL);
-    ret->head.value = NULL_VALUE;
+    ret->head.value = VALUE_EMPTY;
     ret->head.next = NULL;
     ret->tail = &ret->head;
     ret->length = 0;
@@ -42,7 +42,7 @@ LLIST* open_llist_with_allocator(ALLOCATOR allocator) {
     assert(allocator.alloc != NULL);
     struct llist* ret = (struct llist*)allocator.alloc(sizeof(struct llist));
     assert(ret != NULL);
-    ret->head.value = NULL_VALUE;
+    ret->head.value = VALUE_EMPTY;
     ret->head.next = NULL;
     ret->tail = &ret->head;
     ret->length = 0;
@@ -81,7 +81,7 @@ struct lnode* llist_front_node(LLIST* lst) {
 void llist_traversal(LLIST* lst, TRAVERSE traverse, void* param) {
     assert(lst != NULL);
     for (struct lnode* node=lst->head.next; node!=NULL; node=node->next) {
-        if (traverse(node->value, param)) {
+        if (traverse(&node->value, param)) {
             break;
         }
     }
@@ -106,7 +106,7 @@ struct dllist {
 DLLIST* open_dllist() {
     struct dllist* ret = NEW(struct dllist);
     assert(ret != NULL);
-    ret->head.value = NULL_VALUE;
+    ret->head.value = VALUE_EMPTY;
     ret->head.prev = &ret->head;
     ret->head.next = NULL;
     ret->tail = &ret->head;
@@ -141,13 +141,13 @@ void dlist_traversal(DLLIST* lst, int reverse, TRAVERSE traverse, void* param) {
     assert(lst != NULL);
     if (reverse) {
         for (struct dlnode* node=lst->tail; node!=&lst->head; node=node->prev) {
-            if (traverse(node->value, param)) {
+            if (traverse(&node->value, param)) {
                 break;
             }
         }
     } else {
         for (struct dlnode* node=lst->head.next; node!=NULL; node=node->next) {
-            if (traverse(node->value, param)) {
+            if (traverse(&node->value, param)) {
                 break;
             }
         }

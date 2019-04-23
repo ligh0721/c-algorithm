@@ -3,6 +3,7 @@
 //
 
 #include <string.h>
+#include "tinterpreter.h"
 #include "tlexer.h"
 #include "tmisc.h"
 #include "terror.h"

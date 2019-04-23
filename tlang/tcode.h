@@ -5,7 +5,6 @@
 #ifndef TLANG_TCODE_H
 #define TLANG_TCODE_H
 
-#include "tinterpreter.h"
 
 ArgumentList* crb_create_argument_list(Expression *expression);
 ArgumentList* crb_chain_argument_list(ArgumentList *list, Expression *expr);

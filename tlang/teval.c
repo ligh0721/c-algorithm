@@ -3,6 +3,7 @@
 //
 
 #include <math.h>
+#include "tinterpreter.h"
 #include "teval.h"
 #include "terror.h"
 #include "tstack.h"
@@ -68,7 +69,7 @@ static CRB_Value* search_global_variable_from_env(CRB_Interpreter *inter, CRB_Lo
  */
 static void eval_identifier_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     // 查找当前作用域内局部变量
-    CRB_Value* vp = CRB_search_local_variable(env, expr->u.identifier);
+    CRB_Value* vp = CRB_search_local_variable(env, expr->u.identifier, NULL);
     if (vp != NULL) {
         push_value(inter, vp);
         return;
@@ -276,6 +277,7 @@ void chain_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_nu
     CRB_Object* right_obj = crb_create_crowbar_string_i(inter, right_str);
 
     result->type = CRB_STRING_VALUE;
+//    int len = wstring_len(left->u.object->u.string.string) + wstring_len(right_obj->u.string.string);
     int len = CRB_wcslen(left->u.object->u.string.string) + CRB_wcslen(right_obj->u.string.string);
     CRB_Char* str = MEM_malloc(sizeof(CRB_Char) * (len + 1));
     CRB_wcscpy(str, left->u.object->u.string.string);
@@ -385,10 +387,13 @@ static CRB_Value* get_array_element_lvalue(CRB_Interpreter *inter, CRB_LocalEnvi
         crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_INT_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
 
-    if (index.u.int_value < 0 || index.u.int_value >= array.u.object->u.array.size) {
-        crb_runtime_error(inter, env, expr->line_number, ARRAY_INDEX_OUT_OF_BOUNDS_ERR, CRB_INT_MESSAGE_ARGUMENT, "size", array.u.object->u.array.size, CRB_INT_MESSAGE_ARGUMENT, "index", index.u.int_value, CRB_MESSAGE_ARGUMENT_END);
+    CRB_Value_ARRAY* arr = array.u.object->u.array.array;
+    long len = CRB_Value_array_len(arr);
+    CRB_Value* data = CRB_Value_array_data(arr);
+    if (index.u.int_value < 0 || index.u.int_value >= len) {
+        crb_runtime_error(inter, env, expr->line_number, ARRAY_INDEX_OUT_OF_BOUNDS_ERR, CRB_INT_MESSAGE_ARGUMENT, "size", len, CRB_INT_MESSAGE_ARGUMENT, "index", index.u.int_value, CRB_MESSAGE_ARGUMENT_END);
     }
-    return &array.u.object->u.array.array[index.u.int_value];
+    return data + index.u.int_value;
 }
 /*
  * 获取关联数组成员左值

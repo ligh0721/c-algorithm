@@ -19,7 +19,7 @@ VALUE int_value(long value);
 VALUE float_value(double value);
 VALUE ptr_value(void* value);
 
-extern const VALUE NULL_VALUE;
+extern const VALUE VALUE_EMPTY;
 
 #define NEW(TYPE) ((TYPE*)malloc(sizeof(TYPE)))
 #define NEW0(size) (malloc(size))
@@ -44,7 +44,7 @@ int desc_order_str(VALUE a, VALUE b);
 
 typedef void (*PRINT_VALUE)(VALUE value);
 
-typedef int (*TRAVERSE)(VALUE value, void* param);
+typedef int (*TRAVERSE)(const VALUE* value, void* param);
 
 typedef void* (*ALLOC)(size_t size);
 typedef void (*FREE)(void* p);

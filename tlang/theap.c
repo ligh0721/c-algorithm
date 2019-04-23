@@ -4,8 +4,8 @@
 
 #include <wchar.h>
 #include <string.h>
-#include "theap.h"
 #include "tinterpreter.h"
+#include "theap.h"
 
 
 static void check_gc(CRB_Interpreter *inter) {
@@ -74,37 +74,41 @@ CRB_Object* crb_create_native_pointer_i(CRB_Interpreter *inter, void *pointer, C
 }
 
 // assoc object
-CRB_Value* CRB_add_assoc_member(CRB_Interpreter *inter, CRB_Object *assoc, char *name, CRB_Value *value, CRB_Boolean is_final) {
+CRB_Value* CRB_add_assoc_member(CRB_Interpreter *inter, CRB_Object *assoc, const char *name, CRB_Value *value, CRB_Boolean is_final) {
     check_gc(inter);
-    AssocMember* member = (AssocMember*)MEM_malloc(sizeof(AssocMember));
-    member->name = name;
-    member->value = *value;
-    member->is_final = is_final;
-    rbtree_set(assoc->u.assoc.members, ptr_value(member));
+    AssocMember_RBTREE* tr = assoc->u.assoc.members;
+    AssocMember key = {name, *value, is_final};
+    AssocMember_RBNODE* parent;
+    AssocMember_RBNODE** where = AssocMember_rbtree_fast_get(tr, key, &parent);
+    if (!AssocMember_rbtree_node_not_found(tr, where)) {
+        AssocMember* value_entry = AssocMember_rbtree_fast_value(tr, where);
+        *value_entry = key;
+        return &value_entry->value;
+    }
+    AssocMember_RBNODE* node = AssocMember_rbtree_open_node(tr, key, parent);
+    AssocMember_rbtree_fast_set(tr, where, node);
     inter->heap.current_heap_size += sizeof(AssocMember);
-    return &member->value;
-    AssocMember* member_p = MEM_realloc(assoc->u.assoc.members, sizeof(AssocMember) * (assoc->u.assoc.member_count+1));
-    member_p[assoc->u.assoc.member_count].name = name;
-    member_p[assoc->u.assoc.member_count].value = *value;
-    member_p[assoc->u.assoc.member_count].is_final = is_final;
-    assoc->u.assoc.member = member_p;
-    assoc->u.assoc.member_count++;
-    inter->heap.current_heap_size += sizeof(AssocMember);
-    return &member_p[assoc->u.assoc.member_count-1].value;
+    AssocMember* value_entry = AssocMember_rbtree_fast_value(tr, where);
+    return &value_entry->value;
+//    AssocMember* member_p = MEM_realloc(assoc->u.assoc.members, sizeof(AssocMember) * (assoc->u.assoc.member_count+1));
+//    member_p[assoc->u.assoc.member_count].name = name;
+//    member_p[assoc->u.assoc.member_count].value = *value;
+//    member_p[assoc->u.assoc.member_count].is_final = is_final;
+//    assoc->u.assoc.member = member_p;
+//    assoc->u.assoc.member_count++;
+//    inter->heap.current_heap_size += sizeof(AssocMember);
+//    return &member_p[assoc->u.assoc.member_count-1].value;
 }
 
 CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, CRB_Boolean* is_final) {
-    NamedItemEntry key = {member_name};
-    int ok;
-    VALUE res = rbtree_get(assoc->u.assoc.members, ptr_value(&key), &ok);
-    if (ok) {
-        AssocMember* member = (AssocMember*)res.ptr_value;
-        if (is_final) {
-            *is_final = member->is_final;
-        }
-        return &member->value;
+    AssocMember_RBTREE* tr = assoc->u.assoc.members;
+    AssocMember key = {member_name};
+    AssocMember_RBNODE** where = AssocMember_rbtree_fast_get(tr, key, NULL);
+    if (AssocMember_rbtree_node_not_found(tr, where)) {
+        return NULL;
     }
-    return NULL;
+    AssocMember* value_entry = AssocMember_rbtree_fast_value(tr, where);
+    return &value_entry->value;
 //    if (assoc->u.assoc.member_count == 0) {
 //        return NULL;
 //    }
@@ -124,6 +128,11 @@ CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, C
 // gc
 static void gc_mark_value(CRB_Value *v);
 
+static int _gc_mark_every_assoc_member(const AssocMember *value, void *param) {
+    gc_mark_value(&((AssocMember*)value)->value);
+    return 0;
+}
+
 static void gc_mark(CRB_Object *obj) {
     if (obj == NULL)
         return;
@@ -134,18 +143,21 @@ static void gc_mark(CRB_Object *obj) {
     obj->marked = CRB_TRUE;
 
     if (obj->type == ARRAY_OBJECT) {
-        long len = array_len(obj->u.array.array);
-        VALUE* data = array_data(obj->u.array.array);
+        CRB_Value_ARRAY* arr = obj->u.array.array;
+        long len = CRB_Value_array_len(arr);
+        CRB_Value* data = CRB_Value_array_data(arr);
         for (long i=0; i<len; ++i) {
-            gc_mark_value(&data)
+            gc_mark_value(data++);
         }
 //        for (int i = 0; i < obj->u.array.size; i++) {
 //            gc_mark_value(&obj->u.array.array[i]);
 //        }
     } else if (obj->type == ASSOC_OBJECT) {
-        for (int i = 0; i < obj->u.assoc.member_count; i++) {
-            gc_mark_value(&obj->u.assoc.member[i].value);
-        }
+        AssocMember_RBTREE* tr = obj->u.assoc.members;
+        AssocMember_rbtree_ldr(tr, _gc_mark_every_assoc_member, NULL);
+//        for (int i = 0; i < obj->u.assoc.member_count; i++) {
+//            gc_mark_value(&obj->u.assoc.member[i].value);
+//        }
     } else if (obj->type == SCOPE_CHAIN_OBJECT) {
         gc_mark(obj->u.scope_chain.frame);
         gc_mark(obj->u.scope_chain.next);
@@ -174,8 +186,8 @@ static void gc_mark_ref_in_native_method(CRB_LocalEnvironment *env) {
     }
 }
 
-static int _every_variable_gc_mark_value(VALUE value, void *param) {
-    Variable* v = (Variable*)value.ptr_value;
+static int _every_variable_gc_mark_value(const VALUE* value, void *param) {
+    Variable* v = (Variable*)value->ptr_value;
     gc_mark_value(&v->value);
     return 0;
 }
@@ -207,7 +219,7 @@ static void gc_mark_objects(CRB_Interpreter *inter) {
 static void gc_dispose_object(CRB_Interpreter *inter, CRB_Object *obj) {
     switch (obj->type) {
         case ARRAY_OBJECT:
-            inter->heap.current_heap_size -= sizeof(CRB_Value) * obj->u.array.alloc_size;
+            inter->heap.current_heap_size -= sizeof(CRB_Value) * CRB_Value_array_cap(obj->u.array.array);
             MEM_free(obj->u.array.array);
             break;
         case STRING_OBJECT:
@@ -217,8 +229,10 @@ static void gc_dispose_object(CRB_Interpreter *inter, CRB_Object *obj) {
             }
             break;
         case ASSOC_OBJECT:
-            inter->heap.current_heap_size -= sizeof(AssocMember) * obj->u.assoc.member_count;
-            MEM_free(obj->u.assoc.member);
+            inter->heap.current_heap_size -= sizeof(AssocMember) * AssocMember_rbtree_len(obj->u.assoc.members);
+            close_AssocMember_rbtree(obj->u.assoc.members);
+            obj->u.assoc.members = NULL;
+//            MEM_free(obj->u.assoc.member);
             break;
         case SCOPE_CHAIN_OBJECT:
             break;

@@ -29,8 +29,8 @@ struct item_node {
 
 static LLIST* g_item_list;
 
-static int close_every_item(VALUE value, void* param) {
-    DELETE(value.ptr_value);
+static int close_every_item(const VALUE* value, void* param) {
+    DELETE(value->ptr_value);
     return 0;
 }
 
@@ -296,8 +296,8 @@ void deque_test() {
     printf("\n");
 }
 
-int traverse(VALUE value, void* param) {
-    printf("%ld ", value.int_value);
+int traverse(const VALUE* value, void* param) {
+    printf("%ld ", value->int_value);
     return 0;
 }
 
@@ -442,7 +442,7 @@ typedef int int_VALUE;
 #include "algorithm_tpl.h"
 #include "rbtree_tpl.h"
 #include "array_tpl.h"
-NULL_VALUE_DEF(int, 0)
+VALUE_EMPTY_DEF(int, 0)
 COMPARE_DEF(int)
 TRAVERSE_DEF(int)
 RBTREE_DECL(int)

@@ -5,12 +5,11 @@
 #ifndef TLANG_TINTERPRETER_H
 #define TLANG_TINTERPRETER_H
 
-#include <rbtree.h>
 #include <link.h>
-#include <array.h>
+#include <rbtree.h>
 #include <wstring.h>
 #include <setjmp.h>
-#include "tlang.h"
+#include "tobject.h"
 
 #define smaller(a, b) ((a) < (b) ? (a) : (b))
 #define larger(a, b) ((a) > (b) ? (a) : (b))
@@ -51,7 +50,7 @@ typedef struct {
 
 // object
 struct CRB_Array_tag {
-    ARRAY* array;  //  ARRAY<CRB_Value>
+    CRB_Value_ARRAY* array;  //  ARRAY<CRB_Value>
 //    int         size;
 //    int         alloc_size;
 //    CRB_Value   *array;
@@ -59,18 +58,18 @@ struct CRB_Array_tag {
 
 struct CRB_String_tag {
     CRB_Boolean is_literal;
-    WSTRING* string;
-//    CRB_Char    *string;
+//    WSTRING* string;
+    CRB_Char    *string;
 };
 
-typedef struct {
-    char        *name;
+struct AssocMember_tag {
+    const char        *name;
     CRB_Value   value;
     CRB_Boolean is_final;
-} AssocMember;
+};
 
 struct CRB_Assoc_tag {
-    RBTREE* members;  // RBTREE<AssocMember*>
+    AssocMember_RBTREE* members;  // RBTREE<AssocMember>
 //    int         member_count;
 //    AssocMember *member;
 };
@@ -463,7 +462,7 @@ typedef enum {
 //    Variable    *variable;
 //    struct GlobalVariableRef_tag *next;
 //} GlobalVariableRef;
-typedef RBTREE GlobalVariableRef;
+typedef RBTREE GlobalVariableRef;  // RBTREE<Variable*>
 
 typedef struct RefInNativeFunc_tag {
     CRB_Object  *object;

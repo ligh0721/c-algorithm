@@ -5,7 +5,6 @@
 #ifndef TLANG_TSTACK_H
 #define TLANG_TSTACK_H
 
-#include "tinterpreter.h"
 
 void push_value(CRB_Interpreter *inter, CRB_Value *value);
 CRB_Value pop_value(CRB_Interpreter *inter);

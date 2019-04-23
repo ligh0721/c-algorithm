@@ -5,13 +5,13 @@
 #ifndef ALGORITHM_ALGORITHM_TPL_H
 #define ALGORITHM_ALGORITHM_TPL_H
 
-#define NULL_VALUE_DEF(ValueType, value) \
-const ValueType##_VALUE ValueType##_NULL_VALUE = value;
+#define VALUE_EMPTY_DEF(ValueType, value) \
+const ValueType ValueType##_EMPTY = value;
 
 #define COMPARE_DEF(ValueType) \
-typedef int (*ValueType##_COMPARE)(ValueType##_VALUE, ValueType##_VALUE);
+typedef int (*ValueType##_COMPARE)(ValueType, ValueType);
 
 #define TRAVERSE_DEF(ValueType) \
-typedef int (*ValueType##_TRAVERSE)(ValueType##_VALUE value, void* param);
+typedef int (*ValueType##_TRAVERSE)(const ValueType* value, void* param);
 
 #endif //ALGORITHM_ALGORITHM_TPL_H

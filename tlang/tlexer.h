@@ -5,8 +5,6 @@
 #ifndef TLANG_TLEXER_H
 #define TLANG_TLEXER_H
 
-#include "tinterpreter.h"
-
 
 // string
 char* crb_create_identifier(char *str);

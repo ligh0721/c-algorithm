@@ -5,7 +5,6 @@
 #ifndef TLANG_THEAP_H
 #define TLANG_THEAP_H
 
-#include "tinterpreter.h"
 
 // string object
 CRB_Object* crb_literal_to_crb_string_i(CRB_Interpreter *inter, CRB_Char *str);

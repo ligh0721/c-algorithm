@@ -5,8 +5,6 @@
 #ifndef TLANG_TMISC_H
 #define TLANG_TMISC_H
 
-#include "tinterpreter.h"
-
 
 void* crb_malloc(size_t size);
 

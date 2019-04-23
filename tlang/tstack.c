@@ -2,6 +2,7 @@
 // Created by t5w0rd on 19-4-20.
 //
 
+#include "tinterpreter.h"
 #include "tstack.h"
 
 

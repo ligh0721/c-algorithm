@@ -27,7 +27,7 @@ void CRB_dispose_interpreter(CRB_Interpreter* interpreter);
 
 
 // development
-typedef wchar_t CRB_Char;  // TODO: use wchar_t
+typedef wchar_t CRB_Char;
 
 typedef enum {
     CRB_FALSE = 0,
@@ -52,7 +52,7 @@ typedef struct CRB_Object_tag CRB_Object;
 typedef struct CRB_Array_tag CRB_Array;
 typedef struct CRB_String_tag CRB_String;
 typedef struct CRB_Assoc_tag CRB_Assoc;
-typedef LLIST CRB_ParameterList;
+typedef LLIST CRB_ParameterList;  // LLIST<char*>
 typedef struct CRB_Block_tag CRB_Block;
 typedef struct CRB_FunctionDefinition_tag CRB_FunctionDefinition;
 typedef struct CRB_LocalEnvironment_tag CRB_LocalEnvironment;
@@ -106,7 +106,6 @@ struct CRB_FunctionDefinition_tag {
 
 CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, char *name, CRB_NativeFunctionProc *proc);
 
-
 typedef void CRB_NativePointerFinalizeProc(CRB_Interpreter *inter, CRB_Object *obj);  // TODO: *
 typedef struct {
     char                                *name;
@@ -131,7 +130,7 @@ typedef struct {
 // theap
 CRB_Object* CRB_create_crowbar_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Char *str);
 
-CRB_Value* CRB_add_assoc_member(CRB_Interpreter *inter, CRB_Object *assoc, char *name, CRB_Value *value, CRB_Boolean is_final);
+CRB_Value* CRB_add_assoc_member(CRB_Interpreter *inter, CRB_Object *assoc, const char *name, CRB_Value *value, CRB_Boolean is_final);
 CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, CRB_Boolean* is_final);
 
 // teval
@@ -156,7 +155,7 @@ void CRB_wcstombs(const CRB_Char *src, char *dest);
 char CRB_wctochar(CRB_Char src);
 int CRB_print_wcs(FILE *fp, CRB_Char *str);
 int CRB_print_wcs_ln(FILE *fp, CRB_Char *str);
-CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *value);
+CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const CRB_Value *value);
 
 
 

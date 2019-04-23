@@ -127,7 +127,7 @@ VALUE deque_pop_front(DEQUE* dq, int* empty) {
         if (empty != NULL) {
             *empty = 1;
         }
-        return NULL_VALUE;
+        return VALUE_EMPTY;
     }
     VALUE ret = array_get(dq->data, dq->front);
     long cap = array_cap(dq->data);
@@ -145,7 +145,7 @@ VALUE deque_pop_front(DEQUE* dq, int* empty) {
 VALUE deque_front(DEQUE* dq) {
     assert(dq != NULL);
     if (dq->front == -1) {
-        return NULL_VALUE;
+        return VALUE_EMPTY;
     }
     return array_get(dq->data, dq->front);
 }
@@ -175,7 +175,7 @@ VALUE deque_pop_back(DEQUE* dq, int* empty) {
         if (empty != NULL) {
             *empty = 1;
         }
-        return NULL_VALUE;
+        return VALUE_EMPTY;
     }
     VALUE ret = array_get(dq->data, dq->back);
     if (dq->front == dq->back) {
@@ -192,7 +192,7 @@ VALUE deque_pop_back(DEQUE* dq, int* empty) {
 VALUE deque_back(DEQUE* dq) {
     assert(dq != NULL);
     if (dq->back == -1) {
-        return NULL_VALUE;
+        return VALUE_EMPTY;
     }
     return array_get(dq->data, dq->back);
 }

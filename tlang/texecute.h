@@ -5,8 +5,6 @@
 #ifndef TLANG_TEXECUTE_H
 #define TLANG_TEXECUTE_H
 
-#include "tinterpreter.h"
-
 
 StatementResult crb_execute_statement_list(CRB_Interpreter *inter, CRB_LocalEnvironment *env, StatementList *list);
 

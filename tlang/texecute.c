@@ -2,6 +2,7 @@
 // Created by t5w0rd on 19-4-20.
 //
 
+#include "tinterpreter.h"
 #include "texecute.h"
 #include "terror.h"
 #include "tmisc.h"
@@ -31,8 +32,6 @@ static StatementResult execute_global_statement(CRB_Interpreter *inter, CRB_Loca
         char* identifier_name = (char*)node->value.ptr_value;
         NamedItemEntry key = {identifier_name};
         GlobalVariableRef* global_ref = env->global_variable;
-//        int ok;
-//        rbtree_get(env->global_variable, ptr_value(&key), &ok);
         RBNODE* parent;
         RBNODE** where = rbtree_fast_get(global_ref, ptr_value(&key), &parent);
         if (!rbtree_node_not_found(global_ref, where)) {
@@ -102,9 +101,9 @@ struct execute_params {
     StatementResult *res;
 };
 
-static int execute_every_statement(VALUE value, void* param) {
+static int _execute_every_statement(const VALUE *value, void *param) {
     struct execute_params* params = (struct execute_params*)param;
-    *(params->res) = execute_statement(params->inter, params->env, (Statement*)value.ptr_value);
+    *(params->res) = execute_statement(params->inter, params->env, (Statement*)value->ptr_value);
     if (params->res->type != NORMAL_STATEMENT_RESULT) {
         return 1;
     }
@@ -115,6 +114,6 @@ StatementResult crb_execute_statement_list(CRB_Interpreter *inter, CRB_LocalEnvi
     StatementResult ret;
     ret.type = NORMAL_STATEMENT_RESULT;
     struct execute_params params = {inter, env, &ret};
-    llist_traversal(list, execute_every_statement, &params);
+    llist_traversal(list, _execute_every_statement, &params);
     return ret;
 }

@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <assert.h>
+#include "tinterpreter.h"
 #include "tmisc.h"
 #include "terror.h"
 #include "tstack.h"

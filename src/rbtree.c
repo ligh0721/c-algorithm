@@ -87,7 +87,7 @@ static inline void delete(RBTREE* tr, void* p) {
 RBTREE* open_rbtree(COMPARE compare) {
     struct rbtree* ret = NEW(struct rbtree);
     assert(ret != NULL);
-    ret->leaf.value = NULL_VALUE;
+    ret->leaf.value = VALUE_EMPTY;
     ret->leaf.parent_and_color = RB_BLACK;
     ret->leaf.left = ret->leaf.right = NULL;
     ret->root = &ret->leaf;
@@ -101,7 +101,7 @@ RBTREE* open_rbtree_with_allocator(COMPARE compare, ALLOCATOR allocator) {
     assert(allocator.alloc != NULL);
     struct rbtree* ret = (struct rbtree*)allocator.alloc(sizeof(struct rbtree));
     assert(ret != NULL);
-    ret->leaf.value = NULL_VALUE;
+    ret->leaf.value = VALUE_EMPTY;
     ret->leaf.parent_and_color = RB_BLACK;
     ret->leaf.left = ret->leaf.right = NULL;
     ret->root = &ret->leaf;
@@ -166,6 +166,10 @@ inline RBNODE* rbtree_open_node(RBTREE* tr, VALUE value, RBNODE* parent) {
 
 inline void rbtree_close_node(RBTREE* tr, RBNODE* node) {
     delete(tr, node);
+}
+
+inline VALUE* rbtree_fast_value(RBTREE* tr, RBNODE** where) {
+    return &(*where)->value;
 }
 
 static inline void rbtree_left_rotate(RBTREE* tr, struct rbnode* node) {
@@ -460,7 +464,7 @@ VALUE rbtree_get(RBTREE* tr, VALUE key, int* ok) {
         if (ok) {
             *ok = 0;
         }
-        return NULL_VALUE;
+        return VALUE_EMPTY;
     }
     if (ok) {
         *ok = 1;
@@ -488,7 +492,7 @@ VALUE rbtree_pop(RBTREE* tr, VALUE key, int* ok) {
         if (ok) {
             *ok = 0;
         }
-        return NULL_VALUE;
+        return VALUE_EMPTY;
     }
     if (ok) {
         *ok = 1;
@@ -513,7 +517,7 @@ void rbtree_ldr(RBTREE* tr, TRAVERSE traverse, void* param) {
         }
         do {
             top = (struct rbnode*)stack_pop(st, NULL).ptr_value;
-            if (traverse(top->value, param)) {
+            if (traverse(&top->value, param)) {
                 close_stack(st);
                 return;
             }

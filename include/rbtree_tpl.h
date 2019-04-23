@@ -7,9 +7,11 @@
 
 #include <assert.h>
 #include <math.h>
+#include "stack.h"
 
-#define RB_RED      0
-#define RB_BLACK    1
+
+#define TPL_RB_RED      0
+#define TPL_RB_BLACK    1
 
 #define RBTREE_DECL(ValueType) \
 typedef struct ValueType##_rbtree ValueType##_RBTREE;\
@@ -20,23 +22,24 @@ void close_##ValueType##_rbtree(ValueType##_RBTREE* tr);\
 long ValueType##_rbtree_len(ValueType##_RBTREE* tr);\
 void ValueType##_rbtree_clear(ValueType##_RBTREE* tr);\
 \
-ValueType##_VALUE ValueType##_rbtree_get(ValueType##_RBTREE* tr, ValueType##_VALUE key, int* ok);\
-void ValueType##_rbtree_set(ValueType##_RBTREE *tr, ValueType##_VALUE value);\
-ValueType##_VALUE ValueType##_rbtree_pop(ValueType##_RBTREE* tr, ValueType##_VALUE key, int* ok);\
+ValueType ValueType##_rbtree_get(ValueType##_RBTREE* tr, ValueType key, int* ok);\
+void ValueType##_rbtree_set(ValueType##_RBTREE *tr, ValueType value);\
+ValueType ValueType##_rbtree_pop(ValueType##_RBTREE* tr, ValueType key, int* ok);\
 \
 void ValueType##_rbtree_ldr(ValueType##_RBTREE* tr, ValueType##_TRAVERSE traverse, void* param);\
 \
 typedef struct ValueType##_rbnode ValueType##_RBNODE;\
-ValueType##_RBNODE* ValueType##_rbtree_open_node(ValueType##_RBTREE* tr, ValueType##_VALUE value, ValueType##_RBNODE* parent);\
+ValueType##_RBNODE* ValueType##_rbtree_open_node(ValueType##_RBTREE* tr, ValueType value, ValueType##_RBNODE* parent);\
 void ValueType##_rbtree_close_node(ValueType##_RBTREE* tr, ValueType##_RBNODE* node);\
-ValueType##_RBNODE** ValueType##_rbtree_fast_get(ValueType##_RBTREE *tr, ValueType##_VALUE key, ValueType##_RBNODE** parent);\
+ValueType* ValueType##_rbtree_fast_value(ValueType##_RBTREE* tr, ValueType##_RBNODE** where);\
+ValueType##_RBNODE** ValueType##_rbtree_fast_get(ValueType##_RBTREE *tr, ValueType key, ValueType##_RBNODE** parent);\
 void ValueType##_rbtree_fast_set(ValueType##_RBTREE *tr, ValueType##_RBNODE** where, ValueType##_RBNODE* node);\
-ValueType##_VALUE ValueType##_rbtree_fast_pop(ValueType##_RBTREE *tr, ValueType##_RBNODE *node);\
+ValueType ValueType##_rbtree_fast_pop(ValueType##_RBTREE *tr, ValueType##_RBNODE *node);\
 int ValueType##_rbtree_node_not_found(ValueType##_RBTREE* tr, ValueType##_RBNODE** where);
 
 #define RBTREE_DEF(ValueType) \
 struct ValueType##_rbnode {\
-    ValueType##_VALUE value;\
+    ValueType value;\
     union {\
         unsigned long parent_and_color;\
         struct {\
@@ -99,8 +102,8 @@ static inline void delete(ValueType##_RBTREE* tr, void* p) {\
 ValueType##_RBTREE* open_##ValueType##_rbtree(ValueType##_COMPARE compare) {\
     struct ValueType##_rbtree* ret = NEW(struct ValueType##_rbtree);\
     assert(ret != NULL);\
-    ret->leaf.value = ValueType##_NULL_VALUE;\
-    ret->leaf.parent_and_color = RB_BLACK;\
+    ret->leaf.value = ValueType##_EMPTY;\
+    ret->leaf.parent_and_color = TPL_RB_BLACK;\
     ret->leaf.left = ret->leaf.right = NULL;\
     ret->root = &ret->leaf;\
     ret->compare = compare;\
@@ -113,8 +116,8 @@ ValueType##_RBTREE* open_##ValueType##_rbtree_with_allocator(ValueType##_COMPARE
     assert(allocator.alloc != NULL);\
     struct ValueType##_rbtree* ret = (struct ValueType##_rbtree*)allocator.alloc(sizeof(struct ValueType##_rbtree));\
     assert(ret != NULL);\
-    ret->leaf.value = ValueType##_NULL_VALUE;\
-    ret->leaf.parent_and_color = RB_BLACK;\
+    ret->leaf.value = ValueType##_EMPTY;\
+    ret->leaf.parent_and_color = TPL_RB_BLACK;\
     ret->leaf.left = ret->leaf.right = NULL;\
     ret->root = &ret->leaf;\
     ret->compare = compare;\
@@ -167,7 +170,7 @@ void ValueType##_rbtree_clear(ValueType##_RBTREE* tr) {\
     tr->length = 0;\
 }\
 \
-inline ValueType##_RBNODE* ValueType##_rbtree_open_node(ValueType##_RBTREE* tr, ValueType##_VALUE value, ValueType##_RBNODE* parent) {\
+inline ValueType##_RBNODE* ValueType##_rbtree_open_node(ValueType##_RBTREE* tr, ValueType value, ValueType##_RBNODE* parent) {\
     struct ValueType##_rbnode* ret = (struct ValueType##_rbnode*)new(tr, sizeof(struct ValueType##_rbnode));\
     ret->value = value;\
     ret->parent_and_color = (unsigned long)parent;\
@@ -177,6 +180,10 @@ inline ValueType##_RBNODE* ValueType##_rbtree_open_node(ValueType##_RBTREE* tr, 
 \
 inline void ValueType##_rbtree_close_node(ValueType##_RBTREE* tr, ValueType##_RBNODE* node) {\
     delete(tr, node);\
+}\
+\
+inline ValueType* ValueType##_rbtree_fast_value(ValueType##_RBTREE* tr, ValueType##_RBNODE** where) {\
+    return &(*where)->value;\
 }\
 \
 static inline void ValueType##_rbtree_left_rotate(ValueType##_RBTREE* tr, struct ValueType##_rbnode* node) {\
@@ -226,7 +233,7 @@ static inline void ValueType##_rbtree_right_rotate(ValueType##_RBTREE* tr, struc
  *  if *ret == leaf, not found (ret == &root)\
  *  else found\
  */\
-inline ValueType##_RBNODE** ValueType##_rbtree_fast_get(ValueType##_RBTREE *tr, const ValueType##_VALUE key, ValueType##_RBNODE** parent) {\
+inline ValueType##_RBNODE** ValueType##_rbtree_fast_get(ValueType##_RBTREE *tr, const ValueType key, ValueType##_RBNODE** parent) {\
     struct ValueType##_rbnode** ret = &tr->root;\
     struct ValueType##_rbnode* leaf = &tr->leaf;\
     if (*ret == leaf) {\
@@ -306,10 +313,10 @@ void ValueType##_rbtree_fast_set(ValueType##_RBTREE *tr, ValueType##_RBNODE** wh
     ValueType##_rbnode_set_black(tr->root);\
 }\
 \
-ValueType##_VALUE ValueType##_rbtree_fast_pop(ValueType##_RBTREE *tr, ValueType##_RBNODE *node) {\
+ValueType ValueType##_rbtree_fast_pop(ValueType##_RBTREE *tr, ValueType##_RBNODE *node) {\
     assert(tr != NULL);\
     assert(node != NULL);\
-    ValueType##_VALUE ret = node->value;\
+    ValueType ret = node->value;\
     struct ValueType##_rbnode* leaf = &tr->leaf;\
     struct ValueType##_rbnode* temp;\
     struct ValueType##_rbnode* subst;\
@@ -451,13 +458,13 @@ int ValueType##_rbtree_node_not_found(ValueType##_RBTREE* tr, ValueType##_RBNODE
     return *where == &tr->leaf;\
 }\
 \
-ValueType##_VALUE ValueType##_rbtree_get(ValueType##_RBTREE* tr, const ValueType##_VALUE key, int* ok) {\
+ValueType ValueType##_rbtree_get(ValueType##_RBTREE* tr, const ValueType key, int* ok) {\
     ValueType##_RBNODE* where = *ValueType##_rbtree_fast_get(tr, key, NULL);\
     if (where == &tr->leaf) {\
         if (ok) {\
             *ok = 0;\
         }\
-        return ValueType##_NULL_VALUE;\
+        return ValueType##_EMPTY;\
     }\
     if (ok) {\
         *ok = 1;\
@@ -465,7 +472,7 @@ ValueType##_VALUE ValueType##_rbtree_get(ValueType##_RBTREE* tr, const ValueType
     return where->value;\
 }\
 \
-void ValueType##_rbtree_set(ValueType##_RBTREE *tr, ValueType##_VALUE value) {\
+void ValueType##_rbtree_set(ValueType##_RBTREE *tr, ValueType value) {\
     assert(tr != NULL);\
     ValueType##_RBNODE* parent;\
     ValueType##_RBNODE** where = ValueType##_rbtree_fast_get(tr, value, &parent);\
@@ -477,19 +484,19 @@ void ValueType##_rbtree_set(ValueType##_RBTREE *tr, ValueType##_VALUE value) {\
     ValueType##_rbtree_fast_set(tr, where, node);\
 }\
 \
-ValueType##_VALUE ValueType##_rbtree_pop(ValueType##_RBTREE* tr, const ValueType##_VALUE key, int* ok) {\
+ValueType ValueType##_rbtree_pop(ValueType##_RBTREE* tr, const ValueType key, int* ok) {\
     assert(tr != NULL);\
     ValueType##_RBNODE* search = *ValueType##_rbtree_fast_get(tr, key, NULL);\
     if (search == NULL || search == &tr->leaf) {\
         if (ok) {\
             *ok = 0;\
         }\
-        return ValueType##_NULL_VALUE;\
+        return ValueType##_EMPTY;\
     }\
     if (ok) {\
         *ok = 1;\
     }\
-    ValueType##_VALUE ret = ValueType##_rbtree_fast_pop(tr, search);\
+    ValueType ret = ValueType##_rbtree_fast_pop(tr, search);\
     ValueType##_rbtree_close_node(tr, search);\
     return ret;\
 }\
@@ -509,7 +516,7 @@ void ValueType##_rbtree_ldr(ValueType##_RBTREE* tr, ValueType##_TRAVERSE travers
         }\
         do {\
             top = (struct ValueType##_rbnode*)stack_pop(st, NULL).ptr_value;\
-            if (traverse(top->value, param)) {\
+            if (traverse(&top->value, param)) {\
                 close_stack(st);\
                 return;\
             }\

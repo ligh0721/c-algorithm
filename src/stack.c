@@ -43,7 +43,7 @@ VALUE stack_pop(STACK* st, int* empty) {
         if (empty != NULL) {
             *empty = 1;
         }
-        return NULL_VALUE;
+        return VALUE_EMPTY;
     }
     return slice_pop(st->data, slice_len(st->data) - 1);
 }
@@ -52,7 +52,7 @@ VALUE stack_top(STACK* st) {
     assert(st != NULL);
     long len = slice_len(st->data);
     if (len == 0) {
-        return NULL_VALUE;
+        return VALUE_EMPTY;
     }
     return slice_get(st->data, len-1);
 }
