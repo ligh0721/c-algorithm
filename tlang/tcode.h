@@ -45,4 +45,8 @@ StatementList* crb_chain_statement_list(StatementList *list, Statement *statemen
 
 CRB_Block* crb_create_block(StatementList *statement_list);
 
+Statement* crb_create_if_statement(Expression *condition, CRB_Block *then_block, Elsif *elsif_list, CRB_Block *else_block);
+Elsif* crb_create_elsif(Expression *expr, CRB_Block *block);
+Elsif* crb_chain_elsif_list(Elsif *list, Elsif *add);
+
 #endif //TLANG_TCODE_H

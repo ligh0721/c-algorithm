@@ -12,12 +12,12 @@
 #include "tlang.h"
 
 
-COMPARE_DEF(CRB_Value)
-TRAVERSE_DEF(CRB_Value)
-ARRAY_DECL(CRB_Value)
+COMPARE_DEFINE(CRB_Value)
+TRAVERSE_DEFINE(CRB_Value)
+ARRAY_DECLARE(CRB_Value)
 
-COMPARE_DEF(AssocMember)
-TRAVERSE_DEF(AssocMember)
-RBTREE_DECL(AssocMember)
+COMPARE_DEFINE(AssocMember)
+TRAVERSE_DEFINE(AssocMember)
+RBTREE_DECLARE(AssocMember)
 
 #endif //TLANG_TOBJECT_H

@@ -30,7 +30,7 @@ static inline void delete(LLIST* lst, void* p) {
 LLIST* open_llist() {
     struct llist* ret = NEW(struct llist);
     assert(ret != NULL);
-    ret->head.value = VALUE_EMPTY;
+    ret->head.value = EMPTY_VALUE;
     ret->head.next = NULL;
     ret->tail = &ret->head;
     ret->length = 0;
@@ -42,7 +42,7 @@ LLIST* open_llist_with_allocator(ALLOCATOR allocator) {
     assert(allocator.alloc != NULL);
     struct llist* ret = (struct llist*)allocator.alloc(sizeof(struct llist));
     assert(ret != NULL);
-    ret->head.value = VALUE_EMPTY;
+    ret->head.value = EMPTY_VALUE;
     ret->head.next = NULL;
     ret->tail = &ret->head;
     ret->length = 0;
@@ -96,7 +96,7 @@ int llist_is_node_before_front(LLIST *lst, struct lnode *back) {
 void llist_traversal(LLIST* lst, TRAVERSE traverse, void* param) {
     assert(lst != NULL);
     for (struct lnode* node=lst->head.next; node!=NULL; node=node->next) {
-        if (traverse(&node->value, param)) {
+        if (traverse((const VALUE*)&node->value, param)) {
             break;
         }
     }
@@ -121,7 +121,7 @@ struct dllist {
 DLLIST* open_dllist() {
     struct dllist* ret = NEW(struct dllist);
     assert(ret != NULL);
-    ret->head.value = VALUE_EMPTY;
+    ret->head.value = EMPTY_VALUE;
     ret->head.prev = &ret->head;
     ret->head.next = NULL;
     ret->tail = &ret->head;

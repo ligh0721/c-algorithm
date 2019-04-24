@@ -110,7 +110,7 @@ void CRB_array_set(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object
 
 void CRB_set_function_definition(const char *name, CRB_NativeFunctionProc *proc, CRB_FunctionDefinition *fd) {
     fd->name = name;
-    fd->type = CRB_NATIVE_FUNCTION_DEFINITION;
+    fd->type = CRB_NATIVE_FUNCTION_DEFINE;
     fd->is_closure = CRB_TRUE;
     fd->u.native_f.proc = proc;
 }

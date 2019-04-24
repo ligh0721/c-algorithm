@@ -591,13 +591,13 @@ CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, i
     if (setjmp(inter->current_recovery_environment.environment) == 0) {
         if (func->type == CRB_CLOSURE_VALUE) {
             switch (func->u.closure.function->type) {
-                case CRB_CROWBAR_FUNCTION_DEFINITION:
+                case CRB_CROWBAR_FUNCTION_DEFINE:
                     ret = call_crowbar_function_from_native(inter, local_env, line_number, env, func, arg_count, args);
                     break;
-                case CRB_NATIVE_FUNCTION_DEFINITION:
+                case CRB_NATIVE_FUNCTION_DEFINE:
                     ret = call_native_function_from_native(inter, local_env, line_number, env, func, arg_count, args);
                     break;
-                case CRB_FUNCTION_DEFINITION_TYPE_COUNT_PLUS_1:
+                case CRB_FUNCTION_DEFINE_TYPE_COUNT_PLUS_1:
                 default:
                     DBG_assert(0, ("bad case..%d\n", func->u.closure.function->type));
             }
@@ -715,13 +715,13 @@ static void do_function_call(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
 
     DBG_assert(func->type == CRB_CLOSURE_VALUE, ("func->type..%d\n", func->type));
     switch (func->u.closure.function->type) {
-        case CRB_CROWBAR_FUNCTION_DEFINITION:
+        case CRB_CROWBAR_FUNCTION_DEFINE:
             call_crowbar_function(inter, env, caller_env, expr, func);
             break;
-        case CRB_NATIVE_FUNCTION_DEFINITION:
+        case CRB_NATIVE_FUNCTION_DEFINE:
             call_native_function(inter, env, caller_env, expr, func->u.closure.function->u.native_f.proc);
             break;
-        case CRB_FUNCTION_DEFINITION_TYPE_COUNT_PLUS_1:
+        case CRB_FUNCTION_DEFINE_TYPE_COUNT_PLUS_1:
         default:
             DBG_assert(0, ("bad case..%d\n", func->u.closure.function->type));
     }

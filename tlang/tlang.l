@@ -16,7 +16,7 @@
 <INITIAL>"func"     return FUNCTION;
 <INITIAL>"if"           return IF;
 <INITIAL>"else"         return ELSE;
-<INITIAL>"elsif"        return ELSIF;
+<INITIAL>"elif"        return ELIF;
 <INITIAL>"while"        return WHILE;
 <INITIAL>"for"          return FOR;
 <INITIAL>"foreach"      return FOREACH;

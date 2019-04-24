@@ -214,7 +214,7 @@ ExpressionList* crb_chain_expression_list(ExpressionList *list, Expression *expr
 static CRB_FunctionDefinition* create_function_definition(const char *identifier, CRB_ParameterList *parameter_list, CRB_Boolean is_closure, CRB_Block *block) {
     CRB_FunctionDefinition* f = crb_malloc(sizeof(CRB_FunctionDefinition));
     f->name = identifier;
-    f->type = CRB_CROWBAR_FUNCTION_DEFINITION;
+    f->type = CRB_CROWBAR_FUNCTION_DEFINE;
     f->is_closure = is_closure;
     f->u.crowbar_f.parameter = parameter_list;
     f->u.crowbar_f.block = block;
@@ -327,4 +327,28 @@ CRB_Block* crb_create_block(StatementList *statement_list) {
     CRB_Block* block = crb_malloc(sizeof(CRB_Block));
     block->statement_list = statement_list;
     return block;
+}
+
+Statement* crb_create_if_statement(Expression *condition, CRB_Block *then_block, Elsif *elsif_list, CRB_Block *else_block) {
+    Statement* st = alloc_statement(IF_STATEMENT);
+    st->u.if_s.condition = condition;
+    st->u.if_s.then_block = then_block;
+    st->u.if_s.elif_list = elsif_list;
+    st->u.if_s.else_block = else_block;
+    return st;
+}
+
+Elsif* crb_create_elsif(Expression *expr, CRB_Block *block) {
+    Elsif* ei = crb_malloc(sizeof(Elsif));
+    ei->condition = expr;
+    ei->block = block;
+    ei->next = NULL;
+    return ei;
+}
+
+Elsif* crb_chain_elsif_list(Elsif *list, Elsif *add) {
+    Elsif*pos;
+    for (pos = list; pos->next; pos = pos->next);
+    pos->next = add;
+    return list;
 }

@@ -6,7 +6,7 @@
 #include "tobject.h"
 
 
-VALUE_EMPTY_DEF(CRB_Value, {})
-VALUE_EMPTY_DEF(AssocMember, {})
-ARRAY_DEF(CRB_Value)
-RBTREE_DEF(AssocMember)
+EMPTY_VALUE_DEFINE(CRB_Value, {})
+EMPTY_VALUE_DEFINE(AssocMember, {})
+ARRAY_DEFINE(CRB_Value)
+RBTREE_DEFINE(AssocMember)

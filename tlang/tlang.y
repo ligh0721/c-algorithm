@@ -18,7 +18,7 @@ extern int yyerror(char const *str);
     Statement           *statement;
     StatementList       *statement_list;
     CRB_Block           *block;
-    Elsif               *elsif;
+    Elsif               *elif;
     AssignmentOperator  assignment_operator;
     IdentifierList      *identifier_list;
 }
@@ -26,7 +26,7 @@ extern int yyerror(char const *str);
 %token  <expression>     DOUBLE_LITERAL
 %token  <expression>     STRING_LITERAL
 %token  <identifier>     IDENTIFIER
-%token  FUNCTION IF ELSE ELSIF WHILE FOR FOREACH RETURN_T BREAK CONTINUE NULL_T
+%token  FUNCTION IF ELSE ELIF WHILE FOR FOREACH RETURN_T BREAK CONTINUE NULL_T
         LP RP LC RC LB RB SEMICOLON COLON COMMA ASSIGN_T LOGICAL_AND LOGICAL_OR
         EQ NE GT GE LT LE ADD SUB MUL DIV MOD TRUE_T FALSE_T EXCLAMATION DOT
         ADD_ASSIGN_T SUB_ASSIGN_T MUL_ASSIGN_T DIV_ASSIGN_T MOD_ASSIGN_T
@@ -46,7 +46,7 @@ extern int yyerror(char const *str);
         throw_statement
 %type   <statement_list> statement_list
 %type   <block> block
-%type   <elsif> elsif elsif_list
+%type   <elif> elif elif_list
 %type   <assignment_operator> assignment_operator
 %type   <identifier> identifier_opt label_opt
 %type   <identifier_list> identifier_list
@@ -385,28 +385,28 @@ if_statement
         {
 //            $$ = crb_create_if_statement($3, $5, NULL, $7);
         }
-        | IF LP expression RP block elsif_list
+        | IF LP expression RP block elif_list
         {
 //            $$ = crb_create_if_statement($3, $5, $6, NULL);
         }
-        | IF LP expression RP block elsif_list ELSE block
+        | IF LP expression RP block elif_list ELSE block
         {
 //            $$ = crb_create_if_statement($3, $5, $6, $8);
         }
         ;
 
-elsif_list
-        : elsif
-        | elsif_list elsif
+elif_list
+        : elif
+        | elif_list elif
         {
-//            $$ = crb_chain_elsif_list($1, $2);
+//            $$ = crb_chain_elif_list($1, $2);
         }
         ;
 
-elsif
-        : ELSIF LP expression RP block
+elif
+        : ELIF LP expression RP block
         {
-//            $$ = crb_create_elsif($3, $5);
+//            $$ = crb_create_elif($3, $5);
         }
         ;
 

@@ -12,7 +12,7 @@
 
 #define TPL_ARRAY_MAX_SIZE (LONG_MAX-16)
 
-#define ARRAY_DECL(ValueType) \
+#define ARRAY_DECLARE(ValueType) \
 typedef struct ValueType##_array ValueType##_ARRAY;\
 \
 ValueType##_ARRAY* open_##ValueType##_array(long cap);\
@@ -41,7 +41,7 @@ void ValueType##_slice_append(ValueType##_SLICE *sli, ValueType value);\
 void ValueType##_slice_push(ValueType##_SLICE *sli, long index, ValueType value);\
 ValueType ValueType##_slice_pop(ValueType##_SLICE *sli, long index);
 
-#define ARRAY_DEF(ValueType) \
+#define ARRAY_DEFINE(ValueType) \
 struct ValueType##_array {\
     long cap;\
     long ref;\

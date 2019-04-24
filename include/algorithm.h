@@ -19,7 +19,7 @@ VALUE int_value(long value);
 VALUE float_value(double value);
 VALUE ptr_value(void* value);
 
-extern const VALUE VALUE_EMPTY;
+extern const VALUE EMPTY_VALUE;
 
 #define NEW(TYPE) ((TYPE*)malloc(sizeof(TYPE)))
 #define NEW0(size) (malloc(size))

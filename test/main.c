@@ -440,13 +440,16 @@ typedef int int_VALUE;
 #include "algorithm_tpl.h"
 #include "rbtree_tpl.h"
 #include "array_tpl.h"
-VALUE_EMPTY_DEF(int, 0)
-COMPARE_DEF(int)
-TRAVERSE_DEF(int)
-RBTREE_DECL(int)
-RBTREE_DEF(int)
-ARRAY_DECL(int)
-ARRAY_DEF(int)
+#include "link_tpl.h"
+EMPTY_VALUE_DEFINE(int, 0)
+COMPARE_DEFINE(int)
+TRAVERSE_DEFINE(int)
+RBTREE_DECLARE(int)
+RBTREE_DEFINE(int)
+ARRAY_DECLARE(int)
+ARRAY_DEFINE(int)
+LLINK_DECLARE(int)
+LLINK_DEFINE(int)
 
 int main(int argc, char* argv[]) {
     g_item_list = open_llist();

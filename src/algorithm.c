@@ -25,7 +25,7 @@ VALUE ptr_value(void* value) {
     return ret;
 }
 
-const VALUE VALUE_EMPTY = {};
+const VALUE EMPTY_VALUE = {};
 
 int asc_order_int(VALUE a, VALUE b) {
     return a.int_value - b.int_value;

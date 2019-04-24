@@ -87,7 +87,7 @@ static inline void delete(RBTREE* tr, void* p) {
 RBTREE* open_rbtree(COMPARE compare) {
     struct rbtree* ret = NEW(struct rbtree);
     assert(ret != NULL);
-    ret->leaf.value = VALUE_EMPTY;
+    ret->leaf.value = EMPTY_VALUE;
     ret->leaf.parent_and_color = RB_BLACK;
     ret->leaf.left = ret->leaf.right = NULL;
     ret->root = &ret->leaf;
@@ -101,7 +101,7 @@ RBTREE* open_rbtree_with_allocator(COMPARE compare, ALLOCATOR allocator) {
     assert(allocator.alloc != NULL);
     struct rbtree* ret = (struct rbtree*)allocator.alloc(sizeof(struct rbtree));
     assert(ret != NULL);
-    ret->leaf.value = VALUE_EMPTY;
+    ret->leaf.value = EMPTY_VALUE;
     ret->leaf.parent_and_color = RB_BLACK;
     ret->leaf.left = ret->leaf.right = NULL;
     ret->root = &ret->leaf;
@@ -464,7 +464,7 @@ VALUE rbtree_get(RBTREE* tr, VALUE key, int* ok) {
         if (ok) {
             *ok = 0;
         }
-        return VALUE_EMPTY;
+        return EMPTY_VALUE;
     }
     if (ok) {
         *ok = 1;
@@ -492,7 +492,7 @@ VALUE rbtree_pop(RBTREE* tr, VALUE key, int* ok) {
         if (ok) {
             *ok = 0;
         }
-        return VALUE_EMPTY;
+        return EMPTY_VALUE;
     }
     if (ok) {
         *ok = 1;

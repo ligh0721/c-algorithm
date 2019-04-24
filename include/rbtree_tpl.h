@@ -13,7 +13,7 @@
 #define TPL_RB_RED      0
 #define TPL_RB_BLACK    1
 
-#define RBTREE_DECL(ValueType) \
+#define RBTREE_DECLARE(ValueType) \
 typedef struct ValueType##_rbtree ValueType##_RBTREE;\
 \
 ValueType##_RBTREE* open_##ValueType##_rbtree(ValueType##_COMPARE compare);\
@@ -37,7 +37,7 @@ void ValueType##_rbtree_fast_set(ValueType##_RBTREE *tr, ValueType##_RBNODE** wh
 ValueType ValueType##_rbtree_fast_pop(ValueType##_RBTREE *tr, ValueType##_RBNODE *node);\
 int ValueType##_rbtree_node_not_found(ValueType##_RBTREE* tr, ValueType##_RBNODE** where);
 
-#define RBTREE_DEF(ValueType) \
+#define RBTREE_DEFINE(ValueType) \
 struct ValueType##_rbnode {\
     ValueType value;\
     union {\
@@ -87,11 +87,11 @@ struct ValueType##_rbtree {\
     ALLOCATOR allocator;\
 };\
 \
-static inline void* new(ValueType##_RBTREE* tr, size_t size) {\
+static inline void* ValueType##_rbtree_new(ValueType##_RBTREE* tr, size_t size) {\
     return tr->allocator.alloc != NULL ? tr->allocator.alloc(size) : NEW0(size);\
 }\
 \
-static inline void delete(ValueType##_RBTREE* tr, void* p) {\
+static inline void ValueType##_rbtree_delete(ValueType##_RBTREE* tr, void* p) {\
     if (tr->allocator.free != NULL) {\
         tr->allocator.free(p);\
     } else if (tr->allocator.alloc == NULL) {\
@@ -129,7 +129,7 @@ ValueType##_RBTREE* open_##ValueType##_rbtree_with_allocator(ValueType##_COMPARE
 void close_##ValueType##_rbtree(ValueType##_RBTREE* tr) {\
     assert(tr != NULL);\
     ValueType##_rbtree_clear(tr);\
-    delete(tr, tr);\
+    ValueType##_rbtree_delete(tr, tr);\
 }\
 \
 long ValueType##_rbtree_len(ValueType##_RBTREE* tr) {\
@@ -171,7 +171,7 @@ void ValueType##_rbtree_clear(ValueType##_RBTREE* tr) {\
 }\
 \
 inline ValueType##_RBNODE* ValueType##_rbtree_open_node(ValueType##_RBTREE* tr, ValueType value, ValueType##_RBNODE* parent) {\
-    struct ValueType##_rbnode* ret = (struct ValueType##_rbnode*)new(tr, sizeof(struct ValueType##_rbnode));\
+    struct ValueType##_rbnode* ret = (struct ValueType##_rbnode*)ValueType##_rbtree_new(tr, sizeof(struct ValueType##_rbnode));\
     ret->value = value;\
     ret->parent_and_color = (unsigned long)parent;\
     ret->left = ret->right = &tr->leaf;\
@@ -179,7 +179,7 @@ inline ValueType##_RBNODE* ValueType##_rbtree_open_node(ValueType##_RBTREE* tr, 
 }\
 \
 inline void ValueType##_rbtree_close_node(ValueType##_RBTREE* tr, ValueType##_RBNODE* node) {\
-    delete(tr, node);\
+    ValueType##_rbtree_delete(tr, node);\
 }\
 \
 inline ValueType* ValueType##_rbtree_fast_value(ValueType##_RBTREE* tr, ValueType##_RBNODE** where) {\

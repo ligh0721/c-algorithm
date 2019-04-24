@@ -88,9 +88,9 @@ typedef struct {
 } CRB_Value;
 
 typedef enum {
-    CRB_CROWBAR_FUNCTION_DEFINITION = 1,
-    CRB_NATIVE_FUNCTION_DEFINITION,
-    CRB_FUNCTION_DEFINITION_TYPE_COUNT_PLUS_1
+    CRB_CROWBAR_FUNCTION_DEFINE = 1,
+    CRB_NATIVE_FUNCTION_DEFINE,
+    CRB_FUNCTION_DEFINE_TYPE_COUNT_PLUS_1
 } CRB_FunctionDefinitionType;
 
 typedef CRB_Value CRB_NativeFunctionProc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args);  // TODO: *

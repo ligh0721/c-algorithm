@@ -386,7 +386,7 @@ typedef struct Elsif_tag {
 typedef struct {
     Expression  *condition;
     CRB_Block   *then_block;
-    Elsif       *elsif_list;
+    Elsif       *elif_list;
     CRB_Block   *else_block;
 } IfStatement;
 

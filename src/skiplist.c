@@ -194,7 +194,7 @@ VALUE skiplist_get(SKIPLIST* sl, VALUE key, int* ok) {
     if (ok) {
         *ok = 0;
     }
-    return VALUE_EMPTY;
+    return EMPTY_VALUE;
 }
 
 void skiplist_range(SKIPLIST* sl, SLICE* data, VALUE key1, VALUE key2, long limit) {
