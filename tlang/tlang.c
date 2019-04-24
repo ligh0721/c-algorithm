@@ -14,7 +14,7 @@ static char* my_readline(void* param) {
 }
 
 static void my_add_history(const char* history, void* param) {
-    return add_history(history);
+    add_history(history);
 }
 
 int readline_mode(int argc, char* argv[]) {
