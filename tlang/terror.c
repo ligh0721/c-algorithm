@@ -13,7 +13,7 @@
 
 typedef struct {
     CRB_MessageArgumentType type;
-    char        *name;
+    const char *name;
     union {
         int     int_val;
         double  double_val;
@@ -27,10 +27,9 @@ static void create_message_argument(MessageArgument *arg, va_list ap) {
     int index = 0;
     CRB_MessageArgumentType type;
 
-    while ((type = va_arg(ap, CRB_MessageArgumentType))
-           != CRB_MESSAGE_ARGUMENT_END) {
+    while ((type = va_arg(ap, CRB_MessageArgumentType)) != CRB_MESSAGE_ARGUMENT_END) {
         arg[index].type = type;
-        arg[index].name = va_arg(ap, char*);
+        arg[index].name = va_arg(ap, const char*);
         switch (type) {
             case CRB_INT_MESSAGE_ARGUMENT:
                 arg[index].u.int_val = va_arg(ap, int);
@@ -58,7 +57,7 @@ static void create_message_argument(MessageArgument *arg, va_list ap) {
     }
 }
 
-static void search_argument(MessageArgument *arg_list, char *arg_name, MessageArgument *arg) {
+static void search_argument(MessageArgument *arg_list, const char *arg_name, MessageArgument *arg) {
     for (int i=0; arg_list[i].type!=CRB_MESSAGE_ARGUMENT_END; ++i) {
         if (!strcmp(arg_list[i].name, arg_name)) {
             *arg = arg_list[i];
@@ -136,28 +135,20 @@ static void self_check(void) {
     if (strcmp(crb_compile_error_message_format[0].format, "dummy") != 0) {
         DBG_panic(("compile error message format error.\n"));
     }
-    if (strcmp(crb_compile_error_message_format
-               [COMPILE_ERROR_COUNT_PLUS_1].format,
-               "dummy") != 0) {
-        DBG_panic(("compile error message format error. "
-                   "COMPILE_ERROR_COUNT_PLUS_1..%d\n",
-                COMPILE_ERROR_COUNT_PLUS_1));
+    if (strcmp(crb_compile_error_message_format[COMPILE_ERROR_COUNT_PLUS_1].format, "dummy") != 0) {
+        DBG_panic(("compile error message format error. COMPILE_ERROR_COUNT_PLUS_1..%d\n", COMPILE_ERROR_COUNT_PLUS_1));
     }
     if (strcmp(crb_runtime_error_message_format[0].format, "dummy") != 0) {
         DBG_panic(("runtime error message format error.\n"));
     }
-    if (strcmp(crb_runtime_error_message_format
-               [RUNTIME_ERROR_COUNT_PLUS_1].format,
-               "dummy") != 0) {
-        DBG_panic(("runtime error message format error. "
-                   "RUNTIME_ERROR_COUNT_PLUS_1..%d\n",
-                RUNTIME_ERROR_COUNT_PLUS_1));
+    if (strcmp(crb_runtime_error_message_format[RUNTIME_ERROR_COUNT_PLUS_1].format, "dummy") != 0) {
+        DBG_panic(("runtime error message format error. RUNTIME_ERROR_COUNT_PLUS_1..%d\n", RUNTIME_ERROR_COUNT_PLUS_1));
     }
 }
 
 void crb_compile_error(CompileError id, ...) {
-    va_list     ap;
-    VString     message;
+    va_list ap;
+    VString message;
 
     self_check();
     va_start(ap, id);
@@ -207,8 +198,8 @@ static void throw_runtime_exception(CRB_Interpreter *inter, CRB_LocalEnvironment
 }
 
 void crb_runtime_error(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, RuntimeError id, ...) {
-    va_list     ap;
-    VString     message;
+    va_list ap;
+    VString message;
 
     self_check();
     va_start(ap, id);
