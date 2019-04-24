@@ -18,10 +18,10 @@ static void my_add_history(const char* history, void* param) {
 }
 
 int readline_mode(int argc, char* argv[]) {
-    char ps[] = ">> ";
+    const char* ps = ">> ";
     CRB_Interpreter* interpreter = CRB_create_interpreter();
     CRB_set_command_line_args(interpreter, argc-1, &argv[1]);
-    ReadLineModeParams params = {my_readline, ps, my_add_history, NULL};
+    ReadLineModeParams params = {my_readline, (void*)ps, my_add_history, NULL};
     CRB_compile_readline(interpreter, &params);
     CRB_dispose_interpreter(interpreter);
     MEM_dump_blocks(stdout);
