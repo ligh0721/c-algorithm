@@ -366,3 +366,42 @@ ElifList* crb_create_elif_list(Elif* elif) {
 ElifList* crb_chain_elif_list(ElifList* list, Elif* elif) {
     return chain_list(list, elif);
 }
+
+Statement* crb_create_while_statement(const char *label, Expression *condition, CRB_Block *block) {
+    Statement* st = alloc_statement(WHILE_STATEMENT);
+    st->u.while_s.label = label;
+    st->u.while_s.condition = condition;
+    st->u.while_s.block = block;
+    return st;
+}
+
+Statement* crb_create_for_statement(const char *label, Expression *init, Expression *cond, Expression *post, CRB_Block *block) {
+    Statement* st = alloc_statement(FOR_STATEMENT);
+    st->u.for_s.label = label;
+    st->u.for_s.init = init;
+    st->u.for_s.condition = cond;
+    st->u.for_s.post = post;
+    st->u.for_s.block = block;
+    return st;
+}
+
+Statement* crb_create_foreach_statement(const char *label, const char *variable, Expression *collection, CRB_Block *block) {
+    Statement* st = alloc_statement(FOREACH_STATEMENT);
+    st->u.foreach_s.label = label;
+    st->u.foreach_s.variable = variable;
+    st->u.foreach_s.collection = collection;
+    st->u.for_s.block = block;
+    return st;
+}
+
+Statement* crb_create_break_statement(const char* label) {
+    Statement* st = alloc_statement(BREAK_STATEMENT);
+    st->u.break_s.label = label;
+    return st;
+}
+
+Statement* crb_create_continue_statement(const char *label) {
+    Statement* st = alloc_statement(CONTINUE_STATEMENT);
+    st->u.continue_s.label = label;
+    return st;
+}

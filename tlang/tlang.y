@@ -378,6 +378,13 @@ identifier_list
         }
         ;
 
+return_statement
+        : RETURN_T expression_opt SEMICOLON
+        {
+            $$ = crb_create_return_statement($2);
+        }
+        ;
+
 if_statement
         : IF LP expression RP block
         {
@@ -429,22 +436,21 @@ label_opt
 while_statement
         : label_opt WHILE LP expression RP block
         {
-//            $$ = crb_create_while_statement($1, $4, $6);
+            $$ = crb_create_while_statement($1, $4, $6);
         }
         ;
 
 for_statement
-        : label_opt FOR LP expression_opt SEMICOLON expression_opt SEMICOLON
-          expression_opt RP block
+        : label_opt FOR LP expression_opt SEMICOLON expression_opt SEMICOLON expression_opt RP block
         {
-//            $$ = crb_create_for_statement($1, $4, $6, $8, $10);
+            $$ = crb_create_for_statement($1, $4, $6, $8, $10);
         }
         ;
 
 foreach_statement
         : label_opt FOREACH LP IDENTIFIER COLON expression RP block
         {
-//            $$ = crb_create_foreach_statement($1, $4, $6, $8);
+            $$ = crb_create_foreach_statement($1, $4, $6, $8);
         }
         ;
 
@@ -454,13 +460,6 @@ expression_opt
             $$ = NULL;
         }
         | expression
-        ;
-
-return_statement
-        : RETURN_T expression_opt SEMICOLON
-        {
-            $$ = crb_create_return_statement($2);
-        }
         ;
 
 identifier_opt
@@ -474,14 +473,14 @@ identifier_opt
 break_statement
         : BREAK identifier_opt SEMICOLON
         {
-//            $$ = crb_create_break_statement($2);
+            $$ = crb_create_break_statement($2);
         }
         ;
 
 continue_statement
         : CONTINUE identifier_opt SEMICOLON
         {
-//            $$ = crb_create_continue_statement($2);
+            $$ = crb_create_continue_statement($2);
         }
         ;
 

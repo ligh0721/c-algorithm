@@ -617,6 +617,28 @@ CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, i
     return ret;
 }
 
+CRB_Value CRB_call_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Object *obj, const char *method_name, int arg_count, CRB_Value *args) {
+    CRB_Value func;
+    if (obj->type == STRING_OBJECT || obj->type == ARRAY_OBJECT) {
+        func.type = CRB_FAKE_METHOD_VALUE;
+        func.u.fake_method.method_name = method_name;
+        func.u.fake_method.object = obj;
+    } else if (obj->type == ASSOC_OBJECT) {
+        CRB_Value* func_p = CRB_search_assoc_member(obj, method_name, NULL);
+        if (func_p->type != CRB_CLOSURE_VALUE) {
+            crb_runtime_error(inter, env, line_number, NOT_FUNCTION_ERR, CRB_MESSAGE_ARGUMENT_END);
+        }
+        func = *func_p;
+    }
+    push_value(inter, &func);
+
+    CRB_Value result = CRB_call_function(inter, env, line_number, &func, arg_count, args);
+
+    pop_value(inter);
+
+    return result;
+}
+
 /*
  * 调用成员函数
  */
@@ -1199,4 +1221,9 @@ static void eval_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, E
 CRB_Value crb_eval_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     eval_expression(inter, env, expr);
     return pop_value(inter);
+}
+
+CRB_Value* crb_eval_expression_peek(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
+    eval_expression(inter, env, expr);
+    return peek_stack(inter, 0);
 }

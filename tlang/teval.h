@@ -15,5 +15,6 @@ CRB_Value crb_eval_minus_expression(CRB_Interpreter *inter, CRB_LocalEnvironment
 CRB_Value crb_eval_binary_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, ExpressionType operator, Expression *left, Expression *right);
 CRB_Value* crb_get_identifier_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const char *identifier);
 CRB_Value crb_eval_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr);
+CRB_Value* crb_eval_expression_peek(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr);
 
 #endif //TLANG_TEVAL_H

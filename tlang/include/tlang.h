@@ -71,7 +71,7 @@ typedef struct {
 } CRB_Closure;
 
 typedef struct {
-    char        *method_name;
+    const char  *method_name;
     CRB_Object  *object;
 } CRB_FakeMethod;
 
@@ -156,6 +156,7 @@ CRB_Value CRB_pop_value(CRB_Interpreter *inter);
 CRB_Value* CRB_peek_stack(CRB_Interpreter *inter, int index);
 void CRB_shrink_stack(CRB_Interpreter *inter, int shrink_size);
 CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *func, int arg_count, CRB_Value *args);
+CRB_Value CRB_call_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Object *obj, const char *method_name, int arg_count, CRB_Value *args);
 
 // tmisc
 CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Value *value, CRB_Boolean is_final);

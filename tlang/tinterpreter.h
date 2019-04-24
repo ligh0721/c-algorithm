@@ -43,7 +43,7 @@ typedef struct {
     StatementResultType type;
     union {
         CRB_Value       return_value;
-        char            *label;
+        const char      *label;
     } u;
 } StatementResult;
 
@@ -112,6 +112,12 @@ struct CRB_Object_tag {
    || (type) == CRB_ASSOC_VALUE || (type) == CRB_NATIVE_POINTER_VALUE\
    || (type) == CRB_SCOPE_CHAIN_VALUE)
 
+// Method
+#define ARRAY_ITERATOR_METHOD_NAME ("__create_array_iterator")
+#define ITERATOR_METHOD_NAME    ("iterator")
+#define IS_DONE_METHOD_NAME     ("is_done")
+#define NEXT_METHOD_NAME        ("next")
+#define CURRENT_ITEM_METHOD_NAME        ("current_item")
 
 // Error
 #define EXCEPTION_MEMBER_MESSAGE                ("message")
@@ -343,11 +349,11 @@ struct Expression_tag {
 typedef enum {
     EXPRESSION_STATEMENT = 1,
     GLOBAL_STATEMENT,
+    RETURN_STATEMENT,
     IF_STATEMENT,
     WHILE_STATEMENT,
     FOR_STATEMENT,
     FOREACH_STATEMENT,
-    RETURN_STATEMENT,
     BREAK_STATEMENT,
     CONTINUE_STATEMENT,
     TRY_STATEMENT,

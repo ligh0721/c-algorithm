@@ -50,4 +50,11 @@ Elif* crb_create_elif(Expression *expr, CRB_Block *block);
 ElifList* crb_create_elif_list(Elif* elif);
 ElifList* crb_chain_elif_list(ElifList* list, Elif* elif);
 
+Statement* crb_create_while_statement(const char *label, Expression *condition, CRB_Block *block);
+Statement* crb_create_for_statement(const char *label, Expression *init, Expression *cond, Expression *post, CRB_Block *block);
+Statement* crb_create_foreach_statement(const char *label, const char *variable, Expression *collection, CRB_Block *block);
+Statement* crb_create_break_statement(const char* label);
+Statement* crb_create_continue_statement(const char *label);
+
+
 #endif //TLANG_TCODE_H
