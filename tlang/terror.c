@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 #include "tinterpreter.h"
 #include "tmisc.h"
 #include "terror.h"
@@ -75,7 +76,7 @@ static void format_message(CRB_Interpreter *inter, CRB_LocalEnvironment *env, in
     create_message_argument(arg, ap);
 
     CRB_Char* wc_format = CRB_mbstowcs_alloc(inter, env, line_number, format->format);
-    DBG_assert(wc_format != NULL, ("wc_format is null.\n"));
+    DBG_assert(wc_format != NULL, ("wc_format is null. %s(%d)\n", strerror(errno), errno));
 
     for (int i=0; wc_format[i]!=L'\0'; ++i) {
         if (wc_format[i] != L'$') {

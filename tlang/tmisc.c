@@ -267,13 +267,11 @@ void* CRB_object_get_native_pointer(CRB_Object *obj) {
 
 // char
 int CRB_mbstowcs_len(const char *src) {
-    int status;
     mbstate_t ps;
-
     memset(&ps, 0, sizeof(mbstate_t));
     int src_idx, dest_idx;
     for (src_idx = dest_idx = 0; src[src_idx] != '\0'; ) {
-        status = mbrtowc(NULL, &src[src_idx], MB_LEN_MAX, &ps);
+        int status = mbrtowc(NULL, &src[src_idx], MB_LEN_MAX, &ps);
         if (status < 0) {
             return status;
         }
