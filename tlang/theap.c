@@ -436,7 +436,8 @@ static void gc_dispose_object(CRB_Interpreter *inter, CRB_Object *obj) {
     switch (obj->type) {
         case ARRAY_OBJECT:
             inter->heap.current_heap_size -= sizeof(CRB_Value) * CRB_Value_array_cap(obj->u.array.array);
-            MEM_free(obj->u.array.array);
+//            MEM_free(obj->u.array.array);
+            close_CRB_Value_array(obj->u.array.array);
             break;
         case STRING_OBJECT:
             if (!obj->u.string.is_literal) {
@@ -447,7 +448,6 @@ static void gc_dispose_object(CRB_Interpreter *inter, CRB_Object *obj) {
         case ASSOC_OBJECT:
             inter->heap.current_heap_size -= sizeof(AssocMember) * AssocMember_rbtree_len(obj->u.assoc.members);
             close_AssocMember_rbtree(obj->u.assoc.members);
-            obj->u.assoc.members = NULL;
 //            MEM_free(obj->u.assoc.member);
             break;
         case SCOPE_CHAIN_OBJECT:

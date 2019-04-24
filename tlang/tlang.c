@@ -25,7 +25,6 @@ int readline_mode(int argc, char* argv[]) {
     CRB_compile_readline(interpreter, &params);
     CRB_dispose_interpreter(interpreter);
     MEM_dump_blocks(stdout);
-
     return 0;
 }
 

@@ -574,6 +574,8 @@ CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, i
         closure_env = NULL;
     } else {
         DBG_panic(("func->type..%d\n", func->type));
+        func_name = NULL;
+        closure_env = NULL;
     }
     CRB_LocalEnvironment* local_env = alloc_local_environment(inter, func_name, line_number, closure_env);
     if (func->type == CRB_CLOSURE_VALUE && func->u.closure.function->is_closure && func->u.closure.function->name) {
@@ -656,7 +658,7 @@ static void call_crowbar_function(CRB_Interpreter *inter, CRB_LocalEnvironment *
 //                               CRB_FALSE);
 //        pop_value(inter);
 //    }
-    if (param_p) {
+    if (param_node != NULL) {
         crb_runtime_error(inter, caller_env, expr->line_number, ARGUMENT_TOO_FEW_ERR, CRB_MESSAGE_ARGUMENT_END);
         return;
     }
