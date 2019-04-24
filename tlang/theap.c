@@ -142,7 +142,7 @@ CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, C
         return NULL;
     }
     AssocMember* value_entry = AssocMember_rbtree_fast_value(tr, where);
-    if (*is_final) {
+    if (is_final) {
         *is_final = value_entry->is_final;
     }
     return &value_entry->value;
