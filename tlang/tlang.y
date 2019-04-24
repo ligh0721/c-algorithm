@@ -18,7 +18,8 @@ extern int yyerror(char const *str);
     Statement           *statement;
     StatementList       *statement_list;
     CRB_Block           *block;
-    Elsif               *elif;
+    Elif                *elif;
+    ElifList            *elif_list;
     AssignmentOperator  assignment_operator;
     IdentifierList      *identifier_list;
 }
@@ -46,7 +47,8 @@ extern int yyerror(char const *str);
         throw_statement
 %type   <statement_list> statement_list
 %type   <block> block
-%type   <elif> elif elif_list
+%type   <elif> elif
+%type   <elif_list> elif_list
 %type   <assignment_operator> assignment_operator
 %type   <identifier> identifier_opt label_opt
 %type   <identifier_list> identifier_list
@@ -79,11 +81,11 @@ parameter_list
         }
         | IDENTIFIER
         {
-            $$ = crb_create_parameter($1);
+            $$ = crb_create_parameter_list($1);
         }
         | parameter_list COMMA IDENTIFIER
         {
-            $$ = crb_chain_parameter($1, $3);
+            $$ = crb_chain_parameter_list($1, $3);
         }
         ;
 
@@ -368,45 +370,48 @@ global_statement
 identifier_list
         : IDENTIFIER
         {
-            $$ = crb_create_global_identifier($1);
+            $$ = crb_create_global_identifier_list($1);
         }
         | identifier_list COMMA IDENTIFIER
         {
-            $$ = crb_chain_identifier($1, $3);
+            $$ = crb_chain_global_identifier_list($1, $3);
         }
         ;
 
 if_statement
         : IF LP expression RP block
         {
-//            $$ = crb_create_if_statement($3, $5, NULL, NULL);
+            $$ = crb_create_if_statement($3, $5, NULL, NULL);
         }
         | IF LP expression RP block ELSE block
         {
-//            $$ = crb_create_if_statement($3, $5, NULL, $7);
+            $$ = crb_create_if_statement($3, $5, NULL, $7);
         }
         | IF LP expression RP block elif_list
         {
-//            $$ = crb_create_if_statement($3, $5, $6, NULL);
+            $$ = crb_create_if_statement($3, $5, $6, NULL);
         }
         | IF LP expression RP block elif_list ELSE block
         {
-//            $$ = crb_create_if_statement($3, $5, $6, $8);
+            $$ = crb_create_if_statement($3, $5, $6, $8);
         }
         ;
 
 elif_list
         : elif
+        {
+            $$ = crb_create_elif_list($1);
+        }
         | elif_list elif
         {
-//            $$ = crb_chain_elif_list($1, $2);
+            $$ = crb_chain_elif_list($1, $2);
         }
         ;
 
 elif
         : ELIF LP expression RP block
         {
-//            $$ = crb_create_elif($3, $5);
+            $$ = crb_create_elif($3, $5);
         }
         ;
 

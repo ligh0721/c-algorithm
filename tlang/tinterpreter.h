@@ -63,7 +63,7 @@ struct CRB_String_tag {
 };
 
 struct AssocMember_tag {
-    const char        *name;
+    const char  *name;
     CRB_Value   value;
     CRB_Boolean is_final;
 };
@@ -377,27 +377,28 @@ typedef struct {
     IdentifierList      *identifier_list;
 } GlobalStatement;
 
-typedef struct Elsif_tag {
+typedef struct {
     Expression  *condition;
     CRB_Block   *block;
-    struct Elsif_tag    *next;
-} Elsif;
+} Elif;
+
+typedef LLIST ElifList;  // LLIST<Elif*>
 
 typedef struct {
     Expression  *condition;
     CRB_Block   *then_block;
-    Elsif       *elif_list;
+    ElifList    *elif_list;
     CRB_Block   *else_block;
 } IfStatement;
 
 typedef struct {
-    char        *label;
+    const char  *label;
     Expression  *condition;
     CRB_Block   *block;
 } WhileStatement;
 
 typedef struct {
-    char        *label;
+    const char  *label;
     Expression  *init;
     Expression  *condition;
     Expression  *post;
@@ -405,8 +406,8 @@ typedef struct {
 } ForStatement;
 
 typedef struct {
-    char        *label;
-    char        *variable;
+    const char  *label;
+    const char  *variable;
     Expression  *collection;
     CRB_Block   *block;
 } ForeachStatement;
@@ -416,17 +417,17 @@ typedef struct {
 } ReturnStatement;
 
 typedef struct {
-    char        *label;
+    const char *label;
 } BreakStatement;
 
 typedef struct {
-    char        *label;
+    const char *label;
 } ContinueStatement;
 
 typedef struct {
     CRB_Block   *try_block;
     CRB_Block   *catch_block;
-    char        *exception;
+    const char  *exception;
     CRB_Block   *finally_block;
 } TryStatement;
 

@@ -11,6 +11,9 @@
 
 static StatementResult execute_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Statement *statement);
 
+/*
+ * 执行表达式语句
+ */
 static StatementResult execute_expression_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Statement *statement) {
     StatementResult result;
     result.type = NORMAL_STATEMENT_RESULT;
@@ -19,6 +22,9 @@ static StatementResult execute_expression_statement(CRB_Interpreter *inter, CRB_
     return result;
 }
 
+/*
+ * 执行全局引用语句
+ */
 static StatementResult execute_global_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Statement *statement) {
     StatementResult result;
     result.type = NORMAL_STATEMENT_RESULT;
@@ -48,6 +54,9 @@ static StatementResult execute_global_statement(CRB_Interpreter *inter, CRB_Loca
     return result;
 }
 
+/*
+ * 执行return语句
+ */
 static StatementResult execute_return_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Statement *statement) {
     StatementResult result;
     result.type = RETURN_STATEMENT_RESULT;
@@ -59,6 +68,64 @@ static StatementResult execute_return_statement(CRB_Interpreter *inter, CRB_Loca
     return result;
 }
 
+/*
+ * 执行elif部分
+ */
+static StatementResult execute_elif(CRB_Interpreter *inter, CRB_LocalEnvironment *env, ElifList *elif_list, CRB_Boolean *executed) {
+    *executed = CRB_FALSE;
+    StatementResult result;
+    result.type = NORMAL_STATEMENT_RESULT;
+    for (struct lnode* node=elif_list?llist_front_node(elif_list):NULL; node!=NULL; node=node->next) {
+        Elif* elif = (Elif*)node->value.ptr_value;
+        CRB_Value cond = crb_eval_expression(inter, env, elif->condition);
+        if (cond.type != CRB_BOOLEAN_VALUE) {
+            crb_runtime_error(inter, env, elif->condition->line_number, NOT_BOOLEAN_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
+        }
+        if (cond.u.boolean_value) {
+            result = crb_execute_statement_list(inter, env, elif->block->statement_list);
+            *executed = CRB_TRUE;
+            if (result.type != NORMAL_STATEMENT_RESULT) {
+                goto FUNC_END;
+            }
+        }
+    }
+
+    FUNC_END:
+    return result;
+}
+
+/*
+ * 执行if语句
+ */
+static StatementResult execute_if_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Statement *statement) {
+    StatementResult result;
+    result.type = NORMAL_STATEMENT_RESULT;
+    CRB_Value cond = crb_eval_expression(inter, env, statement->u.if_s.condition);
+    if (cond.type != CRB_BOOLEAN_VALUE) {
+        crb_runtime_error(inter, env, statement->u.if_s.condition->line_number, NOT_BOOLEAN_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
+    }
+    DBG_assert(cond.type == CRB_BOOLEAN_VALUE, ("cond.type..%d", cond.type));
+
+    if (cond.u.boolean_value) {
+        result = crb_execute_statement_list(inter, env, statement->u.if_s.then_block->statement_list);
+    } else {
+        CRB_Boolean elif_executed;
+        result = execute_elif(inter, env, statement->u.if_s.elif_list, &elif_executed);
+        if (result.type != NORMAL_STATEMENT_RESULT) {
+            goto FUNC_END;
+        }
+        if (!elif_executed && statement->u.if_s.else_block) {
+            result = crb_execute_statement_list(inter, env, statement->u.if_s.else_block->statement_list);
+        }
+    }
+
+    FUNC_END:
+    return result;
+}
+
+/*
+ * 执行语句
+ */
 static StatementResult execute_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Statement *statement) {
     StatementResult result;
     result.type = NORMAL_STATEMENT_RESULT;
@@ -71,9 +138,9 @@ static StatementResult execute_statement(CRB_Interpreter *inter, CRB_LocalEnviro
             result = execute_global_statement(inter, env, statement);
             break;
             // TODO:
-//        case IF_STATEMENT:
-//            result = execute_if_statement(inter, env, statement);
-//            break;
+        case IF_STATEMENT:
+            result = execute_if_statement(inter, env, statement);
+            break;
 //        case WHILE_STATEMENT:
 //            result = execute_while_statement(inter, env, statement);
 //            break;

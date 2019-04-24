@@ -11,11 +11,11 @@
 
 /*
  * 通用创建列表项并追加列表项
+ * 构成语句，内存在关闭解释器时统一释放
  */
-static inline LLIST* crb_create_list(const void* first) {
+static inline LLIST* create_list(const void *first) {
     static ALLOCATOR allocator = {crb_malloc, NULL};
     LLIST* ret = open_llist_with_allocator(allocator);
-//    LLIST* ret = open_llist();
     llist_push_back(ret, ptr_value((void*)first));
     return ret;
 }
@@ -23,7 +23,7 @@ static inline LLIST* crb_create_list(const void* first) {
 /*
  * 通用追加列表项
  */
-static inline LLIST* crb_list_push_back(LLIST* list, const void* item) {
+static inline LLIST* chain_list(LLIST *list, const void *item) {
     llist_push_back(list, ptr_value((void*)item));
     return list;
 }
@@ -201,17 +201,17 @@ Expression* crb_create_function_call_expression(Expression *function, ArgumentLi
  * 创建表达式列表
  */
 ExpressionList* crb_create_expression_list(Expression *expression) {
-    return crb_create_list(expression);
+    return create_list(expression);
 }
 
 ExpressionList* crb_chain_expression_list(ExpressionList *list, Expression *expr) {
-    return crb_list_push_back(list, expr);
+    return chain_list(list, expr);
 }
 
 /*
  * 创建函数定义
  */
-static CRB_FunctionDefinition* create_function_definition(const char *identifier, CRB_ParameterList *parameter_list, CRB_Boolean is_closure, CRB_Block *block) {
+static inline CRB_FunctionDefinition* create_function_definition(const char *identifier, CRB_ParameterList *parameter_list, CRB_Boolean is_closure, CRB_Block *block) {
     CRB_FunctionDefinition* f = crb_malloc(sizeof(CRB_FunctionDefinition));
     f->name = identifier;
     f->type = CRB_CROWBAR_FUNCTION_DEFINE;
@@ -248,37 +248,37 @@ Expression* crb_create_closure_definition(const char *identifier, CRB_ParameterL
 /*
  * 创建形参列表
  */
-CRB_ParameterList* crb_create_parameter(const char *identifier) {
-    return crb_create_list(identifier);
+CRB_ParameterList* crb_create_parameter_list(const char *identifier) {
+    return create_list(identifier);
 }
 
-CRB_ParameterList* crb_chain_parameter(CRB_ParameterList *list, const char *identifier) {
-    return crb_list_push_back(list, identifier);
+CRB_ParameterList* crb_chain_parameter_list(CRB_ParameterList *list, const char *identifier) {
+    return chain_list(list, identifier);
 }
 
 /*
  * 创建实参列表
  */
 ArgumentList* crb_create_argument_list(Expression *expression) {
-    return crb_create_list(expression);
+    return create_list(expression);
 }
 
 ArgumentList* crb_chain_argument_list(ArgumentList *list, Expression *expr) {
-    return crb_list_push_back(list, expr);
+    return chain_list(list, expr);
 }
 
 /*
  * 创建全局变量引用列表
  */
-IdentifierList* crb_create_global_identifier(const char *identifier) {
-    return crb_create_list(identifier);
+IdentifierList* crb_create_global_identifier_list(const char *identifier) {
+    return create_list(identifier);
 }
 
-IdentifierList* crb_chain_identifier(IdentifierList *list, const char *identifier) {
-    return crb_list_push_back(list, identifier);
+IdentifierList* crb_chain_global_identifier_list(IdentifierList *list, const char *identifier) {
+    return chain_list(list, identifier);
 }
 
-static Statement* alloc_statement(StatementType type) {
+static inline Statement* alloc_statement(StatementType type) {
     Statement* st = crb_malloc(sizeof(Statement));
     st->type = type;
     st->line_number = crb_get_current_interpreter()->current_line_number;
@@ -313,11 +313,11 @@ Statement* crb_create_return_statement(Expression *expression) {
  * 创建语句列表
  */
 StatementList* crb_create_statement_list(Statement *statement) {
-    return crb_create_list(statement);
+    return create_list(statement);
 }
 
 StatementList* crb_chain_statement_list(StatementList *list, Statement *statement) {
-    return list == NULL ? crb_create_statement_list(statement) : crb_list_push_back(list, statement);
+    return list == NULL ? crb_create_statement_list(statement) : chain_list(list, statement);
 }
 
 /*
@@ -329,26 +329,40 @@ CRB_Block* crb_create_block(StatementList *statement_list) {
     return block;
 }
 
-Statement* crb_create_if_statement(Expression *condition, CRB_Block *then_block, Elsif *elsif_list, CRB_Block *else_block) {
+/*
+ * 创建if语句
+ */
+Statement* crb_create_if_statement(Expression *condition, CRB_Block *then_block, ElifList *elif_list, CRB_Block *else_block) {
     Statement* st = alloc_statement(IF_STATEMENT);
     st->u.if_s.condition = condition;
     st->u.if_s.then_block = then_block;
-    st->u.if_s.elif_list = elsif_list;
+    st->u.if_s.elif_list = elif_list;
     st->u.if_s.else_block = else_block;
     return st;
 }
 
-Elsif* crb_create_elsif(Expression *expr, CRB_Block *block) {
-    Elsif* ei = crb_malloc(sizeof(Elsif));
-    ei->condition = expr;
-    ei->block = block;
-    ei->next = NULL;
-    return ei;
+static inline Elif* alloc_elif(Expression* expr, CRB_Block* block) {
+    Elif* elif = crb_malloc(sizeof(Elif));
+    elif->condition = expr;
+    elif->block = block;
+    return elif;
 }
 
-Elsif* crb_chain_elsif_list(Elsif *list, Elsif *add) {
-    Elsif*pos;
-    for (pos = list; pos->next; pos = pos->next);
-    pos->next = add;
-    return list;
+/*
+ * 创建elif部分
+ */
+Elif* crb_create_elif(Expression *expr, CRB_Block *block) {
+    Elif* elif = alloc_elif(expr, block);
+    return elif;
+}
+
+/*
+ * 创建elif列表
+ */
+ElifList* crb_create_elif_list(Elif* elif) {
+    return create_list(elif);
+}
+
+ElifList* crb_chain_elif_list(ElifList* list, Elif* elif) {
+    return chain_list(list, elif);
 }

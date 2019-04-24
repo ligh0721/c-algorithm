@@ -27,14 +27,14 @@ ExpressionList* crb_chain_expression_list(ExpressionList* list, Expression *expr
 void crb_function_define(const char *identifier, CRB_ParameterList *parameter_list, CRB_Block *block);
 Expression* crb_create_closure_definition(const char *identifier, CRB_ParameterList *parameter_list, CRB_Block *block);
 
-CRB_ParameterList* crb_create_parameter(const char *identifier);
-CRB_ParameterList* crb_chain_parameter(CRB_ParameterList *list, const char *identifier);
+CRB_ParameterList* crb_create_parameter_list(const char *identifier);
+CRB_ParameterList* crb_chain_parameter_list(CRB_ParameterList *list, const char *identifier);
 
 ArgumentList* crb_create_argument_list(Expression *expression);
 ArgumentList* crb_chain_argument_list(ArgumentList *list, Expression *expr);
 
-IdentifierList* crb_create_global_identifier(const char *identifier);
-IdentifierList* crb_chain_identifier(IdentifierList *list, const char *identifier);
+IdentifierList* crb_create_global_identifier_list(const char *identifier);
+IdentifierList* crb_chain_global_identifier_list(IdentifierList *list, const char *identifier);
 
 Statement* crb_create_global_statement(IdentifierList *identifier_list);
 Statement* crb_create_expression_statement(Expression *expression);
@@ -45,8 +45,9 @@ StatementList* crb_chain_statement_list(StatementList *list, Statement *statemen
 
 CRB_Block* crb_create_block(StatementList *statement_list);
 
-Statement* crb_create_if_statement(Expression *condition, CRB_Block *then_block, Elsif *elsif_list, CRB_Block *else_block);
-Elsif* crb_create_elsif(Expression *expr, CRB_Block *block);
-Elsif* crb_chain_elsif_list(Elsif *list, Elsif *add);
+Statement* crb_create_if_statement(Expression *condition, CRB_Block *then_block, ElifList *elif_list, CRB_Block *else_block);
+Elif* crb_create_elif(Expression *expr, CRB_Block *block);
+ElifList* crb_create_elif_list(Elif* elif);
+ElifList* crb_chain_elif_list(ElifList* list, Elif* elif);
 
 #endif //TLANG_TCODE_H

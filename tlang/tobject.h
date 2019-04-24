@@ -8,6 +8,7 @@
 #include <algorithm_tpl.h>
 #include <array_tpl.h>
 #include <rbtree_tpl.h>
+#include <link_tpl.h>
 #include "ttypedef.h"
 #include "tlang.h"
 

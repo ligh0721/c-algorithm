@@ -7,6 +7,7 @@
 
 
 EMPTY_VALUE_DEFINE(CRB_Value, {})
-EMPTY_VALUE_DEFINE(AssocMember, {})
 ARRAY_DEFINE(CRB_Value)
+
+EMPTY_VALUE_DEFINE(AssocMember, {})
 RBTREE_DEFINE(AssocMember)
