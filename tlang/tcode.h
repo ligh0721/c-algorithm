@@ -56,5 +56,7 @@ Statement* crb_create_foreach_statement(const char *label, const char *variable,
 Statement* crb_create_break_statement(const char* label);
 Statement* crb_create_continue_statement(const char *label);
 
+Statement* crb_create_try_statement(CRB_Block *try_block, const char *exception, CRB_Block *catch_block, CRB_Block *finally_block);
+Statement* crb_create_throw_statement(Expression *expression);
 
 #endif //TLANG_TCODE_H

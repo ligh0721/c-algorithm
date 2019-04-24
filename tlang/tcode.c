@@ -405,3 +405,18 @@ Statement* crb_create_continue_statement(const char *label) {
     st->u.continue_s.label = label;
     return st;
 }
+
+Statement* crb_create_try_statement(CRB_Block *try_block, const char *exception, CRB_Block *catch_block, CRB_Block *finally_block) {
+    Statement* st = alloc_statement(TRY_STATEMENT);
+    st->u.try_s.try_block = try_block;
+    st->u.try_s.catch_block = catch_block;
+    st->u.try_s.exception = exception;
+    st->u.try_s.finally_block = finally_block;
+    return st;
+}
+
+Statement* crb_create_throw_statement(Expression *expression) {
+    Statement* st = alloc_statement(THROW_STATEMENT);
+    st->u.throw_s.exception = expression;
+    return st;
+}

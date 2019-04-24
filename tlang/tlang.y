@@ -487,21 +487,21 @@ continue_statement
 try_statement
         : TRY block CATCH LP IDENTIFIER RP block FINALLY block
         {
-//            $$ = crb_create_try_statement($2, $5, $7, $9);
+            $$ = crb_create_try_statement($2, $5, $7, $9);
         }
         | TRY block FINALLY block
         {
-//            $$ = crb_create_try_statement($2, NULL, NULL, $4);
+            $$ = crb_create_try_statement($2, NULL, NULL, $4);
         }
         | TRY block CATCH LP IDENTIFIER RP block
         {
-//            $$ = crb_create_try_statement($2, $5, $7, NULL);
+            $$ = crb_create_try_statement($2, $5, $7, NULL);
         }
 
 throw_statement
         : THROW expression SEMICOLON
         {
-//            $$ = crb_create_throw_statement($2);
+            $$ = crb_create_throw_statement($2);
         }
 
 block
