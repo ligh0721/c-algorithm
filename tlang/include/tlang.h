@@ -94,7 +94,7 @@ typedef enum {
 } CRB_FunctionDefinitionType;
 
 typedef CRB_Value CRB_NativeFunctionProc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args);  // TODO: *
-CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, char *name, CRB_NativeFunctionProc *proc);
+CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, const char *name, CRB_NativeFunctionProc *proc);
 
 struct CRB_FunctionDefinition_tag {
     const char                *name;

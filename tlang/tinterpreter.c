@@ -32,7 +32,7 @@ CRB_Interpreter* CRB_create_interpreter(void) {
     CRB_Interpreter* interpreter = MEM_storage_malloc(storage, sizeof(struct CRB_Interpreter_tag));
     interpreter->interpreter_storage = storage;
     interpreter->execute_storage = MEM_open_storage(0);
-    interpreter->variables = open_rbtree(asc_order_named_item);
+    interpreter->global_vars = open_rbtree(asc_order_named_item);
     interpreter->functions = open_rbtree(asc_order_named_item);
     interpreter->statement_list = NULL;
     interpreter->last_statement_pos = NULL;
@@ -191,7 +191,7 @@ void CRB_interpret(CRB_Interpreter *interpreter) {
 }
 
 static void release_global_strings(CRB_Interpreter *interpreter) {
-    rbtree_clear(interpreter->variables);
+    rbtree_clear(interpreter->global_vars);
 //    while (interpreter->variable) {
 //        Variable *temp = interpreter->variable;
 //        interpreter->variable = temp->next;
@@ -204,16 +204,18 @@ void CRB_dispose_interpreter(CRB_Interpreter *interpreter) {
     if (interpreter->execute_storage) {
         MEM_dispose_storage(interpreter->execute_storage);
     }
-    close_rbtree(interpreter->variables);
-    interpreter->variables = NULL;
+    close_rbtree(interpreter->global_vars);
+    interpreter->global_vars = NULL;
     crb_garbage_collect(interpreter);
     DBG_assert(interpreter->heap.current_heap_size == 0, ("%d bytes leaked.\n", interpreter->heap.current_heap_size));
     MEM_free(interpreter->stack.stack);
 //    crb_dispose_regexp_literals(interpreter);
+    close_rbtree(interpreter->functions);
+    interpreter->functions = NULL;
     MEM_dispose_storage(interpreter->interpreter_storage);
 }
 
-CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, char *name, CRB_NativeFunctionProc *proc) {
+CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, const char *name, CRB_NativeFunctionProc *proc) {
     CRB_FunctionDefinition* fd = crb_malloc(sizeof(CRB_FunctionDefinition));
     fd->name = name;
     fd->type = CRB_NATIVE_FUNCTION_DEFINITION;

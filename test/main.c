@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <setjmp.h>
 #include "sort.h"
 #include "stack.h"
 #include "array.h"
@@ -391,49 +392,46 @@ void wstring_test() {
     close_wstring(s3);
     printf("\n");
 }
+jmp_buf env;
+int setjmp_res;
+#define TRY if ((setjmp_res = setjmp(env))==0)
+#define CATCH(e) else if (setjmp_res==e)
+#define THROW(e) longjmp(env, e)
+
+#define DIV_ZERO_ERR 5
+
+
+
+
+
+
+
+
+
+
+
+
+int div0(int a, int b) {
+    if (b == 0) {
+        THROW(DIV_ZERO_ERR);
+    }
+    return a / b;
+}
+
+void calc(int a, int b) {
+    int res = div0(a, b);
+    printf("%d / %d = %d\n", a, b, res);
+}
 
 void test() {
     printf("=== test ===\n");
-//    save_data();
-
-    int* data;
-    int* data2;
-    int len;
-    load_data(&data, &data2, &len);
-
-    RBTREE* tr = open_rbtree(asc_order_int);
-    SKIPLIST* sl = open_skiplist(asc_order_int, NULL);
-
-    int start;
-    int ok;
-
-    start = clock();
-    for (int i=0; i<len; ++i) {
-        skiplist_set(sl, int_value(data[i]));
+    TRY {
+        calc(5, 2);
+        calc(3, 0);
+        calc(9, 3);
+    } CATCH (DIV_ZERO_ERR) {
+        printf("div zero err\n");
     }
-    printf("skiplist_set, %d: %ld ticks\n", len, clock()-start);
-
-    start = clock();
-    for (int i=0; i<len; ++i) {
-        skiplist_get(sl, int_value(data2[i]), &ok);
-    }
-    printf("skiplist_get, %d: %ld ticks\n", len, clock()-start);
-
-    start = clock();
-    for (int i=0; i<len; ++i) {
-        rbtree_set(tr, int_value(data[i]));
-    }
-    printf("tbtree_set, %d: %ld ticks\n", len, clock()-start);
-
-    start = clock();
-    for (int i=0; i<len; ++i) {
-        rbtree_get(tr, int_value(data2[i]), &ok);
-    }
-    printf("tbtree_get, %d: %ld ticks\n", len, clock()-start);
-
-    close_rbtree(tr);
-    close_skiplist(sl);
-
     printf("\n");
 }
 
@@ -453,17 +451,17 @@ ARRAY_DEF(int)
 int main(int argc, char* argv[]) {
     g_item_list = open_llist();
 
-    sort_test();
-    stack_test();
-    array_test();
-    heap_test();
-    deque_test();
-    rbtree_test();
-    skiplist_test();
-    wstring_test();
-    int_RBTREE* tr = open_int_rbtree(NULL);
-    close_int_rbtree(tr);
-//    test();
+//    sort_test();
+//    stack_test();
+//    array_test();
+//    heap_test();
+//    deque_test();
+//    rbtree_test();
+//    skiplist_test();
+//    wstring_test();
+//    int_RBTREE* tr = open_int_rbtree(NULL);
+//    close_int_rbtree(tr);
+    test();
 
     llist_traversal(g_item_list, close_every_item, NULL);
     close_llist(g_item_list);

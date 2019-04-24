@@ -142,6 +142,9 @@ CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, C
         return NULL;
     }
     AssocMember* value_entry = AssocMember_rbtree_fast_value(tr, where);
+    if (*is_final) {
+        *is_final = value_entry->is_final;
+    }
     return &value_entry->value;
 //    if (assoc->u.assoc.member_count == 0) {
 //        return NULL;
@@ -160,10 +163,10 @@ CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, C
 }
 
 // scope chain
-CRB_Object* crb_create_scope_chain(CRB_Interpreter *inter) {
+CRB_Object* crb_create_scope_chain(CRB_Interpreter *inter, CRB_Object* frame, CRB_Object* next) {
     CRB_Object *ret = alloc_object(inter, SCOPE_CHAIN_OBJECT);
-    ret->u.scope_chain.frame = NULL;
-    ret->u.scope_chain.next = NULL;
+    ret->u.scope_chain.frame = frame;
+    ret->u.scope_chain.next = next;
     return ret;
 }
 
@@ -248,13 +251,16 @@ static CRB_Value print_stack_trace(CRB_Interpreter *inter, CRB_LocalEnvironment 
         if (function_name == NULL || function_name->type != CRB_STRING_VALUE) {
             crb_runtime_error(inter, env, __LINE__, STACK_TRACE_LINE_HAS_NO_FUNC_NAME_ERR, CRB_MESSAGE_ARGUMENT_END);
         }
-        CRB_Char* str = CRB_value_to_string(inter, NULL, line_number->u.int_value, function_name);
+
+        // print line number
+        fprintf(stderr, "line ");
+        CRB_Char* str = CRB_value_to_string(inter, NULL, line_number->u.int_value, line_number);
         CRB_print_wcs(stderr, str);
         MEM_free(str);
+        fprintf(stderr, ", in ");
 
-        fprintf(stderr, " at ");
-
-        str = CRB_value_to_string(inter, NULL, line_number->u.int_value, line_number);
+        // print function name
+        str = CRB_value_to_string(inter, NULL, line_number->u.int_value, function_name);
         CRB_print_wcs_ln(stderr, str);
         MEM_free(str);
     }
@@ -326,8 +332,7 @@ CRB_Object* CRB_create_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *e
 
     CRB_Value scope_chain;
     scope_chain.type = CRB_SCOPE_CHAIN_VALUE;
-    scope_chain.u.object = crb_create_scope_chain(inter);
-    scope_chain.u.object->u.scope_chain.frame = ret;
+    scope_chain.u.object = crb_create_scope_chain(inter, ret, NULL);
     CRB_push_value(inter, &scope_chain);
     ++stack_count;
 
@@ -413,8 +418,8 @@ static void gc_mark_objects(CRB_Interpreter *inter) {
         gc_reset_mark(obj);
     }
 
-    if (inter->variables != NULL) {
-        rbtree_ldr(inter->variables, _every_variable_gc_mark_value, NULL);
+    if (inter->global_vars != NULL) {
+        rbtree_ldr(inter->global_vars, _every_variable_gc_mark_value, NULL);
     }
 //    for (Variable* v = inter->variable; v; v = v->next) {
 //        gc_mark_value(&v->value);
@@ -466,10 +471,7 @@ static void gc_dispose_object(CRB_Interpreter *inter, CRB_Object *obj) {
 }
 
 static void gc_sweep_objects(CRB_Interpreter* inter) {
-    CRB_Object *obj;
-    CRB_Object *tmp;
-
-    for (obj = inter->heap.header; obj; ) {
+    for (CRB_Object* obj = inter->heap.header; obj; ) {
         if (!obj->marked) {
             if (obj->prev) {
                 obj->prev->next = obj->next;
@@ -479,7 +481,7 @@ static void gc_sweep_objects(CRB_Interpreter* inter) {
             if (obj->next) {
                 obj->next->prev = obj->prev;
             }
-            tmp = obj->next;
+            CRB_Object* tmp = obj->next;
             gc_dispose_object(inter, obj);
             obj = tmp;
         } else {

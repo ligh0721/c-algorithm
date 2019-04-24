@@ -9,6 +9,9 @@
 #include "tmisc.h"
 
 
+/*
+ * CRB_dispose_interpreter时统一释放
+ */
 void* crb_malloc(size_t size) {
     CRB_Interpreter* inter = crb_get_current_interpreter();
     return MEM_storage_malloc(inter->interpreter_storage, size);
@@ -175,22 +178,30 @@ CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, const char *identifie
     strcpy(name, identifier);
     new_var->name = name;
     new_var->value = *value;
-    rbtree_set(inter->variables, ptr_value(new_var));
+    rbtree_set(inter->global_vars, ptr_value(new_var));
 //    new_var->next = inter->variable;
 //    inter->variable = new_var;
     return &new_var->value;
 }
 
 Variable* crb_search_global_variable(CRB_Interpreter *inter, const char *identifier) {
+    if (inter->global_vars == NULL) {
+        printf("@@@@@@crb_search_global_variable\n");
+        return NULL;
+    }
     NamedItemEntry key = {identifier};
-    VALUE res = rbtree_get(inter->variables, ptr_value(&key), NULL);
+    VALUE res = rbtree_get(inter->global_vars, ptr_value(&key), NULL);
     return (Variable*)res.ptr_value;
 }
 
 CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Boolean *is_final) {
+    if (inter->global_vars == NULL) {
+        printf("@@@@@@CRB_search_global_variable\n");
+        return NULL;
+    }
     int ok;
     NamedItemEntry key = {identifier};
-    VALUE res = rbtree_get(inter->variables, ptr_value(&key), &ok);
+    VALUE res = rbtree_get(inter->global_vars, ptr_value(&key), &ok);
     if (ok) {
         Variable* var = (Variable*)res.ptr_value;
         if (is_final) {

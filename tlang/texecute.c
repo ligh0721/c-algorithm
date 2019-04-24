@@ -31,7 +31,7 @@ static StatementResult execute_global_statement(CRB_Interpreter *inter, CRB_Loca
     for (struct lnode* node=global_identifiers?llist_front_node(global_identifiers):NULL; node!=NULL; node=node->next) {
         char* identifier_name = (char*)node->value.ptr_value;
         NamedItemEntry key = {identifier_name};
-        GlobalVariableRef* global_ref = env->global_variable;
+        GlobalVariableRef* global_ref = env->global_var_refs;
         RBNODE* parent;
         RBNODE** where = rbtree_fast_get(global_ref, ptr_value(&key), &parent);
         if (!rbtree_node_not_found(global_ref, where)) {
@@ -41,7 +41,7 @@ static StatementResult execute_global_statement(CRB_Interpreter *inter, CRB_Loca
         if (variable == NULL) {
             crb_runtime_error(inter, env, statement->line_number, GLOBAL_VARIABLE_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", identifier_name, CRB_MESSAGE_ARGUMENT_END);
         }
-//        rbtree_set(env->global_variable, ptr_value(variable));
+//        rbtree_set(env->global_var_refs, ptr_value(variable));
         RBNODE* var_node = rbtree_open_node(global_ref, ptr_value(variable), parent);
         rbtree_fast_set(global_ref, where, var_node);
     }

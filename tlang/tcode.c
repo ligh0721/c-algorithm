@@ -15,6 +15,7 @@
 static inline LLIST* crb_create_list(const void* first) {
     static ALLOCATOR allocator = {crb_malloc, NULL};
     LLIST* ret = open_llist_with_allocator(allocator);
+//    LLIST* ret = open_llist();
     llist_push_back(ret, ptr_value((void*)first));
     return ret;
 }

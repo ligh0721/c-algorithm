@@ -73,10 +73,9 @@ static CRB_LocalEnvironment* alloc_local_environment(CRB_Interpreter *inter, con
     ret->caller_line_number = caller_line_number;
     ret->ref_in_native_method = NULL; /* to stop marking by GC */
     ret->variable = NULL; /* to stop marking by GC */
-    ret->variable = crb_create_scope_chain(inter);
-    ret->variable->u.scope_chain.frame = crb_create_assoc_i(inter);
-    ret->variable->u.scope_chain.next = closure_env;
-    ret->global_variable = NULL;
+    CRB_Object* frame = crb_create_assoc_i(inter);
+    ret->variable = crb_create_scope_chain(inter, frame, closure_env);
+    ret->global_var_refs = NULL;
     return ret;
 }
 
@@ -91,7 +90,11 @@ static CRB_Value* search_global_variable_from_env(CRB_Interpreter *inter, CRB_Lo
         return CRB_search_global_variable(inter, name, is_final);
     }
 
-    GlobalVariableRef* global_ref = env->global_variable;
+    GlobalVariableRef* global_ref = env->global_var_refs;
+    if (global_ref == NULL) {
+//        printf("@@@@@@search_global_variable_from_env\n");
+        return NULL;
+    }
     NamedItemEntry key = {name};
     int ok;
     VALUE res = rbtree_get(global_ref, ptr_value(&key), &ok);
@@ -100,7 +103,7 @@ static CRB_Value* search_global_variable_from_env(CRB_Interpreter *inter, CRB_Lo
     }
     return NULL;
 
-//    for (GlobalVariableRef *pos; = env->global_variable; pos; pos = pos->next) {
+//    for (GlobalVariableRef *pos; = env->global_var_refs; pos; pos = pos->next) {
 //        if (!strcmp(pos->name, name)) {
 //            return &pos->variable->value;
 //        }
@@ -508,12 +511,12 @@ static void dispose_local_environment(CRB_Interpreter *inter) {
     CRB_LocalEnvironment *temp = inter->top_environment;
     inter->top_environment = inter->top_environment->next;
 
-    if (temp->global_variable != NULL) {
-        close_rbtree(temp->global_variable);
+    if (temp->global_var_refs != NULL) {
+        close_rbtree(temp->global_var_refs);
     }
-//    while (temp->global_variable) {
-//        GlobalVariableRef* ref = temp->global_variable;
-//        temp->global_variable = ref->next;
+//    while (temp->global_var_refs) {
+//        GlobalVariableRef* ref = temp->global_var_refs;
+//        temp->global_var_refs = ref->next;
 //        MEM_free(ref);
 //    }
     dispose_ref_in_native_method(temp);
@@ -749,9 +752,7 @@ static void eval_function_call_expression(CRB_Interpreter *inter, CRB_LocalEnvir
     }
 
     CRB_LocalEnvironment* local_env = alloc_local_environment(inter, func_name, expr->line_number, closure_env);
-    if (func->type == CRB_CLOSURE_VALUE
-        && func->u.closure.function->is_closure
-        && func->u.closure.function->name) {
+    if (func->type == CRB_CLOSURE_VALUE && func->u.closure.function->is_closure && func->u.closure.function->name) {
         CRB_add_assoc_member(inter, local_env->variable->u.scope_chain.frame, func->u.closure.function->name, func, CRB_TRUE);
     }
 
