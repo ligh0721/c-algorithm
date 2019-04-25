@@ -6,9 +6,10 @@
 %}
 %start STRING_LITERAL_STATE
 %%
+<INITIAL>";"            return SEMICOLON;
+<INITIAL>"\n"           return LF;
 <INITIAL>"("            return LP;
 <INITIAL>")"            return RP;
-<INITIAL>";"            return SEMICOLON;
 <INITIAL>"="            return ASSIGN_T;
 <INITIAL>"+"            return ADD;
 <INITIAL>"-"            return SUB;
@@ -43,7 +44,6 @@
     return FLOAT_LITERAL;
 }
 <INITIAL>[ \t] ;
-<INITIAL>[ \t\r\n] {}
 <INITIAL>.      {
     yyerror("lex error\n");
 }

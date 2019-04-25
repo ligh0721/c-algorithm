@@ -54,7 +54,7 @@ add_flex_bison_dependency(LEX_TARGET YACC_TARGET)
 include_directories(tlang tlang/include ${CMAKE_CURRENT_BINARY_DIR})
 aux_source_directory(tlang TLANG_SRCS)
 add_executable(${TLANG_TARGET} ${TLANG_SRCS} ${BISON_YACC_TARGET_OUTPUTS} ${FLEX_LEX_TARGET_OUTPUTS})
-target_link_libraries(${TLANG_TARGET} ${LIB_TARGET} l readline)
+target_link_libraries(${TLANG_TARGET} ${LIB_TARGET} readline)
 
 
 # empty_lang
@@ -73,4 +73,4 @@ add_flex_bison_dependency(LEX_TARGET2 YACC_TARGET2)
 include_directories(empty_lang ${CMAKE_CURRENT_BINARY_DIR})
 aux_source_directory(empty_lang LANG_SRCS)
 add_executable(${LANG_TARGET} ${LANG_SRCS} ${BISON_YACC_TARGET2_OUTPUTS} ${FLEX_LEX_TARGET2_OUTPUTS})
-target_link_libraries(${LANG_TARGET} ${LIB_TARGET} l readline)
+target_link_libraries(${LANG_TARGET})

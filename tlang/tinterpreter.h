@@ -326,7 +326,7 @@ struct Expression_tag {
         double                  double_value;
         CRB_Char                *string_value;
 //        CRB_Regexp              *regexp_value;
-        const char                    *identifier;
+        const char              *identifier;
         CommaExpression         comma;
         AssignExpression        assign_expression;
         BinaryExpression        binary_expression;

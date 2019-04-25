@@ -12,7 +12,7 @@ extern int yylex();
 %token	<value>	IDENTIFIER
 %token	<value>	INT_LITERAL
 %token	<value>	FLOAT_LITERAL
-%token	LP RP SEMICOLON ASSIGN_T ADD SUB MUL DIV
+%token	SEMICOLON LF LP RP ASSIGN_T ADD SUB MUL DIV
 %type	<value>	value
 
 %%
@@ -22,9 +22,27 @@ exec_unit
 	;
 
 statement
-	: value SEMICOLON
+	: expression statement_end
 	{
-		printf("LangValueType: %d\n", $1.type);
+		printf("EXPRESSION_STATEMENT\n");
+	}
+	| statement_end
+	{
+		printf("<EMPTY_STATEMENT>\n");
+	}
+	;
+
+statement_end
+	: SEMICOLON
+	| LF
+	| statement_end SEMICOLON
+	| statement_end LF
+	;
+
+expression
+	: value
+	{
+		printf("type(%d) ", $1.type);
 	}
 	;
 
