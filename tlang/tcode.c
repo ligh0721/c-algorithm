@@ -75,9 +75,18 @@ Expression* crb_create_null_expression(void) {
 /*
  * 创建数组字面量表达式
  */
-Expression* crb_create_array_expression(ExpressionList *list) {
+Expression* crb_create_array_expression(ExpressionList* list) {
     Expression* exp = crb_alloc_expression(ARRAY_EXPRESSION);
     exp->u.array_literal = list;
+    return exp;
+}
+
+/*
+ * 创建对象(关联数组)字面量表达式
+ */
+Expression* crb_create_assoc_literal_expression(AssocExpressionList* list) {
+    Expression* exp = crb_alloc_expression(ASSOC_EXPRESSION);
+    exp->u.assoc_literal = list;
     return exp;
 }
 
@@ -212,6 +221,27 @@ ExpressionList* crb_create_expression_list(Expression *expression) {
 }
 
 ExpressionList* crb_chain_expression_list(ExpressionList *list, Expression *expr) {
+    return chain_list(list, expr);
+}
+
+/*
+ * 创建关联数组字面量成员项
+ */
+AssocExpression* crb_create_assoc_expression(CRB_Boolean is_final, const char* member_name, Expression* expr) {
+    AssocExpression* assoc_expr = crb_malloc(sizeof(AssocExpression));
+    assoc_expr->member_name = member_name;
+    assoc_expr->expression = expr;
+    assoc_expr->is_final = is_final;
+    return assoc_expr;
+}
+/*
+ * 创建关联数组字面量表达式列表
+ */
+AssocExpressionList* crb_create_assoc_expression_list(AssocExpression* expr) {
+    return create_list(expr);
+}
+
+AssocExpressionList* crb_chain_assoc_expression_list(AssocExpressionList* list, AssocExpression* expr) {
     return chain_list(list, expr);
 }
 

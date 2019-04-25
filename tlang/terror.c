@@ -157,11 +157,13 @@ void crb_compile_error(CompileError id, ...) {
     int line_number = inter->current_line_number;
     crb_vstr_clear(&message);
     format_message(inter, NULL, line_number, &crb_compile_error_message_format[id], &message, ap);
-    fprintf(stderr, "%3d:", line_number);
+    fprintf(stderr, "line %d: ", line_number);
     CRB_print_wcs_ln(stderr, message.string);
     va_end(ap);
 
-    exit(1);
+    if (inter->input_mode != CRB_READLINE_INPUT_MODE) {
+        exit(1);
+    }
 }
 
 static void throw_runtime_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Char *message, CRB_ErrorDefinition *def) {

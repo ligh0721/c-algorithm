@@ -11,6 +11,7 @@ Expression* crb_create_identifier_expression(const char *identifier);
 Expression* crb_create_boolean_expression(CRB_Boolean value);
 Expression* crb_create_null_expression(void);
 Expression* crb_create_array_expression(ExpressionList *list);
+Expression* crb_create_assoc_literal_expression(AssocExpressionList* list);
 Expression* crb_create_minus_expression(Expression *operand);
 Expression* crb_create_logical_not_expression(Expression *operand);
 Expression* crb_create_binary_expression(ExpressionType operator, Expression *left, Expression *right);
@@ -23,6 +24,10 @@ Expression* crb_create_function_call_expression(Expression *function, ArgumentLi
 
 ExpressionList* crb_create_expression_list(Expression *expression);
 ExpressionList* crb_chain_expression_list(ExpressionList* list, Expression *expr);
+
+AssocExpression* crb_create_assoc_expression(CRB_Boolean is_final, const char* member_name, Expression* expr);
+AssocExpressionList* crb_create_assoc_expression_list(AssocExpression* expr);
+AssocExpressionList* crb_chain_assoc_expression_list(AssocExpressionList* list, AssocExpression* expr);
 
 void crb_function_define(const char *identifier, CRB_ParameterList *parameter_list, CRB_Block *block);
 Expression* crb_create_closure_definition(const char *identifier, CRB_ParameterList *parameter_list, CRB_Block *block);

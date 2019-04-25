@@ -100,11 +100,8 @@ CRB_Object* crb_create_assoc_i(CRB_Interpreter *inter) {
 }
 
 CRB_Object* CRB_create_assoc(CRB_Interpreter *inter, CRB_LocalEnvironment *env) {
-    CRB_Object *ret;
-
-    ret = crb_create_assoc_i(inter);
+    CRB_Object* ret = crb_create_assoc_i(inter);
     add_ref_in_native_method(env, ret);
-
     return ret;
 }
 

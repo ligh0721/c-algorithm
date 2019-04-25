@@ -230,6 +230,7 @@ typedef enum {
     MEMBER_EXPRESSION,
     NULL_EXPRESSION,
     ARRAY_EXPRESSION,
+    ASSOC_EXPRESSION,
     INDEX_EXPRESSION,
     INCREMENT_EXPRESSION,
     DECREMENT_EXPRESSION,
@@ -298,10 +299,20 @@ typedef struct {
     Expression  *index;
 } IndexExpression;
 
+// expression.member_name
 typedef struct {
     Expression          *expression;
     const char          *member_name;
 } MemberExpression;
+
+// member_name: expression
+typedef struct {
+    const char          *member_name;
+    Expression          *expression;
+    CRB_Boolean         is_final;
+} AssocExpression;
+
+typedef LLIST AssocExpressionList;  // LLIST<AssocExpression*>
 
 typedef struct {
     Expression  *operand;
@@ -335,6 +346,7 @@ struct Expression_tag {
         FunctionCallExpression  function_call_expression;
         MemberExpression        member_expression;
         ExpressionList          *array_literal;
+        AssocExpressionList     *assoc_literal;
         IndexExpression         index_expression;
         IncrementOrDecrement    inc_dec;
         ClosureExpression       closure;

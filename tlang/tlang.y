@@ -4,7 +4,9 @@
 #include "terror.h"
 #include "tcode.h"
 #include "tlexer.h"
+#ifdef DEBUG
 #define YYDEBUG 1
+#endif
 
 extern int yylex();
 extern int yyerror(char const *str);
@@ -16,6 +18,8 @@ extern int yyerror(char const *str);
     ArgumentList        *argument_list;
     Expression          *expression;
     ExpressionList      *expression_list;
+    AssocExpression     *assoc_expression;
+    AssocExpressionList *assoc_expression_list;
     Statement           *statement;
     StatementList       *statement_list;
     CRB_Block           *block;
@@ -39,9 +43,11 @@ extern int yyerror(char const *str);
         assignment_expression logical_and_expression logical_or_expression
         equality_expression relational_expression
         additive_expression multiplicative_expression
-        unary_expression postfix_expression primary_expression array_literal
+        unary_expression postfix_expression primary_expression array_literal assoc_literal
         closure_definition
 %type   <expression_list> expression_list
+%type   <assoc_expression> assoc_expression
+%type   <assoc_expression_list> assoc_expression_list
 %type   <statement> statement global_statement
         if_statement while_statement for_statement foreach_statement
         return_statement break_statement continue_statement try_statement
@@ -57,6 +63,10 @@ extern int yyerror(char const *str);
 translation_unit
         : definition_or_statement
         | translation_unit definition_or_statement
+        | error {
+            yyclearin;
+            yyerrok;
+        }
         ;
 
 definition_or_statement
@@ -75,8 +85,19 @@ function_definition
         }
         ;
 
+closure_definition
+        : CLOSURE IDENTIFIER LP parameter_list RP block
+        {
+            $$ = crb_create_closure_definition($2, $4, $6);
+        }
+        | CLOSURE LP parameter_list RP block
+        {
+            $$ = crb_create_closure_definition(NULL, $3, $5);
+        }
+        ;
+
 parameter_list
-	: /* empty */
+        : /* empty */
         {
             $$ = NULL;
         }
@@ -87,21 +108,6 @@ parameter_list
         | parameter_list COMMA IDENTIFIER
         {
             $$ = crb_chain_parameter_list($1, $3);
-        }
-        ;
-
-argument_list
-        : /* empty */
-        {
-            $$ = NULL;
-        }
-        | assignment_expression
-        {
-            $$ = crb_create_argument_list($1);
-        }
-        | argument_list COMMA assignment_expression
-        {
-            $$ = crb_chain_argument_list($1, $3);
         }
         ;
 
@@ -300,28 +306,33 @@ primary_expression
             $$ = crb_create_null_expression();
         }
         | array_literal
+        | assoc_literal
         | closure_definition
         ;
 
-array_literal
-        : LC expression_list RC
+argument_list
+        : /* empty */
         {
-            $$ = crb_create_array_expression($2);
+            $$ = NULL;
         }
-        | LC expression_list COMMA RC
+        | assignment_expression
         {
-            $$ = crb_create_array_expression($2);
+            $$ = crb_create_argument_list($1);
+        }
+        | argument_list COMMA assignment_expression
+        {
+            $$ = crb_chain_argument_list($1, $3);
         }
         ;
 
-closure_definition
-        : CLOSURE IDENTIFIER LP parameter_list RP block
+array_literal
+        : LB expression_list RB
         {
-            $$ = crb_create_closure_definition($2, $4, $6);
+            $$ = crb_create_array_expression($2);
         }
-        | CLOSURE LP parameter_list RP block
+        | LB expression_list COMMA RB
         {
-            $$ = crb_create_closure_definition(NULL, $3, $5);
+            $$ = crb_create_array_expression($2);
         }
         ;
 
@@ -340,20 +351,49 @@ expression_list
         }
         ;
 
+assoc_literal
+        : LC assoc_expression_list RC
+        {
+            $$ = crb_create_assoc_literal_expression($2);
+        }
+        | LC assoc_expression_list COMMA RC
+        {
+            $$ = crb_create_assoc_literal_expression($2);
+        }
+        ;
+
+assoc_expression_list
+        : /* empty */
+        {
+            $$ = NULL;
+        }
+        | assoc_expression
+        {
+            $$ = crb_create_assoc_expression_list($1);
+        }
+        | assoc_expression_list COMMA assoc_expression
+        {
+            $$ = crb_chain_assoc_expression_list($1, $3);
+        }
+        ;
+
+assoc_expression
+        : IDENTIFIER COLON assignment_expression
+        {
+            $$ = crb_create_assoc_expression(CRB_FALSE, $1, $3);
+        }
+        | FINAL IDENTIFIER COLON assignment_expression
+        {
+            $$ = crb_create_assoc_expression(CRB_TRUE, $2, $4);
+        }
+        ;
+
 statement
-        : expression SEMICOLON
+        : expression statement_end
         {
             $$ = crb_create_expression_statement($1);
         }
-        | SEMICOLON
-        {
-            $$ = crb_create_expression_statement(NULL);
-        }
-        | expression LF
-        {
-            $$ = crb_create_expression_statement($1);
-        }
-        | LF
+        | statement_end
         {
             $$ = crb_create_expression_statement(NULL);
         }
@@ -370,7 +410,7 @@ statement
         ;
 
 global_statement
-        : GLOBAL_T identifier_list SEMICOLON
+        : GLOBAL_T identifier_list statement_end
         {
             $$ = crb_create_global_statement($2);
         }
@@ -388,7 +428,7 @@ identifier_list
         ;
 
 return_statement
-        : RETURN_T expression_opt SEMICOLON
+        : RETURN_T expression_opt statement_end
         {
             $$ = crb_create_return_statement($2);
         }
@@ -480,14 +520,14 @@ identifier_opt
         ;
 
 break_statement
-        : BREAK identifier_opt SEMICOLON
+        : BREAK identifier_opt statement_end
         {
             $$ = crb_create_break_statement($2);
         }
         ;
 
 continue_statement
-        : CONTINUE identifier_opt SEMICOLON
+        : CONTINUE identifier_opt statement_end
         {
             $$ = crb_create_continue_statement($2);
         }
@@ -509,7 +549,7 @@ try_statement
         ;
 
 throw_statement
-        : THROW expression SEMICOLON
+        : THROW expression statement_end
         {
             $$ = crb_create_throw_statement($2);
         }
@@ -523,5 +563,9 @@ block
         | LC RC {
             $$ = crb_create_block(NULL);
         }
+        ;
+statement_end
+        : SEMICOLON
+        | LF
         ;
 %%

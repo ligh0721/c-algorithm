@@ -364,7 +364,7 @@ struct _assoc_every_member_to_string_params {
 
 static int _assoc_every_member_to_string(const AssocMember* value, void* param) {
     struct _assoc_every_member_to_string_params* params = (struct _assoc_every_member_to_string_params*)param;
-    if (params->need_comma == CRB_FALSE) {
+    if (params->need_comma == CRB_TRUE) {
         crb_vstr_append_string(params->vstr, L", ");
     } else {
         params->need_comma = CRB_TRUE;
@@ -374,7 +374,7 @@ static int _assoc_every_member_to_string(const AssocMember* value, void* param) 
     crb_vstr_append_string(params->vstr, new_str);
     MEM_free(new_str);
 
-    crb_vstr_append_string(params->vstr, L"=>");
+    crb_vstr_append_string(params->vstr, L": ");
     new_str = CRB_value_to_string(params->inter, params->env, params->line_number, &value->value);
     crb_vstr_append_string(params->vstr, new_str);
     MEM_free(new_str);
@@ -420,7 +420,7 @@ CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
             crb_vstr_append_string(&vstr, wc_buf);
             break;
         case CRB_ARRAY_VALUE:
-            CRB_mbstowcs("(", wc_buf);
+            CRB_mbstowcs("[", wc_buf);
             crb_vstr_append_string(&vstr, wc_buf);
             CRB_Value_SLICE* arr = value->u.object->u.array.array;
             long len = CRB_Value_slice_len(arr);
@@ -435,11 +435,11 @@ CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
                 crb_vstr_append_string(&vstr, new_str);
                 MEM_free(new_str);
             }
-            CRB_mbstowcs(")", wc_buf);
+            CRB_mbstowcs("]", wc_buf);
             crb_vstr_append_string(&vstr, wc_buf);
             break;
         case CRB_ASSOC_VALUE:
-            CRB_mbstowcs("(", wc_buf);
+            CRB_mbstowcs("{", wc_buf);
             crb_vstr_append_string(&vstr, wc_buf);
             AssocMember_RBTREE* tr = value->u.object->u.assoc.members;
             struct _assoc_every_member_to_string_params params = {CRB_FALSE, inter, env, line_number, &vstr};
@@ -460,7 +460,7 @@ CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
 //                crb_vstr_append_string(&vstr, new_str);
 //                MEM_free(new_str);
 //            }
-            CRB_mbstowcs(")", wc_buf);
+            CRB_mbstowcs("}", wc_buf);
             crb_vstr_append_string(&vstr, wc_buf);
             break;
         case CRB_CLOSURE_VALUE:

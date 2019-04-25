@@ -40,7 +40,7 @@ CRB_Value CRB_pop_value(CRB_Interpreter *inter) {
 }
 
 static inline CRB_Value* peek_stack(CRB_Interpreter *inter, int index) {
-    return &inter->stack.stack[inter->stack.stack_pointer - index - 1];
+    return &inter->stack.stack[inter->stack.stack_pointer-index-1];
 }
 
 CRB_Value* CRB_peek_stack(CRB_Interpreter *inter, int index) {
@@ -152,24 +152,34 @@ static void eval_double_expression(CRB_Interpreter *inter, double double_value) 
     v.u.double_value = double_value;
     push_value(inter, &v);
 }
+
 /*
  * 数组字面量
  */
 static void eval_array_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, ExpressionList *list) {
-    CRB_Value   v;
 //    int         i;
 
 //    int size = 0;
 //    for (ExpressionList* pos = list; pos; pos = pos->next) {
 //        size++;
 //    }
-    long len = llist_len(list);
+    long len;
+    struct lnode* node;
+    if (list != NULL) {
+        len = llist_len(list);
+        node = llist_front_node(list);
+    } else {
+        len = 0;
+        node = NULL;
+    }
+
+    CRB_Value v;
     v.type = CRB_ARRAY_VALUE;
     v.u.object = crb_create_array_i(inter, len);
     push_value(inter, &v);
 
     CRB_Value* data = CRB_Value_slice_data(v.u.object->u.array.array);
-    for (struct lnode* node=list?llist_front_node(list):NULL; node!=NULL; node=node->next) {
+    for (; node!=NULL; node=node->next) {
         eval_expression(inter, env, (Expression*)node->value.ptr_value);
         *(data++) = pop_value(inter);
     }
@@ -178,6 +188,38 @@ static void eval_array_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *
 //        eval_expression(inter, env, pos->expression);
 //        v.u.object->u.array.array[i] = pop_value(inter);
 //    }
+}
+
+/*
+ * 对象(关联数组)字面量
+ */
+static void eval_assoc_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, AssocExpressionList *list) {
+
+//    int         i;
+
+//    int size = 0;
+//    for (ExpressionList* pos = list; pos; pos = pos->next) {
+//        size++;
+//    }
+    struct lnode* node;
+    if (list != NULL) {
+        node = llist_front_node(list);
+    } else {
+        node = NULL;
+    }
+
+    CRB_Value v;
+    v.type = CRB_ASSOC_VALUE;
+    v.u.object = crb_create_assoc_i(inter);
+    push_value(inter, &v);
+
+    for (; node!=NULL; node=node->next) {
+        AssocExpression* assoc_expr = (AssocExpression*)node->value.ptr_value;
+        eval_expression(inter, env, assoc_expr->expression);
+        CRB_Value* value = peek_stack(inter, 0);
+        CRB_add_assoc_member(inter, v.u.object, assoc_expr->member_name, value, assoc_expr->is_final);
+        shrink_stack(inter, 1);
+    }
 }
 
 /*
@@ -990,13 +1032,13 @@ static void do_assign(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Val
  */
 static void assign_to_member(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr, CRB_Value *src) {
     Expression *left = expr->u.assign_expression.left;
-    CRB_Boolean is_final;
     eval_expression(inter, env, left->u.member_expression.expression);
     CRB_Value* assoc = peek_stack(inter, 0);
     if (assoc->type != CRB_ASSOC_VALUE) {
         crb_runtime_error(inter, env, expr->line_number, NOT_OBJECT_MEMBER_ASSIGN_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
 
+    CRB_Boolean is_final;
     CRB_Value* dest = CRB_search_assoc_member(assoc->u.object, left->u.member_expression.member_name, &is_final);
     if (dest == NULL) {
         if (expr->u.assign_expression.operator != NORMAL_ASSIGN) {
@@ -1236,6 +1278,9 @@ static void eval_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, E
             break;
         case ARRAY_EXPRESSION:
             eval_array_expression(inter, env, expr->u.array_literal);
+            break;
+        case ASSOC_EXPRESSION:
+            eval_assoc_expression(inter, env, expr->u.assoc_literal);
             break;
         case CLOSURE_EXPRESSION:
             eval_closure_expression(inter, env, expr);

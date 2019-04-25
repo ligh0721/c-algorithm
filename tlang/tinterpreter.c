@@ -175,8 +175,8 @@ void CRB_interpret(CRB_Interpreter *interpreter) {
     if ((setjmp(interpreter->current_recovery_environment.environment)) == 0) {
         StatementList* list = interpreter->statement_list;
         struct lnode* last_pos = interpreter->last_statement_pos ? interpreter->last_statement_pos : llist_before_front_node(list);
-        StatementResult result = crb_execute_statement_list_with_pos(interpreter, NULL, last_pos);
         interpreter->last_statement_pos = llist_back_node(list);
+        StatementResult result = crb_execute_statement_list_with_pos(interpreter, NULL, last_pos);
         if (result.type != NORMAL_STATEMENT_RESULT) {
             crb_runtime_error(interpreter, NULL, 0, BREAK_OR_CONTINUE_REACHED_TOPLEVEL_ERR, CRB_MESSAGE_ARGUMENT_END);
         }
