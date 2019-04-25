@@ -112,15 +112,27 @@ struct CRB_FunctionDefinition_tag {
     struct CRB_FunctionDefinition_tag   *next;
 };
 
+// Error
 void CRB_check_argument_count_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int expected_count);
 
 #define CRB_check_argument_count(inter, env, arg_count, expected_count)\
   (CRB_check_argument_count_func(inter, env, __LINE__, \
   arg_count, expected_count))
 
+typedef struct {
+    const char *format;
+    const char *class_name;
+} CRB_ErrorDefinition;
+
+typedef struct {
+    CRB_ErrorDefinition *message_format;
+} CRB_NativeLibInfo;
+
+void CRB_error(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_NativeLibInfo *info, int line_number, int error_code, ...);
+
 typedef void CRB_NativePointerFinalizeProc(CRB_Interpreter *inter, CRB_Object *obj);  // TODO: *
 typedef struct {
-    char                                *name;
+    const char                          *name;
     CRB_NativePointerFinalizeProc       *finalizer;
 } CRB_NativePointerInfo;
 
@@ -132,12 +144,6 @@ typedef enum {
     CRB_POINTER_MESSAGE_ARGUMENT,
     CRB_MESSAGE_ARGUMENT_END
 } CRB_MessageArgumentType;
-
-typedef struct {
-    char *format;
-    char *class_name;
-} CRB_ErrorDefinition;
-
 
 // theap
 CRB_Object* CRB_create_crowbar_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Char *str);
@@ -192,7 +198,7 @@ typedef enum {
 } MEM_FailMode;
 
 typedef struct MEM_Controller_tag *MEM_Controller;
-typedef void (*MEM_ErrorHandler)(MEM_Controller, char *, int, char *);
+typedef void (*MEM_ErrorHandler)(MEM_Controller, const char *, int, const char *);
 typedef struct MEM_Storage_tag *MEM_Storage;
 
 extern MEM_Controller mem_default_controller;
@@ -208,54 +214,31 @@ extern MEM_Controller mem_default_controller;
  * There are private functions of MEM module.
  */
 MEM_Controller MEM_create_controller(void);
-void *MEM_malloc_func(MEM_Controller controller,
-                      char *filename, int line, size_t size);
-void *MEM_realloc_func(MEM_Controller controller,
-                       char *filename, int line, void *ptr, size_t size);
-char *MEM_strdup_func(MEM_Controller controller,
-                      char *filename, int line, char *str);
-MEM_Storage MEM_open_storage_func(MEM_Controller controller,
-                                  char *filename, int line, int page_size);
-void *MEM_storage_malloc_func(MEM_Controller controller,
-                              char *filename, int line,
-                              MEM_Storage storage, size_t size);
+void *MEM_malloc_func(MEM_Controller controller, const char *filename, int line, size_t size);
+void *MEM_realloc_func(MEM_Controller controller, const char *filename, int line, void *ptr, size_t size);
+const char *MEM_strdup_func(MEM_Controller controller, const char *filename, int line, const char *str);
+MEM_Storage MEM_open_storage_func(MEM_Controller controller, const char *filename, int line, int page_size);
+void *MEM_storage_malloc_func(MEM_Controller controller, const char *filename, int line, MEM_Storage storage, size_t size);
 void MEM_free_func(MEM_Controller controller, void *ptr);
-void MEM_dispose_storage_func(MEM_Controller controller,
-                              MEM_Storage storage);
+void MEM_dispose_storage_func(MEM_Controller controller, MEM_Storage storage);
 
-void MEM_set_error_handler(MEM_Controller controller,
-                           MEM_ErrorHandler handler);
-void MEM_set_fail_mode(MEM_Controller controller,
-                       MEM_FailMode mode);
+void MEM_set_error_handler(MEM_Controller controller, MEM_ErrorHandler handler);
+void MEM_set_fail_mode(MEM_Controller controller,MEM_FailMode mode);
 void MEM_dump_blocks_func(MEM_Controller controller, FILE *fp);
-void MEM_check_block_func(MEM_Controller controller,
-                          char *filename, int line, void *p);
-void MEM_check_all_blocks_func(MEM_Controller controller,
-                               char *filename, int line);
+void MEM_check_block_func(MEM_Controller controller, const char *filename, int line, void *p);
+void MEM_check_all_blocks_func(MEM_Controller controller, const char *filename, int line);
 
-#define MEM_malloc(size)\
-  (MEM_malloc_func(MEM_CURRENT_CONTROLLER,\
-                   __FILE__, __LINE__, size))
-#define MEM_realloc(ptr, size)\
-  (MEM_realloc_func(MEM_CURRENT_CONTROLLER, __FILE__, __LINE__, ptr, size))
-#define MEM_strdup(str)\
-  (MEM_strdup_func(MEM_CURRENT_CONTROLLER, __FILE__, __LINE__, str))
-#define MEM_open_storage(page_size)\
-  (MEM_open_storage_func(MEM_CURRENT_CONTROLLER,\
-                         __FILE__, __LINE__, page_size))
-#define MEM_storage_malloc(storage, size)\
-  (MEM_storage_malloc_func(MEM_CURRENT_CONTROLLER,\
-                           __FILE__, __LINE__, storage, size))
+#define MEM_malloc(size) (MEM_malloc_func(MEM_CURRENT_CONTROLLER, __FILE__, __LINE__, size))
+#define MEM_realloc(ptr, size) (MEM_realloc_func(MEM_CURRENT_CONTROLLER, __FILE__, __LINE__, ptr, size))
+#define MEM_strdup(str) (MEM_strdup_func(MEM_CURRENT_CONTROLLER, __FILE__, __LINE__, str))
+#define MEM_open_storage(page_size) (MEM_open_storage_func(MEM_CURRENT_CONTROLLER, __FILE__, __LINE__, page_size))
+#define MEM_storage_malloc(storage, size) (MEM_storage_malloc_func(MEM_CURRENT_CONTROLLER, __FILE__, __LINE__, storage, size))
 #define MEM_free(ptr) (MEM_free_func(MEM_CURRENT_CONTROLLER, ptr))
-#define MEM_dispose_storage(storage)\
-  (MEM_dispose_storage_func(MEM_CURRENT_CONTROLLER, storage))
+#define MEM_dispose_storage(storage) (MEM_dispose_storage_func(MEM_CURRENT_CONTROLLER, storage))
 #ifdef DEBUG
-#define MEM_dump_blocks(fp)\
-  (MEM_dump_blocks_func(MEM_CURRENT_CONTROLLER, fp))
-#define MEM_check_block(p)\
-  (MEM_check_block_func(MEM_CURRENT_CONTROLLER, __FILE__, __LINE__, p))
-#define MEM_check_all_blocks()\
-  (MEM_check_all_blocks_func(MEM_CURRENT_CONTROLLER, __FILE__, __LINE__))
+#define MEM_dump_blocks(fp) (MEM_dump_blocks_func(MEM_CURRENT_CONTROLLER, fp))
+#define MEM_check_block(p) (MEM_check_block_func(MEM_CURRENT_CONTROLLER, __FILE__, __LINE__, p))
+#define MEM_check_all_blocks() (MEM_check_all_blocks_func(MEM_CURRENT_CONTROLLER, __FILE__, __LINE__))
 #else /* DEBUG */
 #define MEM_dump_blocks(fp) ((void)0)
 #define MEM_check_block(p)  ((void)0)
@@ -264,8 +247,8 @@ void MEM_check_all_blocks_func(MEM_Controller controller,
 
 // debug
 typedef struct DBG_Controller_tag *DBG_Controller;
-void DBG_set(DBG_Controller controller, char *file, int line);
-void DBG_set_expression(char *expression);
+void DBG_set(DBG_Controller controller, const char *file, int line);
+void DBG_set_expression(const char *expression);
 
 #ifdef DBG_NO_DEBUG
 #define DBG_create_controller()         ((void)0)
@@ -283,21 +266,11 @@ void DBG_set_expression(char *expression);
 extern DBG_Controller DBG_CURRENT_CONTROLLER;
 
 #define DBG_create_controller() (DBG_create_controller_func())
-#define DBG_set_debug_level(level) \
-(DBG_set_debug_level_func(DBG_CURRENT_CONTROLLER, (level)))
-#define DBG_set_debug_write_fp(fp) \
-(DBG_set_debug_write_fp(DBG_CURRENT_CONTROLLER, (fp))
-#define DBG_assert(expression, arg) \
- ((expression) ? (void)(0) :\
-  ((DBG_set(DBG_CURRENT_CONTROLLER, __FILE__, __LINE__)),\
-   (DBG_set_expression(#expression)),\
-   DBG_assert_func arg))
-#define DBG_panic(arg) \
- ((DBG_set(DBG_CURRENT_CONTROLLER, __FILE__, __LINE__)),\
-  DBG_panic_func arg)
-#define DBG_debug_write(arg) \
- ((DBG_set(DBG_CURRENT_CONTROLLER, __FILE__, __LINE__)),\
-  DBG_debug_write_func arg)
+#define DBG_set_debug_level(level) (DBG_set_debug_level_func(DBG_CURRENT_CONTROLLER, (level)))
+#define DBG_set_debug_write_fp(fp) (DBG_set_debug_write_fp(DBG_CURRENT_CONTROLLER, (fp))
+#define DBG_assert(expression, arg) ((expression) ? (void)(0) : ((DBG_set(DBG_CURRENT_CONTROLLER, __FILE__, __LINE__)), (DBG_set_expression(#expression)), DBG_assert_func arg))
+#define DBG_panic(arg) ((DBG_set(DBG_CURRENT_CONTROLLER, __FILE__, __LINE__)), DBG_panic_func arg)
+#define DBG_debug_write(arg) ((DBG_set(DBG_CURRENT_CONTROLLER, __FILE__, __LINE__)), DBG_debug_write_func arg)
 #endif /* DBG_NO_DEBUG */
 
 typedef enum {
@@ -308,8 +281,8 @@ typedef enum {
 DBG_Controller DBG_create_controller_func(void);
 void DBG_set_debug_level_func(DBG_Controller controller, int level);
 void DBG_set_debug_write_fp_func(DBG_Controller controller, FILE *fp);
-void DBG_assert_func(char *fmt, ...);
-void DBG_panic_func(char *fmt, ...);
-void DBG_debug_write_func(int level, char *fmt, ...);
+void DBG_assert_func(const char *fmt, ...);
+void DBG_panic_func(const char *fmt, ...);
+void DBG_debug_write_func(int level, const char *fmt, ...);
 
 #endif //TLANG_TLANG_H

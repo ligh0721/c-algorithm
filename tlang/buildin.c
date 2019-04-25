@@ -6,7 +6,7 @@
 
 
 static const char* st_builtin_src[] = {
-        "function create_exception_class(parent) {\n",
+        "func create_exception_class(parent) {\n",
         "    this = new_object();\n",
         "    this.parent = parent;\n",
         "    this.create = closure(message) {\n",
@@ -102,7 +102,7 @@ static const char* st_builtin_src[] = {
         "\n",
         "\n",
         "# iterator\n",
-        "function __create_array_iterator(array) {\n",
+        "func __create_array_iterator(array) {\n",
         "    this = new_object();\n",
         "    index = 0;\n",
         "    this.first = closure() {\n",

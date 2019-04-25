@@ -8,6 +8,25 @@
 #include "theap.h"
 
 
+typedef enum {
+    FOPEN_ARGUMENT_TYPE_ERR = 0,
+    FCLOSE_ARGUMENT_TYPE_ERR,
+    FGETS_ARGUMENT_TYPE_ERR,
+    FILE_ALREADY_CLOSED_ERR,
+    FPUTS_ARGUMENT_TYPE_ERR,
+    NEW_ARRAY_ARGUMENT_TYPE_ERR,
+    NEW_ARRAY_ARGUMENT_TOO_FEW_ERR,
+    EXIT_ARGUMENT_TYPE_ERR,
+    NEW_EXCEPTION_ARGUMENT_ERR,
+    FGETS_BAD_MULTIBYTE_CHARACTER_ERR
+} NativeErrorCode;
+
+extern CRB_ErrorDefinition crb_native_error_message_format[];
+
+static CRB_NativeLibInfo st_lib_info = {
+        crb_native_error_message_format,
+};
+
 // functions
 static CRB_Value nv_print_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args){
     CRB_Value value;
@@ -47,17 +66,33 @@ static CRB_Value nv_new_array_proc(CRB_Interpreter *interpreter, CRB_LocalEnviro
     return value;
 }
 
-static CRB_Value nv_new_object_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args){
-    CRB_Value value = {};
+static CRB_Value
+nv_new_object_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args) {
+    CRB_check_argument_count(interpreter, env, arg_count, 0);
+    CRB_Value value;
+    value.type = CRB_ASSOC_VALUE;
+    value.u.object = CRB_create_assoc(interpreter, env);
     return value;
 }
 
-static CRB_Value nv_new_exception_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args){
-    CRB_Value value = {};
+static CRB_Value nv_new_exception_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args) {
+    CRB_check_argument_count(interpreter, env, arg_count, 1);
+    if (args[0].type != CRB_STRING_VALUE) {
+        CRB_error(interpreter, env, &st_lib_info, __LINE__, (int)NEW_EXCEPTION_ARGUMENT_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(args[0].type), CRB_MESSAGE_ARGUMENT_END);
+    }
+    CRB_Value value;
+    value.type = CRB_ASSOC_VALUE;
+    value.u.object = CRB_create_exception(interpreter, env->next, args[0].u.object, env->caller_line_number);
     return value;
 }
 
-static CRB_Value nv_exit_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args){
+static CRB_Value nv_exit_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args) {
+    CRB_check_argument_count(interpreter, env, arg_count, 1);
+    if (args[0].type != CRB_INT_VALUE) {
+        CRB_error(interpreter, env, &st_lib_info, __LINE__, (int)EXIT_ARGUMENT_TYPE_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(args[0].type), CRB_MESSAGE_ARGUMENT_END);
+    }
+
+    exit(args[0].u.int_value);
     CRB_Value value = {};
     return value;
 }

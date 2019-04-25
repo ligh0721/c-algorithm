@@ -218,3 +218,13 @@ void CRB_check_argument_count_func(CRB_Interpreter *inter, CRB_LocalEnvironment 
         crb_runtime_error(inter, env, line_number, ARGUMENT_TOO_MANY_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
 }
+
+void CRB_error(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_NativeLibInfo *info, int line_number, int error_code, ...) {
+    va_list ap;
+    VString message;
+
+    va_start(ap, error_code);
+    crb_vstr_clear(&message);
+    format_message(inter, env, line_number, &info->message_format[error_code], &message, ap);
+    throw_runtime_exception(inter, env, line_number, message.string, &info->message_format[error_code]);
+}

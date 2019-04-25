@@ -6,6 +6,7 @@
 #include <algorithm.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <locale.h>
 #include "tlang.h"
 
 
@@ -45,6 +46,7 @@ int file_mode(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
+    setlocale(LC_CTYPE, "");
     if (argc == 1) {
         return readline_mode(argc, argv);
     } else {

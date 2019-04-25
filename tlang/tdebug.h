@@ -10,8 +10,8 @@
 
 
 struct DBG_Controller_tag {
-    FILE        *debug_write_fp;
-    int         current_debug_level;
+    FILE* debug_write_fp;
+    int current_debug_level;
 };
 
 #endif //TLANG_TDEBUG_H
