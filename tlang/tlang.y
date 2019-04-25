@@ -105,11 +105,7 @@ argument_list
         ;
 
 statement_list
-        : /* empty */
-        {
-            $$ = NULL;
-        }
-        | statement
+        : statement
         {
             $$ = crb_create_statement_list($1);
         }
@@ -508,6 +504,9 @@ block
         : LC statement_list RC
         {
             $$ = crb_create_block($2);
+        }
+        | LC RC {
+            $$ = crb_create_block(NULL);
         }
         ;
 %%
