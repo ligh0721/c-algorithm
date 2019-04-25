@@ -24,25 +24,23 @@ exec_unit
 statement
 	: expression statement_end
 	{
-		printf("EXPRESSION_STATEMENT\n");
+		fprintf(stderr, "EXPRESSION_STATEMENT\n");
 	}
 	| statement_end
 	{
-		printf("<EMPTY_STATEMENT>\n");
+		fprintf(stderr, "<EMPTY_STATEMENT>\n");
 	}
 	;
 
 statement_end
 	: SEMICOLON
 	| LF
-	| statement_end SEMICOLON
-	| statement_end LF
 	;
 
 expression
 	: value
 	{
-		printf("type(%d) ", $1.type);
+		fprintf(stderr, "type(%d) ", $1.type);
 	}
 	;
 
