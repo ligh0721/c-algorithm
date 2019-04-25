@@ -237,20 +237,10 @@ typedef enum {
     EXPRESSION_TYPE_COUNT_PLUS_1
 } ExpressionType;
 
-#define crb_is_numeric_type(type)\
-  ((type) == CRB_INT_VALUE || (type) == CRB_DOUBLE_VALUE)
-#define crb_is_math_operator(operator) \
-  ((operator) == ADD_EXPRESSION || (operator) == SUB_EXPRESSION\
-   || (operator) == MUL_EXPRESSION || (operator) == DIV_EXPRESSION\
-   || (operator) == MOD_EXPRESSION)
-
-#define crb_is_compare_operator(operator) \
-  ((operator) == EQ_EXPRESSION || (operator) == NE_EXPRESSION\
-   || (operator) == GT_EXPRESSION || (operator) == GE_EXPRESSION\
-   || (operator) == LT_EXPRESSION || (operator) == LE_EXPRESSION)
-
-#define crb_is_logical_operator(operator) \
-  ((operator) == LOGICAL_AND_EXPRESSION || (operator) == LOGICAL_OR_EXPRESSION)
+#define crb_is_numeric_type(type) ((type) == CRB_INT_VALUE || (type) == CRB_DOUBLE_VALUE)
+#define crb_is_math_operator(operator) ((operator) == ADD_EXPRESSION || (operator) == SUB_EXPRESSION || (operator) == MUL_EXPRESSION || (operator) == DIV_EXPRESSION || (operator) == MOD_EXPRESSION)
+#define crb_is_compare_operator(operator) ((operator) == EQ_EXPRESSION || (operator) == NE_EXPRESSION || (operator) == GT_EXPRESSION || (operator) == GE_EXPRESSION || (operator) == LT_EXPRESSION || (operator) == LE_EXPRESSION)
+#define crb_is_logical_operator(operator) ((operator) == LOGICAL_AND_EXPRESSION || (operator) == LOGICAL_OR_EXPRESSION)
 
 
 typedef LLIST ArgumentList;  // LLIST<Expression*>
@@ -289,6 +279,13 @@ typedef struct {
     Expression          *function;
     ArgumentList        *argument;
 } FunctionCallExpression;
+
+typedef struct {
+    ObjectType  type;
+    const char  *name;
+    int         argument_count;
+    void        (*func)(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, CRB_Value *result);
+} FakeMethodTable;
 
 //typedef struct ExpressionList_tag {
 //    ExpressionListNode head;

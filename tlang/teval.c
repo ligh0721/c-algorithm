@@ -10,6 +10,7 @@
 #include "tmisc.h"
 #include "theap.h"
 #include "texecute.h"
+#include "tnative.h"
 
 
 // stack operate
@@ -558,28 +559,6 @@ static CRB_Value call_native_function_from_native(CRB_Interpreter *inter, CRB_Lo
     return value;
 }
 
-
-typedef struct {
-    ObjectType  type;
-    const char  *name;
-    int         argument_count;
-    void        (*func)(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, CRB_Value *result);
-} FakeMethodTable;
-
-static FakeMethodTable st_fake_method_table[] = {
-        // TODO:
-//        {ARRAY_OBJECT, "add", 1, array_add_method},
-//        {ARRAY_OBJECT, "size", 0, array_size_method},
-//        {ARRAY_OBJECT, "resize", 1, array_resize_method},
-//        {ARRAY_OBJECT, "insert", 2, array_insert_method},
-//        {ARRAY_OBJECT, "remove", 1, array_remove_method},
-//        {ARRAY_OBJECT, "iterator", 0, array_iterator_method},
-//        {STRING_OBJECT, "length", 0, string_length_method},
-//        {STRING_OBJECT, "substr", 2, string_substr_method},
-};
-
-#define FAKE_METHOD_TABLE_SIZE(array)  (sizeof(array) / sizeof((array)[0]))
-
 static inline void check_method_argument_count(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int param_count) {
     if (arg_count < param_count) {
         crb_runtime_error(inter, env, line_number, ARGUMENT_TOO_FEW_ERR, CRB_MESSAGE_ARGUMENT_END);
@@ -588,22 +567,8 @@ static inline void check_method_argument_count(CRB_Interpreter *inter, CRB_Local
     }
 }
 
-static inline FakeMethodTable* search_fake_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_FakeMethod *fm) {
-    int i;
-    for (i = 0; i < FAKE_METHOD_TABLE_SIZE(st_fake_method_table); i++) {
-        if (fm->object->type == st_fake_method_table[i].type && !strcmp(fm->method_name, st_fake_method_table[i].name)) {
-            break;
-        }
-    }
-    if (i == FAKE_METHOD_TABLE_SIZE(st_fake_method_table)) {
-        crb_runtime_error(inter, env, line_number, NO_SUCH_METHOD_ERR, CRB_STRING_MESSAGE_ARGUMENT, "method_name", fm->method_name, CRB_MESSAGE_ARGUMENT_END);
-    }
-
-    return &st_fake_method_table[i];
-}
-
 static inline CRB_Value call_fake_method_from_native(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_LocalEnvironment *caller_env, CRB_Value *func, int arg_count, CRB_Value *args) {
-    FakeMethodTable* fmt = search_fake_method(inter, env, line_number, &func->u.fake_method);
+    FakeMethodTable* fmt = crb_search_fake_method(inter, env, line_number, &func->u.fake_method);
     check_method_argument_count(inter, env, line_number, arg_count, fmt->argument_count);
     for (int i=0; i<arg_count; ++i) {
         push_value(inter, &args[i]);
@@ -705,7 +670,7 @@ static void call_fake_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
         node = llist_front_node(arg_list);
     }
 
-    FakeMethodTable* fmt = search_fake_method(inter, env, expr->line_number, fm);
+    FakeMethodTable* fmt = crb_search_fake_method(inter, env, expr->line_number, fm);
     check_method_argument_count(inter, env, expr->line_number, arg_count, fmt->argument_count);
     for (; node!=NULL; node=node->next) {
         eval_expression(inter, caller_env, (Expression*)node->value.ptr_value);

@@ -6,6 +6,7 @@
 #include "tnative.h"
 #include "tmisc.h"
 #include "theap.h"
+#include "terror.h"
 
 
 typedef enum {
@@ -23,9 +24,7 @@ typedef enum {
 
 extern CRB_ErrorDefinition crb_native_error_message_format[];
 
-static CRB_NativeLibInfo st_lib_info = {
-        crb_native_error_message_format,
-};
+static CRB_NativeLibInfo st_lib_info = {crb_native_error_message_format};
 
 // functions
 static CRB_Value nv_print_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args){
@@ -66,8 +65,7 @@ static CRB_Value nv_new_array_proc(CRB_Interpreter *interpreter, CRB_LocalEnviro
     return value;
 }
 
-static CRB_Value
-nv_new_object_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args) {
+static CRB_Value nv_new_object_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args) {
     CRB_check_argument_count(interpreter, env, arg_count, 0);
     CRB_Value value;
     value.type = CRB_ASSOC_VALUE;
@@ -148,4 +146,33 @@ void CRB_set_function_definition(const char *name, CRB_NativeFunctionProc *proc,
     fd->type = CRB_NATIVE_FUNCTION_DEFINE;
     fd->is_closure = CRB_TRUE;
     fd->u.native_f.proc = proc;
+}
+
+// fake method
+FakeMethodTable st_fake_method_table[] = {
+        // TODO:
+//        {ARRAY_OBJECT, "add", 1, array_add_method},
+//        {ARRAY_OBJECT, "size", 0, array_size_method},
+//        {ARRAY_OBJECT, "resize", 1, array_resize_method},
+//        {ARRAY_OBJECT, "insert", 2, array_insert_method},
+//        {ARRAY_OBJECT, "remove", 1, array_remove_method},
+//        {ARRAY_OBJECT, "iterator", 0, array_iterator_method},
+//        {STRING_OBJECT, "length", 0, string_length_method},
+//        {STRING_OBJECT, "substr", 2, string_substr_method},
+};
+
+#define FAKE_METHOD_TABLE_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+
+FakeMethodTable* crb_search_fake_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_FakeMethod *fm) {
+    int i;
+    for (i = 0; i < FAKE_METHOD_TABLE_SIZE(st_fake_method_table); i++) {
+        if (fm->object->type == st_fake_method_table[i].type && !strcmp(fm->method_name, st_fake_method_table[i].name)) {
+            break;
+        }
+    }
+    if (i == FAKE_METHOD_TABLE_SIZE(st_fake_method_table)) {
+        crb_runtime_error(inter, env, line_number, NO_SUCH_METHOD_ERR, CRB_STRING_MESSAGE_ARGUMENT, "method_name", fm->method_name, CRB_MESSAGE_ARGUMENT_END);
+    }
+
+    return &st_fake_method_table[i];
 }
