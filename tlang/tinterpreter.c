@@ -64,7 +64,7 @@ CRB_Interpreter* CRB_create_interpreter(void) {
 
 #ifndef MINICROWBAR
     extern void crb_compile_built_in_script(CRB_Interpreter *inter);
-    crb_compile_built_in_script(interpreter);
+//    crb_compile_built_in_script(interpreter);
 #endif /* MINICROWBAR */
 
     return interpreter;

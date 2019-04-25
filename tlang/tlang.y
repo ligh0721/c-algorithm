@@ -3,6 +3,7 @@
 #include "tinterpreter.h"
 #include "terror.h"
 #include "tcode.h"
+#include "tlexer.h"
 #define YYDEBUG 1
 
 extern int yylex();
@@ -22,6 +23,7 @@ extern int yyerror(char const *str);
     ElifList            *elif_list;
     AssignmentOperator  assignment_operator;
     IdentifierList      *identifier_list;
+    void                *dummy;
 }
 %token  <expression>     INT_LITERAL
 %token  <expression>     DOUBLE_LITERAL
@@ -493,12 +495,14 @@ try_statement
         {
             $$ = crb_create_try_statement($2, $5, $7, NULL);
         }
+        ;
 
 throw_statement
         : THROW expression SEMICOLON
         {
             $$ = crb_create_throw_statement($2);
         }
+        ;
 
 block
         : LC statement_list RC

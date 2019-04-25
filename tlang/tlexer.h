@@ -13,7 +13,7 @@ void crb_add_string_literal(int letter);
 void crb_reset_string_literal_buffer(void);
 CRB_Char* crb_close_string_literal(void);
 
-#define increment_line_number() (crb_get_current_interpreter()->current_line_number++)
+#define crb_increment_line_number() (crb_get_current_interpreter()->current_line_number++)
 
 void crb_set_source_string(const char** source);
 

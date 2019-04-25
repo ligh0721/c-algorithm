@@ -13,10 +13,10 @@
 %}
 %start COMMENT STRING_LITERAL_STATE REGEXP_LITERAL_STATE SHIFT_JIS_2ND_CHAR
 %%
-<INITIAL>"func"     return FUNCTION;
+<INITIAL>"func"         return FUNCTION;
 <INITIAL>"if"           return IF;
 <INITIAL>"else"         return ELSE;
-<INITIAL>"elif"        return ELIF;
+<INITIAL>"elif"         return ELIF;
 <INITIAL>"while"        return WHILE;
 <INITIAL>"for"          return FOR;
 <INITIAL>"foreach"      return FOREACH;
@@ -92,7 +92,7 @@
     BEGIN STRING_LITERAL_STATE;
 }
 <INITIAL>[ \t] ;
-<INITIAL>[ \t\r\n] {increment_line_number();}
+<INITIAL>[ \t\r\n] {crb_increment_line_number();}
 <INITIAL>#     BEGIN COMMENT;
 <INITIAL>.      {
     crb_compile_error(CHARACTER_INVALID_ERR,
@@ -100,7 +100,7 @@
                       CRB_MESSAGE_ARGUMENT_END);
 }
 <COMMENT>\n     {
-    increment_line_number();
+    crb_increment_line_number();
     BEGIN INITIAL;
 }
 <COMMENT>.      ;
@@ -113,7 +113,7 @@
 }
 <STRING_LITERAL_STATE>\n        {
     crb_add_string_literal('\n');
-    increment_line_number();
+    crb_increment_line_number();
 }
 <STRING_LITERAL_STATE>\\\"      crb_add_string_literal('"');
 <STRING_LITERAL_STATE>\\n       crb_add_string_literal('\n');
