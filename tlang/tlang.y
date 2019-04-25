@@ -29,7 +29,7 @@ extern int yyerror(char const *str);
 %token  <expression>     STRING_LITERAL
 %token  <identifier>     IDENTIFIER
 %token  FUNCTION IF ELSE ELIF WHILE FOR FOREACH RETURN_T BREAK CONTINUE NULL_T
-        LP RP LC RC LB RB SEMICOLON COLON COMMA ASSIGN_T LOGICAL_AND LOGICAL_OR
+        LP RP LC RC LB RB LF SEMICOLON COLON COMMA ASSIGN_T LOGICAL_AND LOGICAL_OR
         EQ NE GT GE LT LE ADD SUB MUL DIV MOD TRUE_T FALSE_T EXCLAMATION DOT
         ADD_ASSIGN_T SUB_ASSIGN_T MUL_ASSIGN_T DIV_ASSIGN_T MOD_ASSIGN_T
         INCREMENT DECREMENT CLOSURE GLOBAL_T TRY CATCH FINALLY THROW FINAL
@@ -344,6 +344,18 @@ statement
         : expression SEMICOLON
         {
             $$ = crb_create_expression_statement($1);
+        }
+        | SEMICOLON
+        {
+            $$ = crb_create_expression_statement(NULL);
+        }
+        | expression LF
+        {
+            $$ = crb_create_expression_statement($1);
+        }
+        | LF
+        {
+            $$ = crb_create_expression_statement(NULL);
         }
         | global_statement
         | if_statement

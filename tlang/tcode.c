@@ -17,6 +17,9 @@
 static inline LLIST* create_list(const void *first) {
     static ALLOCATOR allocator = {crb_malloc, NULL};
     LLIST* ret = open_llist_with_allocator(allocator);
+    if (first == NULL) {
+        return ret;
+    }
     llist_push_back(ret, ptr_value((void*)first));
     return ret;
 }
@@ -25,6 +28,9 @@ static inline LLIST* create_list(const void *first) {
  * 通用追加列表项
  */
 static inline LLIST* chain_list(LLIST *list, const void *item) {
+    if (item == NULL) {
+        return list;
+    }
     llist_push_back(list, ptr_value((void*)item));
     return list;
 }
@@ -299,6 +305,9 @@ Statement* crb_create_global_statement(IdentifierList *identifier_list) {
  * 创建表达式语句
  */
 Statement* crb_create_expression_statement(Expression *expression) {
+    if (expression == NULL) {
+        return NULL;
+    }
     Statement* st = alloc_statement(EXPRESSION_STATEMENT);
     st->u.expression_s = expression;
     return st;

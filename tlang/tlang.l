@@ -39,6 +39,7 @@
 <INITIAL>"}"            return RC;
 <INITIAL>"["            return LB;
 <INITIAL>"]"            return RB;
+<INITIAL>"\n"           return LF;
 <INITIAL>";"            return SEMICOLON;
 <INITIAL>":"            return COLON;
 <INITIAL>","            return COMMA;
@@ -92,7 +93,7 @@
     BEGIN STRING_LITERAL_STATE;
 }
 <INITIAL>[ \t] ;
-<INITIAL>[ \t\r\n] {crb_increment_line_number();}
+<INITIAL>[ \t\r] {crb_increment_line_number();}
 <INITIAL>#     BEGIN COMMENT;
 <INITIAL>.      {
     crb_compile_error(CHARACTER_INVALID_ERR, CRB_CHARACTER_MESSAGE_ARGUMENT, "bad_char", yytext[0], CRB_MESSAGE_ARGUMENT_END);
