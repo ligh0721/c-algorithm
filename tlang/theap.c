@@ -72,7 +72,7 @@ CRB_Object* CRB_create_crowbar_string(CRB_Interpreter *inter, CRB_LocalEnvironme
 // array object
 CRB_Object* crb_create_array_i(CRB_Interpreter *inter, int size) {
     CRB_Object* ret = alloc_object(inter, ARRAY_OBJECT);
-    ret->u.array.array = open_CRB_Value_array(size);
+    ret->u.array.array = open_CRB_Value_slice(size, size);
 //    ret->u.array.size = size;
 //    ret->u.array.alloc_size = size;
 //    ret->u.array.array = MEM_malloc(sizeof(CRB_Value) * size);
@@ -235,9 +235,9 @@ static CRB_Value print_stack_trace(CRB_Interpreter *inter, CRB_LocalEnvironment 
         crb_runtime_error(inter, env, __LINE__, STACK_TRACE_IS_NOT_ARRAY_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(stack_trace->type), CRB_MESSAGE_ARGUMENT_END);
     }
 
-    CRB_Value_ARRAY* stack_trace_arr = stack_trace->u.object->u.array.array;
-    CRB_Value* stack_trace_data = CRB_Value_array_data(stack_trace_arr);
-    long len = CRB_Value_array_len(stack_trace_arr);
+    CRB_Value_SLICE* stack_trace_arr = stack_trace->u.object->u.array.array;
+    CRB_Value* stack_trace_data = CRB_Value_slice_data(stack_trace_arr);
+    long len = CRB_Value_slice_len(stack_trace_arr);
     for (long i=0; i<len; ++i) {
         if (stack_trace_data[i].type != CRB_ASSOC_VALUE) {
             crb_runtime_error(inter, env, __LINE__, STACK_TRACE_LINE_IS_NOT_ASSOC_ERR, CRB_MESSAGE_ARGUMENT_END);
@@ -364,9 +364,9 @@ static void gc_mark(CRB_Object *obj) {
     obj->marked = CRB_TRUE;
 
     if (obj->type == ARRAY_OBJECT) {
-        CRB_Value_ARRAY* arr = obj->u.array.array;
-        long len = CRB_Value_array_len(arr);
-        CRB_Value* data = CRB_Value_array_data(arr);
+        CRB_Value_SLICE* arr = obj->u.array.array;
+        long len = CRB_Value_slice_len(arr);
+        CRB_Value* data = CRB_Value_slice_data(arr);
         for (long i=0; i<len; ++i) {
             gc_mark_value(data++);
         }
@@ -440,9 +440,11 @@ static void gc_mark_objects(CRB_Interpreter *inter) {
 static void gc_dispose_object(CRB_Interpreter *inter, CRB_Object *obj) {
     switch (obj->type) {
         case ARRAY_OBJECT:
-            inter->heap.current_heap_size -= sizeof(CRB_Value) * CRB_Value_array_cap(obj->u.array.array);
+            if (CRB_Value_array_ref(CRB_Value_slice_array_ref(obj->u.array.array)) == 1) {
+                inter->heap.current_heap_size -= sizeof(CRB_Value) * CRB_Value_slice_cap(obj->u.array.array);
+            }
 //            MEM_free(obj->u.array.array);
-            close_CRB_Value_array(obj->u.array.array);
+            close_CRB_Value_slice(obj->u.array.array);
             break;
         case STRING_OBJECT:
             if (!obj->u.string.is_literal) {

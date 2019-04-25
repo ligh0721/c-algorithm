@@ -25,6 +25,7 @@ long ValueType##_array_cap(ValueType##_ARRAY* arr);\
 ValueType* ValueType##_array_data(ValueType##_ARRAY* arr);\
 ValueType ValueType##_array_get(ValueType##_ARRAY *arr, long index);\
 ValueType ValueType##_array_set(ValueType##_ARRAY *arr, long index, ValueType value);\
+long ValueType##_array_ref(ValueType##_ARRAY *arr);\
 \
 typedef struct ValueType##_slice ValueType##_SLICE;\
 \
@@ -38,8 +39,9 @@ ValueType* ValueType##_slice_data(ValueType##_SLICE *sli);\
 ValueType ValueType##_slice_get(ValueType##_SLICE *sli, long index);\
 ValueType ValueType##_slice_set(ValueType##_SLICE *sli, long index, ValueType value);\
 void ValueType##_slice_append(ValueType##_SLICE *sli, ValueType value);\
-void ValueType##_slice_push(ValueType##_SLICE *sli, long index, ValueType value);\
-ValueType ValueType##_slice_pop(ValueType##_SLICE *sli, long index);
+void ValueType##_slice_insert(ValueType##_SLICE *sli, long index, ValueType value);\
+ValueType ValueType##_slice_pop(ValueType##_SLICE *sli, long index);\
+ValueType##_ARRAY* ValueType##_slice_array_ref(ValueType##_SLICE *sli);
 
 #define ARRAY_DEFINE(ValueType) \
 struct ValueType##_array {\
@@ -114,6 +116,11 @@ ValueType ValueType##_array_set(ValueType##_ARRAY *arr, long index, ValueType va
     ValueType ret = arr->data[index];\
     arr->data[index] = value;\
     return ret;\
+}\
+\
+long ValueType##_array_ref(ValueType##_ARRAY* arr) {\
+    assert(arr != NULL);\
+    return arr->ref;\
 }\
 \
 \
@@ -216,7 +223,7 @@ void ValueType##_slice_append(ValueType##_SLICE* sli, ValueType value) {\
     sli->len++;\
 }\
 \
-void ValueType##_slice_push(ValueType##_SLICE *sli, long index, ValueType value) {\
+void ValueType##_slice_insert(ValueType##_SLICE *sli, long index, ValueType value) {\
     assert(sli != NULL);\
     assert(index <= sli->len);\
     if (sli->pos+sli->len == sli->data->cap) {\
@@ -242,6 +249,11 @@ ValueType ValueType##_slice_pop(ValueType##_SLICE *sli, long index) {\
     }\
     sli->len--;\
     return ret;\
+}\
+\
+ValueType##_ARRAY* ValueType##_slice_array_ref(ValueType##_SLICE *sli) {\
+    assert(sli != NULL);\
+    return sli->data;\
 }
 
 #endif //ALGORITHM_ARRAY_TPL_H

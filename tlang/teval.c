@@ -168,7 +168,7 @@ static void eval_array_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *
     v.u.object = crb_create_array_i(inter, len);
     push_value(inter, &v);
 
-    CRB_Value* data = CRB_Value_array_data(v.u.object->u.array.array);
+    CRB_Value* data = CRB_Value_slice_data(v.u.object->u.array.array);
     for (struct lnode* node=list?llist_front_node(list):NULL; node!=NULL; node=node->next) {
         eval_expression(inter, env, (Expression*)node->value.ptr_value);
         *(data++) = pop_value(inter);
@@ -1043,9 +1043,9 @@ static CRB_Value* get_array_element_lvalue(CRB_Interpreter *inter, CRB_LocalEnvi
         crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_INT_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
 
-    CRB_Value_ARRAY* arr = array.u.object->u.array.array;
-    long len = CRB_Value_array_len(arr);
-    CRB_Value* data = CRB_Value_array_data(arr);
+    CRB_Value_SLICE* arr = array.u.object->u.array.array;
+    long len = CRB_Value_slice_len(arr);
+    CRB_Value* data = CRB_Value_slice_data(arr);
     if (index.u.int_value < 0 || index.u.int_value >= len) {
         crb_runtime_error(inter, env, expr->line_number, ARRAY_INDEX_OUT_OF_BOUNDS_ERR, CRB_INT_MESSAGE_ARGUMENT, "size", len, CRB_INT_MESSAGE_ARGUMENT, "index", index.u.int_value, CRB_MESSAGE_ARGUMENT_END);
     }

@@ -135,12 +135,6 @@ void crb_add_std_fp(CRB_Interpreter *inter) {
     CRB_add_global_variable(inter, "STDERR", &fp_value, CRB_TRUE);
 }
 
-void CRB_array_set(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int index, CRB_Value *value) {
-    DBG_assert(obj->type == ARRAY_OBJECT, ("obj->type..%d\n", obj->type));
-    CRB_Value_array_set(obj->u.array.array, index, *value);
-//    obj->u.array.array[index] = *value;
-}
-
 void CRB_set_function_definition(const char *name, CRB_NativeFunctionProc *proc, CRB_FunctionDefinition *fd) {
     fd->name = name;
     fd->type = CRB_NATIVE_FUNCTION_DEFINE;
@@ -149,13 +143,105 @@ void CRB_set_function_definition(const char *name, CRB_NativeFunctionProc *proc,
 }
 
 // fake method
+void CRB_array_set(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int index, CRB_Value *value) {
+    DBG_assert(obj->type == ARRAY_OBJECT, ("obj->type..%d\n", obj->type));
+    CRB_Value_slice_set(obj->u.array.array, index, *value);
+//    obj->u.array.array[index] = *value;
+}
+
+struct _array_record {
+    void* ref_array;
+    long ref_count;
+    long cap;
+};
+
+static inline void record_slice_state(CRB_Value_SLICE* sli, struct _array_record* record) {
+    CRB_Value_ARRAY* arr = CRB_Value_slice_array_ref(sli);
+    record->ref_array = arr;
+    record->ref_count = CRB_Value_array_ref(arr);
+    record->cap = CRB_Value_array_cap(arr);
+}
+
+static inline void check_slice_state(CRB_Value_SLICE* sli, const struct _array_record* record, Heap* heap) {
+    CRB_Value_ARRAY* arr = CRB_Value_slice_array_ref(sli);
+    if (arr == record->ref_array) {
+        return;
+    }
+    if (record->ref_count == 1) {
+        heap->current_heap_size -= sizeof(CRB_Value) * record->cap;
+    }
+    if (CRB_Value_array_ref(arr) == 1) {
+        heap->current_heap_size += sizeof(CRB_Value) * CRB_Value_array_cap(arr);
+    }
+}
+
+inline void CRB_array_append(CRB_Interpreter *inter, CRB_Object *obj, CRB_Value *new_value) {
+    DBG_assert(obj->type == ARRAY_OBJECT, ("bad type..%d\n", obj->type));
+    CRB_Value_SLICE* sli = obj->u.array.array;
+    struct _array_record record;
+    record_slice_state(sli, &record);
+    CRB_Value_slice_append(sli, *new_value);
+    check_slice_state(sli, &record, &inter->heap);
+}
+
+inline void CRB_array_insert(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int pos, CRB_Value *new_value, int line_number) {
+    DBG_assert(obj->type == ARRAY_OBJECT, ("bad type..%d\n", obj->type));
+    CRB_Value_SLICE* sli = obj->u.array.array;
+    long len = CRB_Value_slice_len(sli);
+    if (pos < 0 || pos > len) {
+        crb_runtime_error(inter, env, line_number, ARRAY_INDEX_OUT_OF_BOUNDS_ERR, CRB_INT_MESSAGE_ARGUMENT, "size", len, CRB_INT_MESSAGE_ARGUMENT, "index", pos, CRB_MESSAGE_ARGUMENT_END);
+    }
+    struct _array_record record;
+    record_slice_state(sli, &record);
+    CRB_Value_slice_insert(sli, pos, *new_value);
+    check_slice_state(sli, &record, &inter->heap);
+}
+
+inline CRB_Value CRB_array_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int pos, int line_number) {
+    DBG_assert(obj->type == ARRAY_OBJECT, ("bad type..%d\n", obj->type));
+    CRB_Value_SLICE* sli = obj->u.array.array;
+    long len = CRB_Value_slice_len(sli);
+    if (pos < 0 || pos >= len) {
+        crb_runtime_error(inter, env, line_number, ARRAY_INDEX_OUT_OF_BOUNDS_ERR, CRB_INT_MESSAGE_ARGUMENT, "size", len, CRB_INT_MESSAGE_ARGUMENT, "index", pos, CRB_MESSAGE_ARGUMENT_END);
+    }
+    return CRB_Value_slice_pop(sli, pos);
+}
+
+static void array_method_append(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, CRB_Value *result) {
+    CRB_Value* add = CRB_peek_stack(inter, 0);
+    CRB_array_append(inter, obj, add);
+    result->type = CRB_NULL_VALUE;
+}
+
+static void array_method_length(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, CRB_Value *result) {
+    result->type = CRB_INT_VALUE;
+    result->u.int_value = CRB_Value_slice_len(obj->u.array.array);
+}
+
+static void array_method_insert(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, CRB_Value *result) {
+    CRB_Value* new_value = CRB_peek_stack(inter, 0);
+    CRB_Value* pos = CRB_peek_stack(inter, 1);
+    if (pos->type != CRB_INT_VALUE) {
+        crb_runtime_error(inter, env, __LINE__, ARRAY_INSERT_ARGUMENT_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(pos->type), CRB_MESSAGE_ARGUMENT_END);
+    }
+    CRB_array_insert(inter, env, obj, pos->u.int_value, new_value, __LINE__);
+    result->type = CRB_NULL_VALUE;
+}
+
+static void array_method_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, CRB_Value *result) {
+    CRB_Value* pos = CRB_peek_stack(inter, 0);
+    if (pos->type != CRB_INT_VALUE) {
+        crb_runtime_error(inter, env, __LINE__, ARRAY_REMOVE_ARGUMENT_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(pos->type), CRB_MESSAGE_ARGUMENT_END);
+    }
+    *result = CRB_array_pop(inter, env, obj, pos->u.int_value, __LINE__);
+}
+
 FakeMethodTable st_fake_method_table[] = {
         // TODO:
-//        {ARRAY_OBJECT, "add", 1, array_add_method},
-//        {ARRAY_OBJECT, "size", 0, array_size_method},
-//        {ARRAY_OBJECT, "resize", 1, array_resize_method},
-//        {ARRAY_OBJECT, "insert", 2, array_insert_method},
-//        {ARRAY_OBJECT, "remove", 1, array_remove_method},
+        {ARRAY_OBJECT, "append", 1, array_method_append},
+        {ARRAY_OBJECT, "length", 0, array_method_length},
+        {ARRAY_OBJECT, "insert", 2, array_method_insert},
+        {ARRAY_OBJECT, "pop", 1, array_method_pop},
 //        {ARRAY_OBJECT, "iterator", 0, array_iterator_method},
 //        {STRING_OBJECT, "length", 0, string_length_method},
 //        {STRING_OBJECT, "substr", 2, string_substr_method},

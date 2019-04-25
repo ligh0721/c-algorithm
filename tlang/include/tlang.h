@@ -186,7 +186,12 @@ int CRB_print_wcs(FILE *fp, CRB_Char *str);
 int CRB_print_wcs_ln(FILE *fp, CRB_Char *str);
 CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const CRB_Value *value);
 
-
+// tnative
+void CRB_array_set(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int index, CRB_Value *value);
+void CRB_array_append(CRB_Interpreter *inter, CRB_Object *obj, CRB_Value *new_value);
+void CRB_array_insert(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int pos, CRB_Value *new_value, int line_number);
+CRB_Value CRB_array_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int pos, int line_number);
+void CRB_set_function_definition(const char *name, CRB_NativeFunctionProc *proc, CRB_FunctionDefinition *fd);
 
 
 

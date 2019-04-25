@@ -50,7 +50,7 @@ typedef struct {
 
 // object
 struct CRB_Array_tag {
-    CRB_Value_ARRAY* array;  //  ARRAY<CRB_Value>
+    CRB_Value_SLICE* array;  //  ARRAY<CRB_Value>
 //    int         size;
 //    int         alloc_size;
 //    CRB_Value   *array;

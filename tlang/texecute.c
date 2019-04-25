@@ -395,5 +395,10 @@ inline StatementResult crb_execute_statement_list_with_pos(CRB_Interpreter *inte
 }
 
 StatementResult crb_execute_statement_list(CRB_Interpreter *inter, CRB_LocalEnvironment *env, StatementList *list) {
+    if (list == NULL) {
+        StatementResult ret;
+        ret.type = NORMAL_STATEMENT_RESULT;
+        return ret;
+    }
     return crb_execute_statement_list_with_pos(inter, env, llist_before_front_node(list));
 }

@@ -422,9 +422,9 @@ CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
         case CRB_ARRAY_VALUE:
             CRB_mbstowcs("(", wc_buf);
             crb_vstr_append_string(&vstr, wc_buf);
-            CRB_Value_ARRAY* arr = value->u.object->u.array.array;
-            long len = CRB_Value_array_len(arr);
-            CRB_Value* data = CRB_Value_array_data(arr);
+            CRB_Value_SLICE* arr = value->u.object->u.array.array;
+            long len = CRB_Value_slice_len(arr);
+            CRB_Value* data = CRB_Value_slice_data(arr);
             for (long i = 0; i<len; ++i) {
                 CRB_Char *new_str;
                 if (i > 0) {

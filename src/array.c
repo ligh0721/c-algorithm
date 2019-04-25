@@ -84,6 +84,11 @@ VALUE array_set(ARRAY *arr, long index, VALUE value) {
     return ret;
 }
 
+long array_ref(ARRAY* arr) {
+    assert(arr != NULL);
+    return arr->ref;
+}
+
 
 struct slice {
     struct array* data;
@@ -185,7 +190,7 @@ void slice_append(SLICE* sli, VALUE value) {
     sli->len++;
 }
 
-void slice_push(SLICE *sli, long index, VALUE value) {
+void slice_insert(SLICE *sli, long index, VALUE value) {
     assert(sli != NULL);
     assert(index <= sli->len);
     if (sli->pos+sli->len == sli->data->cap) {
@@ -211,4 +216,9 @@ VALUE slice_pop(SLICE *sli, long index) {
     }
     sli->len--;
     return ret;
+}
+
+ARRAY* slice_array_ref(SLICE *sli) {
+    assert(sli != NULL);
+    return sli->data;
 }
