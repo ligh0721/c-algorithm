@@ -23,7 +23,6 @@ extern int yyerror(char const *str);
     ElifList            *elif_list;
     AssignmentOperator  assignment_operator;
     IdentifierList      *identifier_list;
-    void                *dummy;
 }
 %token  <expression>     INT_LITERAL
 %token  <expression>     DOUBLE_LITERAL
