@@ -17,14 +17,19 @@ extern int yylex();
 
 %%
 exec_unit
+	: statement_list
+	| exec_unit statement_list
+	;
+
+statement_list
 	: statement
-	| exec_unit statement
+	| statement_list statement
 	;
 
 statement
 	: expression statement_end
 	{
-		fprintf(stderr, "EXPRESSION_STATEMENT\n");
+		fprintf(stderr, "<EXPRESSION_STATEMENT>\n");
 	}
 	| statement_end
 	{
