@@ -12,7 +12,7 @@ const char* crb_get_operator_string(ExpressionType type);
 const char* CRB_get_type_name(CRB_ValueType type);
 
 void crb_vstr_clear(VString *v);
-void crb_vstr_append_string(VString *v, CRB_Char *str);
+void crb_vstr_append_string(VString *v, const CRB_Char *str);
 void crb_vstr_append_character(VString *v, CRB_Char ch);
 
 Variable* crb_search_global_variable(CRB_Interpreter *inter, const char *identifier);

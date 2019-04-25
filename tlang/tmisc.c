@@ -154,7 +154,7 @@ void crb_vstr_clear(VString *v) {
     v->string = NULL;
 }
 
-void crb_vstr_append_string(VString *v, CRB_Char *str) {
+void crb_vstr_append_string(VString *v, const CRB_Char *str) {
     int old_len = my_strlen(v->string);
     int new_size = sizeof(CRB_Char) * (old_len + CRB_wcslen(str)  + 1);
     v->string = MEM_realloc(v->string, new_size);
@@ -354,12 +354,34 @@ int CRB_print_wcs_ln(FILE *fp, CRB_Char *str) {
     return result;
 }
 
+static inline int check_record(RBTREE* record, const CRB_Value *value, CRB_Char* wc_buf) {
+    if (record != NULL && (value->type == CRB_ARRAY_VALUE || value->type == CRB_ASSOC_VALUE)) {
+        RBNODE* parent;
+        RBNODE** where = rbtree_fast_get(record, ptr_value(value), &parent);
+        if (rbtree_node_not_found(record, where)) {
+            RBNODE* node = rbtree_open_node(record, ptr_value(value), parent);
+            rbtree_fast_set(record, where, node);
+            return 0;
+        } else {
+            if (value->type == CRB_ARRAY_VALUE) {
+                CRB_mbstowcs("[...]", wc_buf);
+            } else if (value->type == CRB_ASSOC_VALUE) {
+                CRB_mbstowcs("{...}", wc_buf);
+            }
+            return 1;
+        }
+    }
+    return 0;
+}
+
 struct _assoc_every_member_to_string_params {
     CRB_Boolean need_comma;
     CRB_Interpreter* inter;
     CRB_LocalEnvironment *env;
     int line_number;
+    CRB_Char* wc_buf;
     VString* vstr;
+    RBTREE* record;
 };
 
 static int _assoc_every_member_to_string(const AssocMember* value, void* param) {
@@ -369,23 +391,28 @@ static int _assoc_every_member_to_string(const AssocMember* value, void* param) 
     } else {
         params->need_comma = CRB_TRUE;
     }
+
     CRB_Char* new_str = CRB_mbstowcs_alloc(params->inter, params->env, params->line_number, value->name);
     DBG_assert(new_str != NULL, ("new_str is null.\n"));
     crb_vstr_append_string(params->vstr, new_str);
     MEM_free(new_str);
 
     crb_vstr_append_string(params->vstr, L": ");
-    new_str = CRB_value_to_string(params->inter, params->env, params->line_number, &value->value);
-    crb_vstr_append_string(params->vstr, new_str);
-    MEM_free(new_str);
+    if (check_record(params->record, &value->value, params->wc_buf)) {
+        crb_vstr_append_string(params->vstr, params->wc_buf);
+    } else {
+        new_str = CRB_value_to_string(params->inter, params->env, params->line_number, &value->value);
+        crb_vstr_append_string(params->vstr, new_str);
+        MEM_free(new_str);
+    }
     return 0;
 }
 
-CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const CRB_Value *value) {
+// TODO: 去除环形遍历
+CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const CRB_Value *value, RBTREE* record) {
     VString     vstr;
     char        buf[LINE_BUF_SIZE];
     CRB_Char    wc_buf[LINE_BUF_SIZE];
-
     crb_vstr_clear(&vstr);
 
     switch (value->type) {
@@ -426,14 +453,17 @@ CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
             long len = CRB_Value_slice_len(arr);
             CRB_Value* data = CRB_Value_slice_data(arr);
             for (long i = 0; i<len; ++i) {
-                CRB_Char *new_str;
                 if (i > 0) {
                     CRB_mbstowcs(", ", wc_buf);
                     crb_vstr_append_string(&vstr, wc_buf);
                 }
-                new_str = CRB_value_to_string(inter, env, line_number, data++);
-                crb_vstr_append_string(&vstr, new_str);
-                MEM_free(new_str);
+                if (check_record(record, data+i, wc_buf)) {
+                    crb_vstr_append_string(&vstr, wc_buf);
+                } else {
+                    CRB_Char* new_str = CRB_value_to_string(inter, env, line_number, data+i);
+                    crb_vstr_append_string(&vstr, new_str);
+                    MEM_free(new_str);
+                }
             }
             CRB_mbstowcs("]", wc_buf);
             crb_vstr_append_string(&vstr, wc_buf);
@@ -442,7 +472,7 @@ CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
             CRB_mbstowcs("{", wc_buf);
             crb_vstr_append_string(&vstr, wc_buf);
             AssocMember_RBTREE* tr = value->u.object->u.assoc.members;
-            struct _assoc_every_member_to_string_params params = {CRB_FALSE, inter, env, line_number, &vstr};
+            struct _assoc_every_member_to_string_params params = {CRB_FALSE, inter, env, line_number, wc_buf, &vstr, record};
             AssocMember_rbtree_ldr(tr, _assoc_every_member_to_string, &params);
 //            for (i = 0; i < value->u.object->u.assoc.member_count; i++) {
 //                if (i > 0) {

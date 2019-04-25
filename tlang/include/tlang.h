@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <wchar.h>
 #include <link.h>
+#include <rbtree.h>
 
 #define UTF_8_SOURCE
 
@@ -184,7 +185,7 @@ void CRB_wcstombs(const CRB_Char *src, char *dest);
 char CRB_wctochar(CRB_Char src);
 int CRB_print_wcs(FILE *fp, CRB_Char *str);
 int CRB_print_wcs_ln(FILE *fp, CRB_Char *str);
-CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const CRB_Value *value);
+CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const CRB_Value *value, RBTREE* record);
 
 // tnative
 void CRB_array_set(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int index, CRB_Value *value);
