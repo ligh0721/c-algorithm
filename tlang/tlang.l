@@ -7,11 +7,11 @@
 #include "tlexer.h"
 #include "tcode.h"
 #include "terror.h"
-#include "y.tab.h"
+#include "tlang_y.tab.h"
 
 
 %}
-%start COMMENT STRING_LITERAL_STATE REGEXP_LITERAL_STATE SHIFT_JIS_2ND_CHAR
+%start COMMENT STRING_LITERAL_STATE
 %%
 <INITIAL>"func"         return FUNCTION;
 <INITIAL>"if"           return IF;
@@ -70,7 +70,7 @@
     return IDENTIFIER;
 }
 <INITIAL>[1-9][0-9]* {
-    Expression  *expression = crb_alloc_expression(INT_EXPRESSION);
+    Expression* expression = crb_alloc_expression(INT_EXPRESSION);
     sscanf(yytext, "%d", &expression->u.int_value);
     yylval.expression = expression;
     return INT_LITERAL;
@@ -95,9 +95,7 @@
 <INITIAL>[ \t\r\n] {crb_increment_line_number();}
 <INITIAL>#     BEGIN COMMENT;
 <INITIAL>.      {
-    crb_compile_error(CHARACTER_INVALID_ERR,
-                      CRB_CHARACTER_MESSAGE_ARGUMENT, "bad_char", yytext[0],
-                      CRB_MESSAGE_ARGUMENT_END);
+    crb_compile_error(CHARACTER_INVALID_ERR, CRB_CHARACTER_MESSAGE_ARGUMENT, "bad_char", yytext[0], CRB_MESSAGE_ARGUMENT_END);
 }
 <COMMENT>\n     {
     crb_increment_line_number();
@@ -120,7 +118,6 @@
 <STRING_LITERAL_STATE>\\t       crb_add_string_literal('\t');
 <STRING_LITERAL_STATE>\\\\      crb_add_string_literal('\\');
 <STRING_LITERAL_STATE>.         {
-    //Encoding enc = crb_get_current_interpreter()->source_encoding;
     crb_add_string_literal(yytext[0]);
 }
 %%

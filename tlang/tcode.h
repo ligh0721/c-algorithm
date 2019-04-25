@@ -17,7 +17,7 @@ Expression* crb_create_binary_expression(ExpressionType operator, Expression *le
 Expression* crb_create_assign_expression(CRB_Boolean is_final, Expression *left, AssignmentOperator operator, Expression *operand);
 Expression* crb_create_comma_expression(Expression *left, Expression *right);
 Expression* crb_create_index_expression(Expression *array, Expression *index);
-Expression* crb_create_member_expression(Expression *expression, char *member_name);
+Expression* crb_create_member_expression(Expression *expression, const char *member_name);
 Expression* crb_create_inc_dec_expression(Expression *operand, ExpressionType inc_or_dec);
 Expression* crb_create_function_call_expression(Expression *function, ArgumentList *argument);
 

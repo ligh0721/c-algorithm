@@ -11,7 +11,7 @@ extern int yyerror(char const *str);
 
 %}
 %union {
-    char                *identifier;
+    const char          *identifier;
     CRB_ParameterList   *parameter_list;
     ArgumentList        *argument_list;
     Expression          *expression;

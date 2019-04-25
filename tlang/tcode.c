@@ -172,7 +172,7 @@ Expression* crb_create_index_expression(Expression *array, Expression *index) {
 /*
  * 创建访问成员表达式
  */
-Expression* crb_create_member_expression(Expression *expression, char *member_name) {
+Expression* crb_create_member_expression(Expression *expression, const char *member_name) {
     Expression* exp = crb_alloc_expression(MEMBER_EXPRESSION);
     exp->u.member_expression.expression = expression;
     exp->u.member_expression.member_name = member_name;

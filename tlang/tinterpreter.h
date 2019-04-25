@@ -300,7 +300,7 @@ typedef struct {
 
 typedef struct {
     Expression          *expression;
-    char                *member_name;
+    const char          *member_name;
 } MemberExpression;
 
 typedef struct {
