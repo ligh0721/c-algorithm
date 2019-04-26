@@ -50,7 +50,7 @@ typedef struct {
 
 // object
 struct CRB_Array_tag {
-    CRB_Value_SLICE* array;  //  ARRAY<CRB_Value>
+    CRB_Value_SLICE* array;  //  ARRAY<CRB_Value>  // TODO: 精简结构
 //    int         size;
 //    int         alloc_size;
 //    CRB_Value   *array;
@@ -298,7 +298,7 @@ typedef LLIST ExpressionList;  // LLIST<Expression*>
 
 // array[index]
 typedef struct {
-    Expression  *array;
+    Expression  *array;  // or string
     Expression  *index;
 } IndexExpression;
 

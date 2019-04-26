@@ -1045,10 +1045,38 @@ CRB_Value* crb_get_identifier_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironmen
 /*
  * 获取数组元素左值
  */
-static CRB_Value* get_array_element_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
+static inline CRB_Value* get_array_element_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr, CRB_Value* array, CRB_Value* index) {
+    CRB_Value_SLICE* arr = array->u.object->u.array.array;
+    long len = CRB_Value_slice_len(arr);
+    if (index->u.int_value < 0 || index->u.int_value >= len) {
+        crb_runtime_error(inter, env, expr->line_number, ARRAY_INDEX_OUT_OF_BOUNDS_ERR, CRB_INT_MESSAGE_ARGUMENT, "size", len, CRB_INT_MESSAGE_ARGUMENT, "index", index->u.int_value, CRB_MESSAGE_ARGUMENT_END);
+    }
+    CRB_Value* data = CRB_Value_slice_data(arr);
+    return data + index->u.int_value;
+}
+
+/*
+ * 获取字符串元素左值
+ */
+static inline CRB_Value* get_string_element_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr, CRB_Value* string, CRB_Value* index) {
+    CRB_Char* str = string->u.object->u.string.string;
+    int len = CRB_wcslen(str);
+    if (index->u.int_value < 0 || index->u.int_value >= len) {
+        // TODO: string err
+        crb_runtime_error(inter, env, expr->line_number, ARRAY_INDEX_OUT_OF_BOUNDS_ERR, CRB_INT_MESSAGE_ARGUMENT, "size", len, CRB_INT_MESSAGE_ARGUMENT, "index", index->u.int_value, CRB_MESSAGE_ARGUMENT_END);
+    }
+
+    return data + index->u.int_value;
+}
+
+/*
+ * 获取元素左值
+ */
+static inline CRB_Value* get_element_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     eval_expression(inter, env, expr->u.index_expression.array);
     CRB_Value array = pop_value(inter);
-    if (array.type != CRB_ARRAY_VALUE) {
+    if (array.type != CRB_ARRAY_VALUE && array.type != CRB_STRING_VALUE) {
+        // TODO:
         crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_ARRAY_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
 
@@ -1058,13 +1086,15 @@ static CRB_Value* get_array_element_lvalue(CRB_Interpreter *inter, CRB_LocalEnvi
         crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_INT_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
 
-    CRB_Value_SLICE* arr = array.u.object->u.array.array;
-    long len = CRB_Value_slice_len(arr);
-    if (index.u.int_value < 0 || index.u.int_value >= len) {
-        crb_runtime_error(inter, env, expr->line_number, ARRAY_INDEX_OUT_OF_BOUNDS_ERR, CRB_INT_MESSAGE_ARGUMENT, "size", len, CRB_INT_MESSAGE_ARGUMENT, "index", index.u.int_value, CRB_MESSAGE_ARGUMENT_END);
+    switch (array.type) {
+        case CRB_ARRAY_VALUE:
+            return get_array_element_lvalue(inter, env, expr, &array, &index);
+        case CRB_STRING_VALUE:
+            return get_string_element_lvalue(inter, env, expr, &array, &index);
+        default:
+            DBG_panic(("bad default.\n"));
     }
-    CRB_Value* data = CRB_Value_slice_data(arr);
-    return data + index.u.int_value;
+    return NULL;
 }
 
 /*
@@ -1093,7 +1123,7 @@ static CRB_Value* get_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
     if (expr->type == IDENTIFIER_EXPRESSION) {
         dest = crb_get_identifier_lvalue(inter, env, expr->line_number, expr->u.identifier);
     } else if (expr->type == INDEX_EXPRESSION) {
-        dest = get_array_element_lvalue(inter, env, expr);
+        dest = get_element_lvalue(inter, env, expr);
     } else if (expr->type == MEMBER_EXPRESSION) {
         dest = get_member_lvalue(inter, env, expr);
     } else {
@@ -1106,7 +1136,7 @@ static CRB_Value* get_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
  * 索引数组表达式求值
  */
 static void eval_index_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
-    CRB_Value* left = get_array_element_lvalue(inter, env, expr);
+    CRB_Value* left = get_element_lvalue(inter, env, expr);
     push_value(inter, left);
 }
 
