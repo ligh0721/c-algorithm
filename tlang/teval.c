@@ -94,7 +94,6 @@ static CRB_Value* search_global_variable_from_env(CRB_Interpreter *inter, CRB_Lo
 
     GlobalVariableRef* global_ref = env->global_var_refs;
     if (global_ref == NULL) {
-//        printf("@@@@@@search_global_variable_from_env\n");
         return NULL;
     }
     NamedItemEntry key = {name};
@@ -104,14 +103,6 @@ static CRB_Value* search_global_variable_from_env(CRB_Interpreter *inter, CRB_Lo
         return &((Variable*)res.ptr_value)->value;
     }
     return NULL;
-
-//    for (GlobalVariableRef *pos; = env->global_var_refs; pos; pos = pos->next) {
-//        if (!strcmp(pos->name, name)) {
-//            return &pos->variable->value;
-//        }
-//    }
-//
-//    return NULL;
 }
 
 /*
@@ -989,8 +980,6 @@ CRB_Value crb_eval_binary_expression(CRB_Interpreter *inter, CRB_LocalEnvironmen
  */
 static void do_assign(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Value *src, CRB_Value *dest, AssignmentOperator operator, int line_number) {
     ExpressionType expr_type;
-    CRB_Value result;
-
     if (operator == NORMAL_ASSIGN) {
         *dest = *src;
     } else {
@@ -1016,6 +1005,7 @@ static void do_assign(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Val
                 DBG_panic(("bad default.\n"));
                 expr_type = EXPRESSION_TYPE_COUNT_PLUS_1;
         }
+        CRB_Value result;
         if (dest->type == CRB_STRING_VALUE && expr_type == ADD_EXPRESSION) {
             chain_string(inter, env, line_number, dest, src, &result);
         } else {

@@ -343,20 +343,18 @@ char CRB_wctochar(CRB_Char src) {
 }
 
 int CRB_print_wcs(FILE *fp, const CRB_Char *str) {
-    return fwprintf(fp, str);
-//    int mb_len = CRB_wcstombs_len(str);
-//    char* tmp = MEM_malloc(mb_len + 1);
-//    CRB_wcstombs(str, tmp);
-//    int result = fprintf(fp, "%s", tmp);
-//    MEM_free(tmp);
-//    return result;
+    int mb_len = CRB_wcstombs_len(str);
+    char* tmp = MEM_malloc(mb_len + 1);
+    CRB_wcstombs(str, tmp);
+    int result = fprintf(fp, "%s", tmp);
+    MEM_free(tmp);
+    return result;
 }
 
 int CRB_print_wcs_ln(FILE *fp, const CRB_Char *str) {
-    return fwprintf(fp, L"%s\n", str);
-//    int result = CRB_print_wcs(fp, str);
-//    fprintf(fp, "\n");
-//    return result;
+    int result = CRB_print_wcs(fp, str);
+    fprintf(fp, "\n");
+    return result;
 }
 
 struct _value_to_string_params {
