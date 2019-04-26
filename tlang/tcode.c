@@ -190,7 +190,7 @@ Expression* crb_create_index_expression(Expression *array, Expression *index) {
 Expression* crb_create_slice_expression(Expression *array, Expression *begin, Expression *end) {
     Expression* exp = crb_alloc_expression(SLICE_EXPRESSION);
     exp->u.slice_expression.array = array;
-    exp->u.slice_expression.begin = begin;
+    exp->u.slice_expression.start = begin;
     exp->u.slice_expression.end = end;
     return exp;
 }

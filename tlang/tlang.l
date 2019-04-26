@@ -72,7 +72,7 @@
 }
 <INITIAL>[1-9][0-9]* {
     Expression* expression = crb_alloc_expression(INT_EXPRESSION);
-    sscanf(yytext, "%d", &expression->u.int_value);
+    sscanf(yytext, "%ld", &expression->u.int_value);
     yylval.expression = expression;
     return INT_LITERAL;
 }

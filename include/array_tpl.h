@@ -36,6 +36,7 @@ void close_##ValueType##_slice(ValueType##_SLICE* sli);\
 long ValueType##_slice_len(ValueType##_SLICE* sli);\
 long ValueType##_slice_cap(ValueType##_SLICE* sli);\
 ValueType* ValueType##_slice_data(ValueType##_SLICE *sli);\
+long ValueType##_slice_pos(ValueType##_SLICE* sli);\
 ValueType ValueType##_slice_get(ValueType##_SLICE *sli, long index);\
 ValueType ValueType##_slice_set(ValueType##_SLICE *sli, long index, ValueType value);\
 void ValueType##_slice_append(ValueType##_SLICE *sli, ValueType value);\
@@ -182,6 +183,11 @@ ValueType* ValueType##_slice_data(ValueType##_SLICE *sli) {\
     return sli->data->data + sli->pos;\
 }\
 \
+long ValueType##_slice_pos(ValueType##_SLICE* sli) {\
+    assert(sli != NULL);\
+    return sli->pos;\
+}\
+\
 ValueType ValueType##_slice_get(ValueType##_SLICE *sli, long index) {\
     assert(sli != NULL);\
     assert(index < sli->len);\
@@ -199,7 +205,8 @@ ValueType ValueType##_slice_set(ValueType##_SLICE *sli, long index, ValueType va
 \
 void ValueType##_slice_grow(ValueType##_SLICE* sli, long mincap) {\
     assert(sli != NULL);\
-    long old_cap = sli->data->cap;\
+    mincap -= sli->pos;\
+    long old_cap = sli->data->cap - sli->pos;\
     long new_cap = old_cap + (old_cap >> 1);\
     if (new_cap < mincap) {\
         new_cap = mincap;\
@@ -208,9 +215,10 @@ void ValueType##_slice_grow(ValueType##_SLICE* sli, long mincap) {\
         new_cap = mincap > TPL_ARRAY_MAX_SIZE ? LONG_MAX : TPL_ARRAY_MAX_SIZE;\
     }\
     ValueType##_ARRAY* new_arr = open_##ValueType##_array(new_cap);\
-    memcpy(new_arr->data, sli->data->data, sizeof(ValueType)*old_cap);\
+    memcpy(new_arr->data, sli->data->data+sli->pos, sizeof(ValueType)*old_cap);\
     close_##ValueType##_array(sli->data);\
     sli->data = new_arr;\
+    sli->pos = 0;\
 }\
 \
 void ValueType##_slice_append(ValueType##_SLICE* sli, ValueType value) {\
@@ -218,6 +226,7 @@ void ValueType##_slice_append(ValueType##_SLICE* sli, ValueType value) {\
     long pos = sli->pos + sli->len;\
     if (pos == sli->data->cap) {\
         ValueType##_slice_grow(sli, sli->data->cap+1);\
+        pos = sli->len;\
     }\
     sli->data->data[pos] = value;\
     sli->len++;\

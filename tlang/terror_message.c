@@ -49,9 +49,10 @@ CRB_ErrorDefinition crb_runtime_error_message_format[] = {
                 "IndexOperandNotArrayException"},
         {"下标运算符中的值不是整数类型。",
                 "IndexOperandNotIntException"},
-        {"数组下标越界。"
-         "数组大小为$(size)，访问的下标为[$(index)]。",
+        {"数组下标越界。数组大小为$(size)，访问的下标为[$(index)]。",
                 "ArrayIndexOutOfBoundsException"},
+        {"数组切片下标越界。数组容量为$(cap)，切片的下标为[$(begin):$(end)]。",
+                "ArraySliceOutOfBoundsException"},
         {"对象中不存在名为$(method_name)的成员。",
                 "NoSuchMethodException"},
         {"自增/自减的目标值不是整数类型。",

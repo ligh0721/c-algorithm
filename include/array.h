@@ -34,6 +34,7 @@ void close_slice(SLICE* sli);
 long slice_len(SLICE* sli);
 long slice_cap(SLICE* sli);
 VALUE* slice_data(SLICE *sli);
+long slice_pos(SLICE* sli);
 VALUE slice_get(SLICE *sli, long index);
 VALUE slice_set(SLICE *sli, long index, VALUE value);
 void slice_append(SLICE *sli, VALUE value);

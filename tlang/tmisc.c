@@ -442,7 +442,7 @@ CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
             }
             break;
         case CRB_INT_VALUE:
-            sprintf(params->buf, "%d", value->u.int_value);
+            sprintf(params->buf, "%ld", value->u.int_value);
             CRB_mbstowcs(params->buf, params->wc_buf);
             crb_vstr_append_string(&params->vstr, params->wc_buf);
             break;

@@ -427,8 +427,14 @@ void test() {
     printf("=== test ===\n");
     TRY {
         calc(5, 2);
-        calc(3, 0);
         calc(9, 3);
+        SLICE* sl = open_slice(2, 2);
+        slice_set(sl, 0, int_value(1));
+        slice_set(sl, 1, int_value(2));
+        SLICE* sl2 = open_slice_by_slice(sl, 1, 2);
+        slice_append(sl2, int_value(3));
+        slice_insert(sl2, 0, int_value(-1));
+        calc(3, 0);
     } CATCH (DIV_ZERO_ERR) {
         printf("div zero err\n");
     }

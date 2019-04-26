@@ -263,6 +263,22 @@ postfix_expression
         {
             $$ = crb_create_index_expression($1, $3);
         }
+        | postfix_expression LB expression COLON expression RB
+        {
+            $$ = crb_create_slice_expression($1, $3, $5);
+        }
+        | postfix_expression LB COLON expression RB
+        {
+            $$ = crb_create_slice_expression($1, NULL, $4);
+        }
+        | postfix_expression LB expression COLON RB
+        {
+            $$ = crb_create_slice_expression($1, $3, NULL);
+        }
+        | postfix_expression LB COLON RB
+        {
+            $$ = crb_create_slice_expression($1, NULL, NULL);
+        }
         | postfix_expression DOT IDENTIFIER
         {
             $$ = crb_create_member_expression($1, $3);

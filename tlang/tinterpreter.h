@@ -155,6 +155,7 @@ typedef enum {
     INDEX_OPERAND_NOT_ARRAY_ERR,
     INDEX_OPERAND_NOT_INT_ERR,
     ARRAY_INDEX_OUT_OF_BOUNDS_ERR,
+    ARRAY_SLICE_OUT_OF_BOUNDS_ERR,
     NO_SUCH_METHOD_ERR,
     INC_DEC_OPERAND_TYPE_ERR,
     INC_DEC_OPERAND_NOT_EXIST_ERR,
@@ -301,10 +302,10 @@ typedef struct {
     Expression  *index;
 } IndexExpression;
 
-// array[begin:end]
+// array[start:end]
 typedef struct {
     Expression  *array;
-    Expression  *begin;
+    Expression  *start;
     Expression  *end;
 } SliceExpression;
 
@@ -342,7 +343,7 @@ struct Expression_tag {
     int line_number;
     union {
         CRB_Boolean             boolean_value;
-        int                     int_value;
+        long                    int_value;
         double                  double_value;
         CRB_Char                *string_value;
 //        CRB_Regexp              *regexp_value;

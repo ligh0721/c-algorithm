@@ -107,6 +107,7 @@ SLICE* open_slice(long len, long cap) {
 
 SLICE* open_slice_by_array(ARRAY* arr, long start, long end) {
     assert(arr != NULL);
+    assert(start >= 0);
     assert(start <= end);
     assert(end <= arr->cap);
     struct slice* ret = NEW(struct slice);
@@ -118,6 +119,7 @@ SLICE* open_slice_by_array(ARRAY* arr, long start, long end) {
 
 SLICE* open_slice_by_slice(SLICE* sli, long start, long end) {
     assert(sli != NULL);
+    assert(start >= 0);
     assert(start <= end);
     assert(sli->pos+end <= sli->data->cap);
     struct slice* ret = NEW(struct slice);
@@ -148,6 +150,11 @@ VALUE* slice_data(SLICE *sli) {
     return sli->data->data + sli->pos;
 }
 
+long slice_pos(SLICE* sli) {
+    assert(sli != NULL);
+    return sli->pos;
+}
+
 VALUE slice_get(SLICE *sli, long index) {
     assert(sli != NULL);
     assert(index < sli->len);
@@ -165,7 +172,8 @@ VALUE slice_set(SLICE *sli, long index, VALUE value) {
 
 void slice_grow(SLICE* sli, long mincap) {
     assert(sli != NULL);
-    long old_cap = sli->data->cap;
+    mincap -= sli->pos;
+    long old_cap = sli->data->cap - sli->pos;
     long new_cap = old_cap + (old_cap >> 1);
     if (new_cap < mincap) {
         new_cap = mincap;
@@ -173,10 +181,12 @@ void slice_grow(SLICE* sli, long mincap) {
     if (new_cap > ARRAY_MAX_SIZE) {
         new_cap = mincap > ARRAY_MAX_SIZE ? LONG_MAX : ARRAY_MAX_SIZE;
     }
+
     ARRAY* new_arr = open_array(new_cap);
-    memcpy(new_arr->data, sli->data->data, sizeof(VALUE)*old_cap);
+    memcpy(new_arr->data, sli->data->data+sli->pos, sizeof(VALUE)*old_cap);
     close_array(sli->data);
     sli->data = new_arr;
+    sli->pos = 0;
 //    printf("@slice_grow: cap: %ld -> %ld\n", old_cap, new_cap);
 }
 
@@ -185,6 +195,7 @@ void slice_append(SLICE* sli, VALUE value) {
     long pos = sli->pos + sli->len;
     if (pos == sli->data->cap) {
         slice_grow(sli, sli->data->cap+1);
+        pos = sli->len;
     }
     sli->data->data[pos] = value;
     sli->len++;

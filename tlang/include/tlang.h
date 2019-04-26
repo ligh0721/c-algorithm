@@ -80,7 +80,7 @@ typedef struct {
     CRB_ValueType       type;
     union {
         CRB_Boolean     boolean_value;
-        int             int_value;
+        long            int_value;
         double          double_value;
         CRB_Object      *object;
         CRB_Closure     closure;

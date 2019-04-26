@@ -80,6 +80,12 @@ CRB_Object* crb_create_array_i(CRB_Interpreter *inter, int size) {
     return ret;
 }
 
+CRB_Object* crb_create_array_slice_i(CRB_Interpreter *inter, CRB_Value_SLICE* arr, long begin, long end) {
+    CRB_Object* ret = alloc_object(inter, ARRAY_OBJECT);
+    ret->u.array.array = open_CRB_Value_slice_by_slice(arr, begin, end);
+    return ret;
+}
+
 CRB_Object* CRB_create_array(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int size) {
     CRB_Object* ret = crb_create_array_i(inter, size);
     add_ref_in_native_method(env, ret);

@@ -183,13 +183,6 @@ static void eval_array_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *
  * 对象(关联数组)字面量
  */
 static void eval_assoc_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, AssocExpressionList *list) {
-
-//    int         i;
-
-//    int size = 0;
-//    for (ExpressionList* pos = list; pos; pos = pos->next) {
-//        size++;
-//    }
     struct lnode* node;
     if (list != NULL) {
         node = llist_front_node(list);
@@ -823,10 +816,6 @@ static void do_function_call(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
 static void eval_function_call_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     CRB_Object* closure_env;
     const char* func_name;
-    RecoveryEnvironment env_backup;
-    CRB_Value   return_value;
-    int stack_pointer_backup;
-
     eval_expression(inter, env, expr->u.function_call_expression.function);
     CRB_Value* func = peek_stack(inter, 0);
     if (func->type == CRB_CLOSURE_VALUE) {
@@ -846,8 +835,8 @@ static void eval_function_call_expression(CRB_Interpreter *inter, CRB_LocalEnvir
         CRB_add_assoc_member(inter, local_env->variable->u.scope_chain.frame, func->u.closure.function->name, func, CRB_TRUE);
     }
 
-    stack_pointer_backup = crb_get_stack_pointer(inter);
-    env_backup = inter->current_recovery_environment;
+    int stack_pointer_backup = crb_get_stack_pointer(inter);
+    RecoveryEnvironment env_backup = inter->current_recovery_environment;
     if (setjmp(inter->current_recovery_environment.environment) == 0) {
         do_function_call(inter, local_env, env, expr, func);
     } else {
@@ -858,7 +847,7 @@ static void eval_function_call_expression(CRB_Interpreter *inter, CRB_LocalEnvir
     inter->current_recovery_environment = env_backup;
     dispose_local_environment(inter);
 
-    return_value = pop_value(inter);
+    CRB_Value return_value = pop_value(inter);
     pop_value(inter); /* func */
     push_value(inter, &return_value);
 }
@@ -1064,23 +1053,23 @@ CRB_Value* crb_get_identifier_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironmen
  */
 static CRB_Value* get_array_element_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     eval_expression(inter, env, expr->u.index_expression.array);
-    eval_expression(inter, env, expr->u.index_expression.index);
-    CRB_Value index = pop_value(inter);
     CRB_Value array = pop_value(inter);
-
     if (array.type != CRB_ARRAY_VALUE) {
         crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_ARRAY_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
+
+    eval_expression(inter, env, expr->u.index_expression.index);
+    CRB_Value index = pop_value(inter);
     if (index.type != CRB_INT_VALUE) {
         crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_INT_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
 
     CRB_Value_SLICE* arr = array.u.object->u.array.array;
     long len = CRB_Value_slice_len(arr);
-    CRB_Value* data = CRB_Value_slice_data(arr);
     if (index.u.int_value < 0 || index.u.int_value >= len) {
         crb_runtime_error(inter, env, expr->line_number, ARRAY_INDEX_OUT_OF_BOUNDS_ERR, CRB_INT_MESSAGE_ARGUMENT, "size", len, CRB_INT_MESSAGE_ARGUMENT, "index", index.u.int_value, CRB_MESSAGE_ARGUMENT_END);
     }
+    CRB_Value* data = CRB_Value_slice_data(arr);
     return data + index.u.int_value;
 }
 
@@ -1090,7 +1079,6 @@ static CRB_Value* get_array_element_lvalue(CRB_Interpreter *inter, CRB_LocalEnvi
 static CRB_Value* get_member_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     eval_expression(inter, env, expr->u.member_expression.expression);
     CRB_Value assoc = pop_value(inter);
-
     if (assoc.type != CRB_ASSOC_VALUE) {
         crb_runtime_error(inter, env, expr->line_number, NOT_OBJECT_MEMBER_UPDATE_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
@@ -1121,12 +1109,6 @@ static CRB_Value* get_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
 }
 
 /*
- * 获取数组切片左值
- */
-static CRB_Value* get_array_slice_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
-    // TODO:
-}
-/*
  * 索引数组表达式求值
  */
 static void eval_index_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
@@ -1138,8 +1120,50 @@ static void eval_index_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *
  * 数组切片表达式求值
  */
 static void eval_slice_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
-    CRB_Value* left = get_array_slice_lvalue(inter, env, expr);
-    push_value(inter, left);
+    eval_expression(inter, env, expr->u.slice_expression.array);
+    CRB_Value array = pop_value(inter);
+    if (array.type != CRB_ARRAY_VALUE) {
+        crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_ARRAY_ERR, CRB_MESSAGE_ARGUMENT_END);
+    }
+
+    CRB_Value start;
+    if (expr->u.slice_expression.start == NULL) {
+        start.type = CRB_INT_VALUE;
+        start.u.int_value = 0;
+    } else {
+        eval_expression(inter, env, expr->u.slice_expression.start);
+        start = pop_value(inter);
+        if (start.type != CRB_INT_VALUE) {
+            crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_INT_ERR, CRB_MESSAGE_ARGUMENT_END);
+        }
+    }
+
+    CRB_Value_SLICE* arr = array.u.object->u.array.array;
+    long cap = CRB_Value_slice_cap(arr);
+    long pos = CRB_Value_slice_pos(arr);
+
+    CRB_Value end;
+    if (expr->u.slice_expression.end == NULL) {
+        end.type = CRB_INT_VALUE;
+        end.u.int_value = CRB_Value_slice_len(arr);
+    } else {
+        eval_expression(inter, env, expr->u.slice_expression.end);
+        end = pop_value(inter);
+        if (end.type != CRB_INT_VALUE) {
+            crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_INT_ERR, CRB_MESSAGE_ARGUMENT_END);
+        }
+    }
+
+    long start_value = start.u.int_value;
+    long end_value = end.u.int_value;
+    if (start_value < 0 || start_value > end_value || pos + end_value > cap) {
+        crb_runtime_error(inter, env, expr->line_number, ARRAY_SLICE_OUT_OF_BOUNDS_ERR, CRB_INT_MESSAGE_ARGUMENT, "cap", cap, CRB_INT_MESSAGE_ARGUMENT, "begin", start_value, CRB_INT_MESSAGE_ARGUMENT, "end", end_value, CRB_MESSAGE_ARGUMENT_END);
+    }
+
+    CRB_Value v;
+    v.type = CRB_ARRAY_VALUE;
+    v.u.object = crb_create_array_slice_i(inter, arr, start_value, end_value);
+    push_value(inter, &v);
 }
 
 /*

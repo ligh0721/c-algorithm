@@ -12,6 +12,7 @@ CRB_Object* crb_create_crowbar_string_i(CRB_Interpreter *inter, CRB_Char *str);
 
 // array object
 CRB_Object* crb_create_array_i(CRB_Interpreter *inter, int size);
+CRB_Object* crb_create_array_slice_i(CRB_Interpreter *inter, CRB_Value_SLICE* arr, long begin, long end);
 
 // assoc
 CRB_Object* crb_create_assoc_i(CRB_Interpreter *inter);

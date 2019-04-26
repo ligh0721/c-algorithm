@@ -44,6 +44,7 @@ static const char* st_builtin_src[] = {
         "IndexOperandNotArrayException = create_exception_class(BugException);\n",
         "IndexOperandNotIntException = create_exception_class(BugException);\n",
         "ArrayIndexOutOfBoundsException = create_exception_class(BugException);\n",
+        "ArraySliceOutOfBoundsException = create_exception_class(BugException);\n",
         "NoSuchMethodException = create_exception_class(BugException);\n",
         "IncDecOperandTypeException = create_exception_class(BugException);\n",
         "IncDecOperandNotExistException = create_exception_class(BugException);\n",
