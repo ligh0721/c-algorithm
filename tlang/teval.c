@@ -118,9 +118,7 @@ static CRB_Value* search_global_variable_from_env(CRB_Interpreter *inter, CRB_Lo
  * NULL字面量
  */
 static void eval_null_expression(CRB_Interpreter *inter) {
-    CRB_Value   v;
-    v.type = CRB_NULL_VALUE;
-    push_value(inter, &v);
+    push_value(inter, &CRB_Null_Value);
 }
 
 /*

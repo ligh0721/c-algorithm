@@ -59,6 +59,7 @@ CRB_Interpreter* CRB_create_interpreter(void) {
 #endif
 
     crb_set_current_interpreter(interpreter);
+    crb_init_native_const_values();
     crb_add_native_functions(interpreter);
 //    crb_add_regexp_functions(interpreter);
 
@@ -213,17 +214,4 @@ void CRB_dispose_interpreter(CRB_Interpreter *interpreter) {
     close_rbtree(interpreter->functions);
     interpreter->functions = NULL;
     MEM_dispose_storage(interpreter->interpreter_storage);
-}
-
-CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, const char *name, CRB_NativeFunctionProc *proc) {
-    CRB_FunctionDefinition* fd = crb_malloc(sizeof(CRB_FunctionDefinition));
-    fd->name = name;
-    fd->type = CRB_NATIVE_FUNCTION_DEFINE;
-    fd->is_closure = CRB_FALSE;
-    fd->u.native_f.proc = proc;
-    rbtree_set(interpreter->functions, ptr_value(fd));
-//    fd->next = interpreter->functions;
-//    interpreter->function_list = fd;
-
-    return fd;
 }

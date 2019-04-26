@@ -2,12 +2,27 @@
 // Created by t5w0rd on 19-4-20.
 //
 
+#include <include/tlang.h>
 #include "tinterpreter.h"
 #include "tnative.h"
 #include "tmisc.h"
 #include "theap.h"
 #include "terror.h"
 
+
+CRB_Value CRB_Null_Value;
+CRB_Value CRB_True_Value;
+CRB_Value CRB_False_Value;
+
+void crb_init_native_const_values() {
+    CRB_Null_Value.type = CRB_NULL_VALUE;
+
+    CRB_True_Value.type = CRB_BOOLEAN_VALUE;
+    CRB_True_Value.u.boolean_value = CRB_TRUE;
+
+    CRB_False_Value.type = CRB_BOOLEAN_VALUE;
+    CRB_False_Value.u.boolean_value = CRB_FALSE;
+}
 
 typedef enum {
     FOPEN_ARGUMENT_TYPE_ERR = 0,
@@ -28,16 +43,28 @@ static CRB_NativeLibInfo st_lib_info = {crb_native_error_message_format};
 
 // functions
 static CRB_Value nv_print_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args){
-    CRB_Value value;
-    value.type = CRB_NULL_VALUE;
+    for (int i=0; i<arg_count; ++i) {
+        if (i > 0) {
+            fprintf(stdout, " ");
+        }
+        CRB_Char* str = CRB_value_to_string(interpreter, env, __LINE__, args+i, NULL);
+        CRB_print_wcs(stdout, str);
+        MEM_free(str);
+    }
+    return CRB_Null_Value;
+}
 
-    CRB_check_argument_count(interpreter, env, arg_count, 1);
-
-    CRB_Char* str = CRB_value_to_string(interpreter, env, __LINE__, &args[0], NULL);
-    CRB_print_wcs(stdout, str);
-    MEM_free(str);
-
-    return value;
+static CRB_Value nv_println_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args){
+    for (int i=0; i<arg_count; ++i) {
+        if (i > 0) {
+            fprintf(stdout, " ");
+        }
+        CRB_Char* str = CRB_value_to_string(interpreter, env, __LINE__, args+i, NULL);
+        CRB_print_wcs(stdout, str);
+        MEM_free(str);
+    }
+    fprintf(stdout, "\n");
+    return CRB_Null_Value;
 }
 
 static CRB_Value nv_fopen_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args){
@@ -65,7 +92,7 @@ static CRB_Value nv_new_array_proc(CRB_Interpreter *interpreter, CRB_LocalEnviro
     return value;
 }
 
-static CRB_Value nv_new_object_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args) {
+static CRB_Value nv_object_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args) {
     CRB_check_argument_count(interpreter, env, arg_count, 0);
     CRB_Value value;
     value.type = CRB_ASSOC_VALUE;
@@ -89,24 +116,35 @@ static CRB_Value nv_exit_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment
     if (args[0].type != CRB_INT_VALUE) {
         CRB_error(interpreter, env, &st_lib_info, __LINE__, (int)EXIT_ARGUMENT_TYPE_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(args[0].type), CRB_MESSAGE_ARGUMENT_END);
     }
-
     exit(args[0].u.int_value);
-    CRB_Value value = {};
-    return value;
+    return CRB_Null_Value;
+}
+
+CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, const char *name, CRB_NativeFunctionProc *proc) {
+    CRB_FunctionDefinition* fd = crb_malloc(sizeof(CRB_FunctionDefinition));
+    fd->name = name;
+    fd->type = CRB_NATIVE_FUNCTION_DEFINE;
+    fd->is_closure = CRB_FALSE;
+    fd->u.native_f.proc = proc;
+    rbtree_set(interpreter->functions, ptr_value(fd));
+//    fd->next = interpreter->functions;
+//    interpreter->function_list = fd;
+
+    return fd;
 }
 
 void crb_add_native_functions(CRB_Interpreter *inter) {
     CRB_add_native_function(inter, "print", nv_print_proc);
+    CRB_add_native_function(inter, "println", nv_println_proc);
     CRB_add_native_function(inter, "fopen", nv_fopen_proc);
     CRB_add_native_function(inter, "fclose", nv_fclose_proc);
     CRB_add_native_function(inter, "fgets", nv_fgets_proc);
     CRB_add_native_function(inter, "fputs", nv_fputs_proc);
     CRB_add_native_function(inter, "new_array", nv_new_array_proc);
-    CRB_add_native_function(inter, "new_object", nv_new_object_proc);
+    CRB_add_native_function(inter, "object", nv_object_proc);
     CRB_add_native_function(inter, "new_exception", nv_new_exception_proc);
     CRB_add_native_function(inter, "exit", nv_exit_proc);
 }
-
 
 // file pointers
 static void file_finalizer(CRB_Interpreter *inter, CRB_Object *obj) {

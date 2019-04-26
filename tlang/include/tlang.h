@@ -88,6 +88,10 @@ typedef struct {
     } u;
 } CRB_Value;
 
+extern CRB_Value CRB_Null_Value;
+extern CRB_Value CRB_True_Value;
+extern CRB_Value CRB_False_Value;
+
 typedef enum {
     CRB_CROWBAR_FUNCTION_DEFINE = 1,
     CRB_NATIVE_FUNCTION_DEFINE,
@@ -116,9 +120,7 @@ struct CRB_FunctionDefinition_tag {
 // Error
 void CRB_check_argument_count_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int expected_count);
 
-#define CRB_check_argument_count(inter, env, arg_count, expected_count)\
-  (CRB_check_argument_count_func(inter, env, __LINE__, \
-  arg_count, expected_count))
+#define CRB_check_argument_count(inter, env, arg_count, expected_count) (CRB_check_argument_count_func(inter, env, __LINE__, arg_count, expected_count))
 
 typedef struct {
     const char *format;
@@ -183,8 +185,8 @@ CRB_Char* CRB_mbstowcs_alloc(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
 int CRB_wcstombs_len(const CRB_Char *src);
 void CRB_wcstombs(const CRB_Char *src, char *dest);
 char CRB_wctochar(CRB_Char src);
-int CRB_print_wcs(FILE *fp, CRB_Char *str);
-int CRB_print_wcs_ln(FILE *fp, CRB_Char *str);
+int CRB_print_wcs(FILE *fp, const CRB_Char *str);
+int CRB_print_wcs_ln(FILE *fp, const CRB_Char *str);
 CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const CRB_Value *value, void* param);
 
 // tnative

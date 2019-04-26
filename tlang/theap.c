@@ -261,10 +261,7 @@ static CRB_Value print_stack_trace(CRB_Interpreter *inter, CRB_LocalEnvironment 
         CRB_print_wcs_ln(stderr, str);
         MEM_free(str);
     }
-
-    CRB_Value ret;
-    ret.type = CRB_NULL_VALUE;
-    return ret;
+    return CRB_Null_Value;
 }
 
 CRB_Object* CRB_create_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *message, int line_number) {
