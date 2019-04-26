@@ -17,7 +17,7 @@ CRB_ErrorDefinition crb_compile_error_message_format[] = {
         {"预期外的宽字符串。", NULL},
         {"数组的不能含有final元素。", NULL},
         {"复合运算符不能用于final值。", NULL},
-        {"dummy"}
+        {"dummy", NULL}
 };
 
 CRB_ErrorDefinition crb_runtime_error_message_format[] = {
@@ -40,8 +40,7 @@ CRB_ErrorDefinition crb_runtime_error_message_format[] = {
                 "LogicalOperatorIntegerOperandException"},
         {"$(operator)运算符不能用于boolean型。",
                 "NotBooleanOperatorException"},
-        {"null只能用于运算符 == 和 !="
-         "(不能进行$(operator)操作)。",
+        {"null只能用于运算符 == 和 != (不能进行$(operator)操作)。",
                 "NotNullOperatorException"},
         {"操作数不是左边值。",
                 "NotLValueException"},
@@ -79,22 +78,17 @@ CRB_ErrorDefinition crb_runtime_error_message_format[] = {
                 "GlobalStatementInToplevelException"},
         {"函数$(name)已经存在。",
                 "FunctionExistsException"},
-        {"数组的resize()必须传入整数类型"
-         "(不能传入$(type))。",
+        {"数组的resize()必须传入整数类型(不能传入$(type))。",
                 "ArrayResizeArgumentException"},
-        {"数组insert()的第一个参数必须是整数值"
-         "(不能传入$(type))。",
+        {"数组insert()的第一个参数必须是整数值(不能传入$(type))。",
                 "ArrayInsertArgumentException"},
-        {"数组的remove()必须传入整数值"
-         "(不能传入$(type))。",
+        {"数组的remove()必须传入整数值(不能传入$(type))。",
                 "ArrayRemoveArgumentException"},
-        {"指定的位置超出字符串长度。"
-         "为长度为$(len)的字符串指定了$(pos)。",
+        {"指定的位置超出字符串长度。为长度为$(len)的字符串指定了$(pos)。",
                 "StringPositionOutOfBoundsException"},
         {"字符串substr()的第二个参数(截取字符串的长度)超出范围($(len))。",
                 "StringSubstrLengthException"},
-        {"字符串substr()的参数必须是整数值。"
-         "(传递了$(type1)和$(type2))。",
+        {"字符串substr()的参数必须是整数值。(传递了$(type1)和$(type2))。",
                 "StringSubstrArgumentException"},
         {"异常中没有message成员。",
                 "ExceptionHasNoMessageException"},
@@ -122,8 +116,8 @@ CRB_ErrorDefinition crb_runtime_error_message_format[] = {
                 "ExceptionClassIsNotAssocException"},
         {"异常类中没有create method。",
                 "ExceptionClassHasNoCreateMethodException"},
-        {"向函数$(func_name)的第$(idx)个参数传递了错误的类型$(type)。"
-         "ArgumentTypeMismatchException"},
+        {"向函数$(func_name)的第$(idx)个参数传递了错误的类型$(type)。",
+                "ArgumentTypeMismatchException"},
         {"预期外的宽字符串。",
                 "UnexpectedWideStringException"},
         {"正则表达式检索失败。$(message)",
@@ -152,16 +146,14 @@ CRB_ErrorDefinition crb_native_error_message_format[] = {
                 "FileAlreadyClosedException"},
         {"请为fputs()函数传入文件指针和字符串。",
                 "FPutsArgumentTypeException"},
-        {"请为new_array()函数传入整数类型（数组的大小）。",
+        {"请为array()函数传入整数类型（数组的大小）。",
                 "NewArrayArgumentTypeException"},
-        {"请为new_array()函数传递数组大小和维数。",
+        {"请为array()函数传递数组大小和维数。",
                 "NewArrayArgumentTooFewException"},
-        {"exit()的参数不是整数值"
-         "(不能传入$(type))。",
+        {"exit()的参数不是整数值(不能传入$(type))。",
                 "ExitArgumentTypeException"},
-        {"new_exception()的参数不是消息字符串"
-         "(不能传入$(type))。",
+        {"exception()的参数不是消息字符串(不能传入$(type))。",
                 "NewExceptionArgumentException"},
         {"错误的多字节字符串",
-                "FGetsBadMultibyteCharacterException"},
+                "FGetsBadMultibyteCharacterException"}
 };

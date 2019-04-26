@@ -69,6 +69,21 @@ CRB_Object* CRB_create_crowbar_string(CRB_Interpreter *inter, CRB_LocalEnvironme
     return ret;
 }
 
+CRB_Object* crb_string_substr_i(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *str, int from, int len, int line_number) {
+    int org_len = CRB_wcslen(str->u.string.string);
+    if (from < 0 || from >= org_len) {
+        crb_runtime_error(inter, env, line_number, STRING_POS_OUT_OF_BOUNDS_ERR, CRB_INT_MESSAGE_ARGUMENT, "len", org_len, CRB_INT_MESSAGE_ARGUMENT, "pos", from, CRB_MESSAGE_ARGUMENT_END);
+    }
+    if (len < 0 || from + len > org_len) {
+        crb_runtime_error(inter, env, line_number, STRING_SUBSTR_LEN_ERR, CRB_INT_MESSAGE_ARGUMENT, "len", len, CRB_MESSAGE_ARGUMENT_END);
+    }
+    CRB_Char* new_str = MEM_malloc(sizeof(CRB_Char) * (len+1));
+    CRB_wcsncpy(new_str, str->u.string.string + from, len);
+    new_str[len] = L'\0';
+
+    return crb_create_crowbar_string_i(inter, new_str);
+}
+
 // array object
 CRB_Object* crb_create_array_i(CRB_Interpreter *inter, int size) {
     CRB_Object* ret = alloc_object(inter, ARRAY_OBJECT);

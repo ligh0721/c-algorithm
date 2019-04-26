@@ -171,9 +171,6 @@ void crb_vstr_append_character(VString *v, CRB_Char ch) {
     v->string[current_len+1] = L'\0';
 }
 
-
-
-
 CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Value *value, CRB_Boolean is_final) {
     Variable* new_var = crb_execute_malloc(inter, sizeof(Variable));
     new_var->is_final = is_final;
@@ -182,8 +179,6 @@ CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, const char *identifie
     new_var->name = name;
     new_var->value = *value;
     rbtree_set(inter->global_vars, ptr_value(new_var));
-//    new_var->next = inter->variable;
-//    inter->variable = new_var;
     return &new_var->value;
 }
 
@@ -213,16 +208,6 @@ CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, const char *identi
         return &var->value;
     }
     return NULL;
-//    Variable* pos;
-//    for (pos=inter->variable; pos; pos = pos->next) {
-//        if (!strcmp(pos->name, identifier))
-//            break;
-//    }
-//    if (pos == NULL) {
-//        return NULL;
-//    } else {
-//        return &pos->value;
-//    }
 }
 
 CRB_Value* CRB_add_local_variable(CRB_Interpreter *inter, CRB_LocalEnvironment *env, const char *identifier, CRB_Value *value, CRB_Boolean is_final) {
@@ -256,11 +241,6 @@ CRB_FunctionDefinition* CRB_search_function(CRB_Interpreter *inter, const char *
     NamedItemEntry key = {name};
     VALUE res = rbtree_get(inter->functions, ptr_value(&key), NULL);
     return (CRB_FunctionDefinition*)res.ptr_value;
-//    for (CRB_FunctionDefinition *pos = inter->function_list; pos; pos = pos->next) {
-//        if (!strcmp(pos->name, name))
-//            break;
-//    }
-//    return pos;
 }
 
 void* CRB_object_get_native_pointer(CRB_Object *obj) {

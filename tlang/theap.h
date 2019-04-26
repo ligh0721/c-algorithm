@@ -9,6 +9,7 @@
 // string object
 CRB_Object* crb_literal_to_crb_string_i(CRB_Interpreter *inter, CRB_Char *str);
 CRB_Object* crb_create_crowbar_string_i(CRB_Interpreter *inter, CRB_Char *str);
+CRB_Object* crb_string_substr_i(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *str, int from, int len, int line_number);
 
 // array object
 CRB_Object* crb_create_array_i(CRB_Interpreter *inter, int size);

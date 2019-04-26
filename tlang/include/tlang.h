@@ -100,6 +100,7 @@ typedef enum {
 
 typedef CRB_Value CRB_NativeFunctionProc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args);  // TODO: *
 CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, const char *name, CRB_NativeFunctionProc *proc);
+CRB_Value CRB_create_closure(CRB_LocalEnvironment *env, CRB_FunctionDefinition *fd);
 
 struct CRB_FunctionDefinition_tag {
     const char                *name;
@@ -165,6 +166,7 @@ CRB_Value CRB_pop_value(CRB_Interpreter *inter);
 CRB_Value* CRB_peek_stack(CRB_Interpreter *inter, int index);
 void CRB_shrink_stack(CRB_Interpreter *inter, int shrink_size);
 CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *func, int arg_count, CRB_Value *args);
+CRB_Value CRB_call_function_by_name(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const char *func_name, int arg_count, CRB_Value *args);
 CRB_Value CRB_call_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Object *obj, const char *method_name, int arg_count, CRB_Value *args);
 
 // tmisc
@@ -176,7 +178,8 @@ CRB_FunctionDefinition* CRB_search_function(CRB_Interpreter *inter, const char *
 void* CRB_object_get_native_pointer(CRB_Object *obj);
 
 #define CRB_wcslen(s) wcslen(s)
-#define CRB_wcscpy(s, d) wcscpy(s, d)
+#define CRB_wcscpy(dst, src) wcscpy(dst, src)
+#define CRB_wcsncpy(dst, src, n) wcsncpy(dst, src, n)
 #define CRB_wcscat(s, s2) wcscat(s, s2)
 #define CRB_wcscmp(s, s2) wcscmp(s, s2)
 int CRB_mbstowcs_len(const char *src);

@@ -221,25 +221,23 @@ static CRB_Value* assign_to_variable(CRB_Interpreter *inter, CRB_LocalEnvironmen
  * 执行foreach语句
  */
 static StatementResult execute_foreach_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Statement *statement) {
-    StatementResult result;
-    CRB_Value   iterator;
-    CRB_Value   *var;
-    CRB_Value   is_done;
     int stack_count = 0;
-    CRB_Value   temp;
 
+    StatementResult result;
     result.type = NORMAL_STATEMENT_RESULT;
 
     CRB_Value* collection = crb_eval_expression_peek(inter, env, statement->u.foreach_s.collection);
     ++stack_count;
     collection = CRB_peek_stack(inter, 0);
 
-    iterator = CRB_call_method(inter, env, statement->line_number, collection->u.object, ITERATOR_METHOD_NAME, 0, NULL);
+    CRB_Value iterator = CRB_call_method(inter, env, statement->line_number, collection->u.object, ITERATOR_METHOD_NAME, 0, NULL);
     CRB_push_value(inter, &iterator);
     ++stack_count;
 
+    CRB_Value is_done;
+    CRB_Value temp;
     temp.type = CRB_NULL_VALUE;
-    var = assign_to_variable(inter, env, statement->line_number, statement->u.foreach_s.variable, &temp);
+    CRB_Value* var = assign_to_variable(inter, env, statement->line_number, statement->u.foreach_s.variable, &temp);
     for (;;) {
         is_done = CRB_call_method(inter, env, statement->line_number, iterator.u.object, IS_DONE_METHOD_NAME, 0, NULL);
         if (is_done.type != CRB_BOOLEAN_VALUE) {

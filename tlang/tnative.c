@@ -87,9 +87,34 @@ static CRB_Value nv_fputs_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironmen
     return value;
 }
 
-static CRB_Value nv_new_array_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args){
-    CRB_Value value = {};
-    return value;
+static inline CRB_Value new_array_sub(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args, int arg_idx) {
+    if (args[arg_idx].type != CRB_INT_VALUE) {
+        CRB_error(inter, env, &st_lib_info, __LINE__, (int)NEW_ARRAY_ARGUMENT_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
+    }
+
+    int size = args[arg_idx].u.int_value;
+    CRB_Value ret;
+    ret.type = CRB_ARRAY_VALUE;
+    ret.u.object = CRB_create_array(inter, env, size);
+
+    if (arg_idx == arg_count-1) {
+        for (int i=0; i<size; ++i) {
+            CRB_array_set(inter, env, ret.u.object, i, &CRB_Null_Value);
+        }
+    } else {
+        for (int i=0; i<size; ++i) {
+            CRB_Value value = new_array_sub(inter, env, arg_count, args, arg_idx+1);
+            CRB_array_set(inter, env, ret.u.object, i, &value);
+        }
+    }
+    return ret;
+}
+
+static CRB_Value nv_array_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args) {
+    if (arg_count < 1) {
+        CRB_error(interpreter, env, &st_lib_info, __LINE__, (int)NEW_ARRAY_ARGUMENT_TOO_FEW_ERR, CRB_MESSAGE_ARGUMENT_END);
+    }
+    return new_array_sub(interpreter, env, arg_count, args, 0);
 }
 
 static CRB_Value nv_object_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args) {
@@ -100,7 +125,7 @@ static CRB_Value nv_object_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironme
     return value;
 }
 
-static CRB_Value nv_new_exception_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args) {
+static CRB_Value nv_exception_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args) {
     CRB_check_argument_count(interpreter, env, arg_count, 1);
     if (args[0].type != CRB_STRING_VALUE) {
         CRB_error(interpreter, env, &st_lib_info, __LINE__, (int)NEW_EXCEPTION_ARGUMENT_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(args[0].type), CRB_MESSAGE_ARGUMENT_END);
@@ -127,10 +152,15 @@ CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, co
     fd->is_closure = CRB_FALSE;
     fd->u.native_f.proc = proc;
     rbtree_set(interpreter->functions, ptr_value(fd));
-//    fd->next = interpreter->functions;
-//    interpreter->function_list = fd;
-
     return fd;
+}
+
+CRB_Value CRB_create_closure(CRB_LocalEnvironment *env, CRB_FunctionDefinition *fd) {
+    CRB_Value ret;
+    ret.type = CRB_CLOSURE_VALUE;
+    ret.u.closure.function = fd;
+    ret.u.closure.environment = env->variable;
+    return ret;
 }
 
 void crb_add_native_functions(CRB_Interpreter *inter) {
@@ -140,9 +170,9 @@ void crb_add_native_functions(CRB_Interpreter *inter) {
     CRB_add_native_function(inter, "fclose", nv_fclose_proc);
     CRB_add_native_function(inter, "fgets", nv_fgets_proc);
     CRB_add_native_function(inter, "fputs", nv_fputs_proc);
-    CRB_add_native_function(inter, "new_array", nv_new_array_proc);
+    CRB_add_native_function(inter, "array", nv_array_proc);
     CRB_add_native_function(inter, "object", nv_object_proc);
-    CRB_add_native_function(inter, "new_exception", nv_new_exception_proc);
+    CRB_add_native_function(inter, "exception", nv_exception_proc);
     CRB_add_native_function(inter, "exit", nv_exit_proc);
 }
 
@@ -274,15 +304,25 @@ static void array_method_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
     *result = CRB_array_pop(inter, env, obj, pos->u.int_value, __LINE__);
 }
 
+static void array_iterator_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, CRB_Value *result) {
+    CRB_Value array;
+    array.type = CRB_ARRAY_VALUE;
+    array.u.object = obj;
+    *result = CRB_call_function_by_name(inter, env, __LINE__, ARRAY_ITERATOR_METHOD_NAME, 1, &array);
+}
+
+static void string_length_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, CRB_Value *result) {
+    result->type = CRB_INT_VALUE;
+    result->u.int_value = CRB_wcslen(obj->u.string.string);
+}
+
 FakeMethodTable st_fake_method_table[] = {
-        // TODO:
         {ARRAY_OBJECT, "append", 1, array_method_append},
         {ARRAY_OBJECT, "length", 0, array_method_length},
         {ARRAY_OBJECT, "insert", 2, array_method_insert},
         {ARRAY_OBJECT, "pop", 1, array_method_pop},
-//        {ARRAY_OBJECT, "iterator", 0, array_iterator_method},
-//        {STRING_OBJECT, "length", 0, string_length_method},
-//        {STRING_OBJECT, "substr", 2, string_substr_method},
+        {ARRAY_OBJECT, "iterator", 0, array_iterator_method},
+        {STRING_OBJECT, "length", 0, string_length_method},
 };
 
 #define FAKE_METHOD_TABLE_SIZE(array) (sizeof(array) / sizeof((array)[0]))
