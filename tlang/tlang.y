@@ -564,7 +564,7 @@ block
             $$ = crb_create_block(NULL);
         }
         ;
-        
+
 statement_end
         : SEMICOLON
         | LF

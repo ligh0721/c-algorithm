@@ -402,6 +402,9 @@ static int _assoc_every_member_to_string(const AssocMember* value, void* param) 
 
     CRB_Char* new_str = CRB_mbstowcs_alloc(params->inter, params->env, params->line_number, value->name);
     DBG_assert(new_str != NULL, ("new_str is null.\n"));
+    if (value->is_final) {
+        crb_vstr_append_string(&params->params->vstr, L"final ");
+    }
     crb_vstr_append_string(&params->params->vstr, new_str);
     MEM_free(new_str);
 
