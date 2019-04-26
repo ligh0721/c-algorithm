@@ -185,6 +185,17 @@ Expression* crb_create_index_expression(Expression *array, Expression *index) {
 }
 
 /*
+ * 创建数组切片表达式
+ */
+Expression* crb_create_slice_expression(Expression *array, Expression *begin, Expression *end) {
+    Expression* exp = crb_alloc_expression(SLICE_EXPRESSION);
+    exp->u.slice_expression.array = array;
+    exp->u.slice_expression.begin = begin;
+    exp->u.slice_expression.end = end;
+    return exp;
+}
+
+/*
  * 创建访问成员表达式
  */
 Expression* crb_create_member_expression(Expression *expression, const char *member_name) {

@@ -232,6 +232,7 @@ typedef enum {
     ARRAY_EXPRESSION,
     ASSOC_EXPRESSION,
     INDEX_EXPRESSION,
+    SLICE_EXPRESSION,
     INCREMENT_EXPRESSION,
     DECREMENT_EXPRESSION,
     CLOSURE_EXPRESSION,
@@ -294,10 +295,18 @@ typedef struct {
 //} ExpressionList;
 typedef LLIST ExpressionList;  // LLIST<Expression*>
 
+// array[index]
 typedef struct {
     Expression  *array;
     Expression  *index;
 } IndexExpression;
+
+// array[begin:end]
+typedef struct {
+    Expression  *array;
+    Expression  *begin;
+    Expression  *end;
+} SliceExpression;
 
 // expression.member_name
 typedef struct {
@@ -348,6 +357,7 @@ struct Expression_tag {
         ExpressionList          *array_literal;
         AssocExpressionList     *assoc_literal;
         IndexExpression         index_expression;
+        SliceExpression         slice_expression;
         IncrementOrDecrement    inc_dec;
         ClosureExpression       closure;
     } u;

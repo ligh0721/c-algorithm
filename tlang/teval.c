@@ -340,8 +340,10 @@ static void eval_binary_int(CRB_Interpreter *inter, CRB_LocalEnvironment *env, E
         case MEMBER_EXPRESSION:     /* FALLTHRU */
         case NULL_EXPRESSION:       /* FALLTHRU */
         case ARRAY_EXPRESSION:      /* FALLTHRU */
+        case ASSOC_EXPRESSION:      /* FALLTHRU */
         case CLOSURE_EXPRESSION:    /* FALLTHRU */
         case INDEX_EXPRESSION:      /* FALLTHRU */
+        case SLICE_EXPRESSION:      /* FALLTHRU */
         case INCREMENT_EXPRESSION:  /* FALLTHRU */
         case DECREMENT_EXPRESSION:  /* FALLTHRU */
         case EXPRESSION_TYPE_COUNT_PLUS_1:  /* FALLTHRU */
@@ -1091,6 +1093,7 @@ static CRB_Value* get_array_element_lvalue(CRB_Interpreter *inter, CRB_LocalEnvi
     }
     return data + index.u.int_value;
 }
+
 /*
  * 获取关联数组成员左值
  */
@@ -1128,10 +1131,24 @@ static CRB_Value* get_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
 }
 
 /*
+ * 获取数组切片左值
+ */
+static CRB_Value* get_array_slice_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
+    // TODO:
+}
+/*
  * 索引数组表达式求值
  */
 static void eval_index_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     CRB_Value* left = get_array_element_lvalue(inter, env, expr);
+    push_value(inter, left);
+}
+
+/*
+ * 数组切片表达式求值
+ */
+static void eval_slice_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
+    CRB_Value* left = get_array_slice_lvalue(inter, env, expr);
     push_value(inter, left);
 }
 
@@ -1285,6 +1302,9 @@ static void eval_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, E
             break;
         case INDEX_EXPRESSION:
             eval_index_expression(inter, env, expr);
+            break;
+        case SLICE_EXPRESSION:
+            eval_slice_expression(inter, env, expr);
             break;
         case INCREMENT_EXPRESSION:  /* FALLTHRU */
         case DECREMENT_EXPRESSION:

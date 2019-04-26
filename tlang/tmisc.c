@@ -90,7 +90,9 @@ const char* crb_get_operator_string(ExpressionType type) {
         case MEMBER_EXPRESSION:     /* FALLTHRU */
         case NULL_EXPRESSION:       /* FALLTHRU */
         case ARRAY_EXPRESSION:      /* FALLTHRU */
+        case ASSOC_EXPRESSION:      /* FALLTHRU */
         case INDEX_EXPRESSION:      /* FALLTHRU */
+        case SLICE_EXPRESSION:      /* FALLTHRU */
         case INCREMENT_EXPRESSION:  /* FALLTHRU */
         case DECREMENT_EXPRESSION:  /* FALLTHRU */
         case CLOSURE_EXPRESSION:    /* FALLTHRU */
