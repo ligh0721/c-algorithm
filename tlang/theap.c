@@ -251,13 +251,13 @@ static CRB_Value print_stack_trace(CRB_Interpreter *inter, CRB_LocalEnvironment 
 
         // print line number
         fprintf(stderr, "line ");
-        CRB_Char* str = CRB_value_to_string(inter, NULL, line_number->u.int_value, line_number);
+        CRB_Char* str = CRB_value_to_string(inter, NULL, line_number->u.int_value, line_number, NULL);
         CRB_print_wcs(stderr, str);
         MEM_free(str);
         fprintf(stderr, ", in ");
 
         // print function name
-        str = CRB_value_to_string(inter, NULL, line_number->u.int_value, function_name);
+        str = CRB_value_to_string(inter, NULL, line_number->u.int_value, function_name, NULL);
         CRB_print_wcs_ln(stderr, str);
         MEM_free(str);
     }

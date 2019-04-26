@@ -33,7 +33,7 @@ static CRB_Value nv_print_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironmen
 
     CRB_check_argument_count(interpreter, env, arg_count, 1);
 
-    CRB_Char* str = CRB_value_to_string(interpreter, env, __LINE__, &args[0]);
+    CRB_Char* str = CRB_value_to_string(interpreter, env, __LINE__, &args[0], NULL);
     CRB_print_wcs(stdout, str);
     MEM_free(str);
 

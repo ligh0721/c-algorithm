@@ -446,7 +446,7 @@ void eval_binary_numeric(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expr
  * 连接字符串
  */
 static void chain_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *left, CRB_Value *right, CRB_Value *result) {
-    CRB_Char* right_str = CRB_value_to_string(inter, env, line_number, right);
+    CRB_Char* right_str = CRB_value_to_string(inter, env, line_number, right, NULL);
     CRB_Object* right_obj = crb_create_crowbar_string_i(inter, right_str);
 
     result->type = CRB_STRING_VALUE;

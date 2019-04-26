@@ -5,6 +5,7 @@
 #include <string.h>
 #include <wchar.h>
 #include <limits.h>
+#include <include/tlang.h>
 #include "tinterpreter.h"
 #include "tmisc.h"
 
@@ -354,19 +355,28 @@ int CRB_print_wcs_ln(FILE *fp, CRB_Char *str) {
     return result;
 }
 
-static inline int check_record(RBTREE* record, const CRB_Value *value, CRB_Char* wc_buf) {
-    if (record != NULL && (value->type == CRB_ARRAY_VALUE || value->type == CRB_ASSOC_VALUE)) {
+struct _value_to_string_params {
+    VString     vstr;
+    char        buf[LINE_BUF_SIZE];
+    CRB_Char    wc_buf[LINE_BUF_SIZE];
+    RBTREE*     record;
+    long        deep;
+};
+
+static inline int check_record(const CRB_Value *value, struct _value_to_string_params* params) {
+    if (value->type == CRB_ARRAY_VALUE || value->type == CRB_ASSOC_VALUE) {
+        VALUE v = ptr_value((void*)value->u.object);
         RBNODE* parent;
-        RBNODE** where = rbtree_fast_get(record, ptr_value(value), &parent);
-        if (rbtree_node_not_found(record, where)) {
-            RBNODE* node = rbtree_open_node(record, ptr_value(value), parent);
-            rbtree_fast_set(record, where, node);
+        RBNODE** where = rbtree_fast_get(params->record, v, &parent);
+        if (rbtree_node_not_found(params->record, where)) {
+            RBNODE* node = rbtree_open_node(params->record, v, parent);
+            rbtree_fast_set(params->record, where, node);
             return 0;
         } else {
             if (value->type == CRB_ARRAY_VALUE) {
-                CRB_mbstowcs("[...]", wc_buf);
+                CRB_mbstowcs("[...]", params->wc_buf);
             } else if (value->type == CRB_ASSOC_VALUE) {
-                CRB_mbstowcs("{...}", wc_buf);
+                CRB_mbstowcs("{...}", params->wc_buf);
             }
             return 1;
         }
@@ -379,101 +389,100 @@ struct _assoc_every_member_to_string_params {
     CRB_Interpreter* inter;
     CRB_LocalEnvironment *env;
     int line_number;
-    CRB_Char* wc_buf;
-    VString* vstr;
-    RBTREE* record;
+    struct _value_to_string_params* params;
 };
 
 static int _assoc_every_member_to_string(const AssocMember* value, void* param) {
     struct _assoc_every_member_to_string_params* params = (struct _assoc_every_member_to_string_params*)param;
     if (params->need_comma == CRB_TRUE) {
-        crb_vstr_append_string(params->vstr, L", ");
+        crb_vstr_append_string(&params->params->vstr, L", ");
     } else {
         params->need_comma = CRB_TRUE;
     }
 
     CRB_Char* new_str = CRB_mbstowcs_alloc(params->inter, params->env, params->line_number, value->name);
     DBG_assert(new_str != NULL, ("new_str is null.\n"));
-    crb_vstr_append_string(params->vstr, new_str);
+    crb_vstr_append_string(&params->params->vstr, new_str);
     MEM_free(new_str);
 
-    crb_vstr_append_string(params->vstr, L": ");
-    if (check_record(params->record, &value->value, params->wc_buf)) {
-        crb_vstr_append_string(params->vstr, params->wc_buf);
+    crb_vstr_append_string(&params->params->vstr, L": ");
+    if (check_record(&value->value, params->params)) {
+        crb_vstr_append_string(&params->params->vstr, params->params->wc_buf);
     } else {
-        new_str = CRB_value_to_string(params->inter, params->env, params->line_number, &value->value);
-        crb_vstr_append_string(params->vstr, new_str);
-        MEM_free(new_str);
+        CRB_value_to_string(params->inter, params->env, params->line_number, &value->value, params->params);
+//        new_str = CRB_value_to_string(params->inter, params->env, params->line_number, &value->value);
+//        crb_vstr_append_string(&params->params->vstr, new_str);
+//        MEM_free(new_str);
     }
     return 0;
 }
 
-// TODO: 去除环形遍历
-CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const CRB_Value *value, RBTREE* record) {
-    VString     vstr;
-    char        buf[LINE_BUF_SIZE];
-    CRB_Char    wc_buf[LINE_BUF_SIZE];
-    crb_vstr_clear(&vstr);
+CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const CRB_Value *value, void* param) {
+    struct _value_to_string_params* params = (struct _value_to_string_params*)param;
+    if (params == NULL) {
+        params = (struct _value_to_string_params*)MEM_malloc(sizeof(struct _value_to_string_params));
+        crb_vstr_clear(&params->vstr);
+        params->record = open_rbtree(asc_order_int);
+        params->deep = 0;
+    }
+    params->deep++;
+    check_record(value, params);
 
     switch (value->type) {
         case CRB_BOOLEAN_VALUE:
             if (value->u.boolean_value) {
-                CRB_mbstowcs("true", wc_buf);
+                crb_vstr_append_string(&params->vstr, L"true");
             } else {
-                CRB_mbstowcs("false", wc_buf);
+                crb_vstr_append_string(&params->vstr, L"false");
             }
-            crb_vstr_append_string(&vstr, wc_buf);
             break;
         case CRB_INT_VALUE:
-            sprintf(buf, "%d", value->u.int_value);
-            CRB_mbstowcs(buf, wc_buf);
-            crb_vstr_append_string(&vstr, wc_buf);
+            sprintf(params->buf, "%d", value->u.int_value);
+            CRB_mbstowcs(params->buf, params->wc_buf);
+            crb_vstr_append_string(&params->vstr, params->wc_buf);
             break;
         case CRB_DOUBLE_VALUE:
-            sprintf(buf, "%f", value->u.double_value);
-            CRB_mbstowcs(buf, wc_buf);
-            crb_vstr_append_string(&vstr, wc_buf);
+            sprintf(params->buf, "%lf", value->u.double_value);
+            CRB_mbstowcs(params->buf, params->wc_buf);
+            crb_vstr_append_string(&params->vstr, params->wc_buf);
             break;
         case CRB_STRING_VALUE:
-            crb_vstr_append_string(&vstr, value->u.object->u.string.string);
+            crb_vstr_append_string(&params->vstr, value->u.object->u.string.string);
             break;
         case CRB_NATIVE_POINTER_VALUE:
-            sprintf(buf, "%s(%p)", value->u.object->u.native_pointer.info->name, value->u.object->u.native_pointer.pointer);
-            CRB_mbstowcs(buf, wc_buf);
-            crb_vstr_append_string(&vstr, wc_buf);
+            sprintf(params->buf, "%s(%p)", value->u.object->u.native_pointer.info->name, value->u.object->u.native_pointer.pointer);
+            CRB_mbstowcs(params->buf, params->wc_buf);
+            crb_vstr_append_string(&params->vstr, params->wc_buf);
             break;
         case CRB_NULL_VALUE:
-            CRB_mbstowcs("null", wc_buf);
-            crb_vstr_append_string(&vstr, wc_buf);
+            CRB_mbstowcs("null", params->wc_buf);
+            crb_vstr_append_string(&params->vstr, params->wc_buf);
             break;
         case CRB_ARRAY_VALUE:
-            CRB_mbstowcs("[", wc_buf);
-            crb_vstr_append_string(&vstr, wc_buf);
+            crb_vstr_append_character(&params->vstr, L'[');
             CRB_Value_SLICE* arr = value->u.object->u.array.array;
             long len = CRB_Value_slice_len(arr);
             CRB_Value* data = CRB_Value_slice_data(arr);
             for (long i = 0; i<len; ++i) {
                 if (i > 0) {
-                    CRB_mbstowcs(", ", wc_buf);
-                    crb_vstr_append_string(&vstr, wc_buf);
+                    crb_vstr_append_string(&params->vstr, L", ");
                 }
-                if (check_record(record, data+i, wc_buf)) {
-                    crb_vstr_append_string(&vstr, wc_buf);
+                if (check_record(data+i, params)) {
+                    crb_vstr_append_string(&params->vstr, params->wc_buf);
                 } else {
-                    CRB_Char* new_str = CRB_value_to_string(inter, env, line_number, data+i);
-                    crb_vstr_append_string(&vstr, new_str);
-                    MEM_free(new_str);
+                    CRB_value_to_string(inter, env, line_number, data+i, params);
+//                    CRB_Char* new_str = CRB_value_to_string(inter, env, line_number, data+i);
+//                    crb_vstr_append_string(&params->vstr, new_str);
+//                    MEM_free(new_str);
                 }
             }
-            CRB_mbstowcs("]", wc_buf);
-            crb_vstr_append_string(&vstr, wc_buf);
+            crb_vstr_append_character(&params->vstr, L']');
             break;
         case CRB_ASSOC_VALUE:
-            CRB_mbstowcs("{", wc_buf);
-            crb_vstr_append_string(&vstr, wc_buf);
+            crb_vstr_append_character(&params->vstr, L'{');
             AssocMember_RBTREE* tr = value->u.object->u.assoc.members;
-            struct _assoc_every_member_to_string_params params = {CRB_FALSE, inter, env, line_number, wc_buf, &vstr, record};
-            AssocMember_rbtree_ldr(tr, _assoc_every_member_to_string, &params);
+            struct _assoc_every_member_to_string_params _params = {CRB_FALSE, inter, env, line_number, params};
+            AssocMember_rbtree_ldr(tr, _assoc_every_member_to_string, &_params);
 //            for (i = 0; i < value->u.object->u.assoc.member_count; i++) {
 //                if (i > 0) {
 //                    CRB_mbstowcs(", ", wc_buf);
@@ -490,40 +499,41 @@ CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
 //                crb_vstr_append_string(&vstr, new_str);
 //                MEM_free(new_str);
 //            }
-            CRB_mbstowcs("}", wc_buf);
-            crb_vstr_append_string(&vstr, wc_buf);
+            crb_vstr_append_character(&params->vstr, L'}');
             break;
         case CRB_CLOSURE_VALUE:
-            CRB_mbstowcs("closure(", wc_buf);
-            crb_vstr_append_string(&vstr, wc_buf);
+            crb_vstr_append_string(&params->vstr, L"closure(");
             if (value->u.closure.function->name == NULL) {
-                CRB_mbstowcs("null", wc_buf);
-                crb_vstr_append_string(&vstr, wc_buf);
+                crb_vstr_append_string(&params->vstr, L"null");
             } else {
                 CRB_Char* new_str = CRB_mbstowcs_alloc(inter, env, line_number, value->u.closure.function->name);
                 DBG_assert(new_str != NULL, ("new_str is null.\n"));
-                crb_vstr_append_string(&vstr, new_str);
+                crb_vstr_append_string(&params->vstr, new_str);
                 MEM_free(new_str);
             }
-            CRB_mbstowcs(")", wc_buf);
-            crb_vstr_append_string(&vstr, wc_buf);
+            crb_vstr_append_character(&params->vstr, L')');
             break;
         case CRB_FAKE_METHOD_VALUE:
-            CRB_mbstowcs("fake_method(", wc_buf);
-            crb_vstr_append_string(&vstr, wc_buf);
+            crb_vstr_append_string(&params->vstr, L"fake_method(");
             {
                 CRB_Char* new_str = CRB_mbstowcs_alloc(inter, env, line_number, value->u.fake_method.method_name);
                 DBG_assert(new_str != NULL, ("new_str is null.\n"));
-                crb_vstr_append_string(&vstr, new_str);
+                crb_vstr_append_string(&params->vstr, new_str);
                 MEM_free(new_str);
             }
-            CRB_mbstowcs(")", wc_buf);
-            crb_vstr_append_string(&vstr, wc_buf);
+            crb_vstr_append_character(&params->vstr, L')');
             break;
         case CRB_SCOPE_CHAIN_VALUE: /* FALLTHRU*/
         default:
-            DBG_panic(("value->type..%d\n", value->type));
+            sprintf(params->buf, "<%s>", CRB_get_type_name(value->type));
+//            DBG_panic(("value->type..%d\n", value->type));
     }
 
-    return vstr.string;
+    CRB_Char* ret = params->vstr.string;
+    params->deep--;
+    if (params->deep == 0) {
+        close_rbtree(params->record);
+        MEM_free(params);
+    }
+    return ret;
 }
