@@ -88,7 +88,7 @@ static inline struct slnode* skiplist_fast_get(SKIPLIST* sl, VALUE key, int reve
     assert(sl != NULL);
     register COMPARE compare = sl->compare;
     struct slnode* prev = sl->head;
-    register struct slnode* node;
+    register struct slnode* node = NULL;
     for (int l=sl->level-1; l>=0; --l) {
         for (node=prev->next[l]; node!=NULL; node=prev->next[l]) {
             int cmp = compare(node->value, key);

@@ -231,7 +231,7 @@ void MEM_free_func(MEM_Controller controller, void *ptr) {
     unchain_block(controller, real_ptr);
     memset(real_ptr, 0xCC, size + sizeof(Header));
 #else
-    real_ptr = ptr;
+    void* real_ptr = ptr;
 #endif
     free(real_ptr);
 }

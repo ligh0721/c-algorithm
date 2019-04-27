@@ -3,6 +3,7 @@
 //
 
 #include <include/tlang.h>
+#include <time.h>
 #include "tinterpreter.h"
 #include "tnative.h"
 #include "tmisc.h"
@@ -45,10 +46,10 @@ static CRB_NativeLibInfo st_lib_info = {crb_native_error_message_format};
 static CRB_Value nv_print_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args){
     for (int i=0; i<arg_count; ++i) {
         if (i > 0) {
-            fprintf(stdout, " ");
+            fprintf(stderr, " ");
         }
         CRB_Char* str = CRB_value_to_string(interpreter, env, __LINE__, args+i, NULL);
-        CRB_print_wcs(stdout, str);
+        CRB_print_wcs(stderr, str);
         MEM_free(str);
     }
     return CRB_Null_Value;
@@ -65,6 +66,14 @@ static CRB_Value nv_println_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironm
     }
     fprintf(stdout, "\n");
     return CRB_Null_Value;
+}
+
+static CRB_Value nv_clock_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args){
+    CRB_check_argument_count(interpreter, env, arg_count, 0);
+    CRB_Value value;
+    value.type = CRB_INT_VALUE;
+    value.u.int_value = clock();
+    return value;
 }
 
 static CRB_Value nv_fopen_proc(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args){
@@ -166,6 +175,7 @@ CRB_Value CRB_create_closure(CRB_LocalEnvironment *env, CRB_FunctionDefinition *
 void crb_add_native_functions(CRB_Interpreter *inter) {
     CRB_add_native_function(inter, "print", nv_print_proc);
     CRB_add_native_function(inter, "println", nv_println_proc);
+    CRB_add_native_function(inter, "clock", nv_clock_proc);
     CRB_add_native_function(inter, "fopen", nv_fopen_proc);
     CRB_add_native_function(inter, "fclose", nv_fclose_proc);
     CRB_add_native_function(inter, "fgets", nv_fgets_proc);

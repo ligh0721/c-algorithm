@@ -314,11 +314,11 @@ void CRB_wcstombs(const CRB_Char *src, char *dest) {
 
 char CRB_wctochar(CRB_Char src) {
     mbstate_t ps;
-    char dest;
+    char dest[MB_LEN_MAX];
     memset(&ps, 0, sizeof(mbstate_t));
-    int status = wcrtomb(&dest, src, &ps);
+    int status = wcrtomb(dest, src, &ps);
     DBG_assert(status == 1, ("wcrtomb status..%d\n", status));
-    return dest;
+    return dest[0];
 }
 
 int CRB_print_wcs(FILE *fp, const CRB_Char *str) {

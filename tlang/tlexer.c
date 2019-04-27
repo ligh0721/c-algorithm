@@ -161,6 +161,7 @@ int my_yyinput(char *buf, int max_size) {
             break;
         default:
             DBG_panic(("bad default. input_mode..%d\n", crb_get_current_interpreter()->input_mode));
+            result = 0;
     }
     return result;
 }

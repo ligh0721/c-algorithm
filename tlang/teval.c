@@ -124,7 +124,7 @@ static void eval_boolean_expression(CRB_Interpreter *inter, CRB_Boolean boolean_
 /*
  * 整数类型字面量
  */
-static void eval_int_expression(CRB_Interpreter *inter, int int_value) {
+static void eval_int_expression(CRB_Interpreter *inter, long int_value) {
     CRB_Value v;
     v.type = CRB_INT_VALUE;
     v.u.int_value = int_value;
@@ -255,7 +255,7 @@ static void eval_identifier_expression(CRB_Interpreter *inter, CRB_LocalEnvironm
 /*
  * 二元整数表达式求值
  */
-static void eval_binary_int(CRB_Interpreter *inter, CRB_LocalEnvironment *env, ExpressionType operator, int left, int right, CRB_Value *result, int line_number) {
+static void eval_binary_int(CRB_Interpreter *inter, CRB_LocalEnvironment *env, ExpressionType operator, long left, long right, CRB_Value *result, int line_number) {
     if (crb_is_math_operator(operator)) {
         result->type = CRB_INT_VALUE;
     } else if (crb_is_compare_operator(operator)) {

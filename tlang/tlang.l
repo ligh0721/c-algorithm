@@ -13,6 +13,14 @@
 %}
 %start COMMENT STRING_LITERAL_STATE
 %%
+<<EOF>> {
+    static int code = 0;
+    return (code = !code) ? LF : 0;
+}
+<INITIAL>"\n" {
+    crb_increment_line_number();
+    return LF;
+}
 <INITIAL>"func"         return FUNCTION;
 <INITIAL>"if"           return IF;
 <INITIAL>"else"         return ELSE;
@@ -39,10 +47,6 @@
 <INITIAL>"}"            return RC;
 <INITIAL>"["            return LB;
 <INITIAL>"]"            return RB;
-<INITIAL>"\n"           {
-    crb_increment_line_number();
-    return LF;
-}
 <INITIAL>";"            return SEMICOLON;
 <INITIAL>":"            return COLON;
 <INITIAL>","            return COMMA;
