@@ -3,7 +3,6 @@
 //
 
 #include <math.h>
-#include <include/tlang.h>
 #include "tinterpreter.h"
 #include "teval.h"
 #include "terror.h"
@@ -13,7 +12,7 @@
 #include "tnative.h"
 
 
-// stack operate
+// stack operation
 static inline void push_value(CRB_Interpreter *inter, CRB_Value *value) {
     DBG_assert(inter->stack.stack_pointer <= inter->stack.stack_alloc_size, ("stack_pointer..%d, stack_alloc_size..%d\n", inter->stack.stack_pointer, inter->stack.stack_alloc_size));
 

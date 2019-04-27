@@ -2,7 +2,6 @@
 // Created by t5w0rd on 19-4-20.
 //
 
-#include <include/tlang.h>
 #include "tinterpreter.h"
 #include "tnative.h"
 #include "tmisc.h"

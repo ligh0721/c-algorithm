@@ -5,7 +5,6 @@
 #include <string.h>
 #include <wchar.h>
 #include <limits.h>
-#include <include/tlang.h>
 #include "tinterpreter.h"
 #include "tmisc.h"
 
@@ -395,9 +394,6 @@ static int _assoc_every_member_to_string(const AssocMember* value, void* param) 
         crb_vstr_append_string(&params->params->vstr, params->params->wc_buf);
     } else {
         CRB_value_to_string(params->inter, params->env, params->line_number, &value->value, params->params);
-//        new_str = CRB_value_to_string(params->inter, params->env, params->line_number, &value->value);
-//        crb_vstr_append_string(&params->params->vstr, new_str);
-//        MEM_free(new_str);
     }
     return 0;
 }
@@ -456,9 +452,6 @@ CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
                     crb_vstr_append_string(&params->vstr, params->wc_buf);
                 } else {
                     CRB_value_to_string(inter, env, line_number, data+i, params);
-//                    CRB_Char* new_str = CRB_value_to_string(inter, env, line_number, data+i);
-//                    crb_vstr_append_string(&params->vstr, new_str);
-//                    MEM_free(new_str);
                 }
             }
             crb_vstr_append_character(&params->vstr, L']');
@@ -468,22 +461,6 @@ CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
             AssocMember_RBTREE* tr = value->u.object->u.assoc.members;
             struct _assoc_every_member_to_string_params _params = {CRB_FALSE, inter, env, line_number, params};
             AssocMember_rbtree_ldr(tr, _assoc_every_member_to_string, &_params);
-//            for (i = 0; i < value->u.object->u.assoc.member_count; i++) {
-//                if (i > 0) {
-//                    CRB_mbstowcs(", ", wc_buf);
-//                    crb_vstr_append_string(&vstr, wc_buf);
-//                }
-//                CRB_Char* new_str = CRB_mbstowcs_alloc(inter, env, line_number, value->u.object->u.assoc.member[i].name);
-//                DBG_assert(new_str != NULL, ("new_str is null.\n"));
-//                crb_vstr_append_string(&vstr, new_str);
-//                MEM_free(new_str);
-//
-//                CRB_mbstowcs("=>", wc_buf);
-//                crb_vstr_append_string(&vstr, wc_buf);
-//                new_str = CRB_value_to_string(inter, env, line_number, &value->u.object->u.assoc.member[i].value);
-//                crb_vstr_append_string(&vstr, new_str);
-//                MEM_free(new_str);
-//            }
             crb_vstr_append_character(&params->vstr, L'}');
             break;
         case CRB_CLOSURE_VALUE:
@@ -511,7 +488,6 @@ CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
         case CRB_SCOPE_CHAIN_VALUE: /* FALLTHRU*/
         default:
             sprintf(params->buf, "<%s>", CRB_get_type_name(value->type));
-//            DBG_panic(("value->type..%d\n", value->type));
     }
 
     CRB_Char* ret = params->vstr.string;
