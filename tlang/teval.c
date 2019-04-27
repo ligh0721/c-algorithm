@@ -1111,7 +1111,7 @@ static CRB_Value* get_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
 }
 
 /*
- * 获取字符串元素左值
+ * 截取字符串求值
  */
 static inline void eval_sub_string_value(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr, CRB_Value *string, CRB_Boolean just_index, Expression *start_expr, Expression *end_expr) {
     long start_value;

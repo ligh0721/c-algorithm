@@ -88,7 +88,7 @@ CRB_ErrorDefinition crb_runtime_error_message_format[] = {
                 "ArrayRemoveArgumentException"},
         {"指定的位置超出字符串长度。为长度为$(len)的字符串指定了$(pos)。",
                 "StringPositionOutOfBoundsException"},
-        {"截取字符串的长度超出范围($(len))。",
+        {"截取字符串的长度超出范围(超出$(len))。",
                 "StringSubstrLengthException"},
         {"截取字符串的位置必须是整数值。(传递了$(type1)和$(type2))。",
                 "StringSubstrArgumentException"},

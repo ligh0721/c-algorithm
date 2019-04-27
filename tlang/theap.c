@@ -75,7 +75,7 @@ CRB_Object* crb_string_substr_i(CRB_Interpreter *inter, CRB_LocalEnvironment *en
         crb_runtime_error(inter, env, line_number, STRING_POS_OUT_OF_BOUNDS_ERR, CRB_INT_MESSAGE_ARGUMENT, "len", org_len, CRB_INT_MESSAGE_ARGUMENT, "pos", from, CRB_MESSAGE_ARGUMENT_END);
     }
     if (len < 0 || from + len > org_len) {
-        crb_runtime_error(inter, env, line_number, STRING_SUBSTR_LEN_ERR, CRB_INT_MESSAGE_ARGUMENT, "len", len, CRB_MESSAGE_ARGUMENT_END);
+        crb_runtime_error(inter, env, line_number, STRING_SUBSTR_LEN_ERR, CRB_INT_MESSAGE_ARGUMENT, "len", from + len - org_len, CRB_MESSAGE_ARGUMENT_END);
     }
     CRB_Char* new_str = MEM_malloc(sizeof(CRB_Char) * (len+1));
     CRB_wcsncpy(new_str, str->u.string.string + from, len);
