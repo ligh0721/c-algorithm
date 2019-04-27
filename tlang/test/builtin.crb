@@ -34,6 +34,7 @@ NotBooleanOperatorException = create_exception_class(BugException);
 NotNullOperatorException = create_exception_class(BugException);
 NotLValueException = create_exception_class(BugException);
 IndexOperandNotArrayException = create_exception_class(BugException);
+IndexOperandNotSupportIndexingException = create_exception_class(BugException);
 IndexOperandNotIntException = create_exception_class(BugException);
 ArrayIndexOutOfBoundsException = create_exception_class(BugException);
 ArraySliceOutOfBoundsException = create_exception_class(BugException);

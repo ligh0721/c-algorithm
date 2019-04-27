@@ -42,6 +42,7 @@ static const char* st_builtin_src[] = {
         "NotNullOperatorException = create_exception_class(BugException);\n",
         "NotLValueException = create_exception_class(BugException);\n",
         "IndexOperandNotArrayException = create_exception_class(BugException);\n",
+        "IndexOperandNotSupportIndexingException = create_exception_class(BugException);\n",
         "IndexOperandNotIntException = create_exception_class(BugException);\n",
         "ArrayIndexOutOfBoundsException = create_exception_class(BugException);\n",
         "ArraySliceOutOfBoundsException = create_exception_class(BugException);\n",
