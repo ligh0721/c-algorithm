@@ -541,11 +541,6 @@ static void dispose_local_environment(CRB_Interpreter *inter) {
     if (temp->global_var_refs != NULL) {
         close_rbtree(temp->global_var_refs);
     }
-//    while (temp->global_var_refs) {
-//        GlobalVariableRef* ref = temp->global_var_refs;
-//        temp->global_var_refs = ref->next;
-//        MEM_free(ref);
-//    }
     dispose_ref_in_native_method(temp);
 
     MEM_free(temp);
@@ -585,6 +580,9 @@ static CRB_Value call_native_function_from_native(CRB_Interpreter *inter, CRB_Lo
 }
 
 static inline void check_method_argument_count(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int param_count) {
+    if (param_count < 0) {
+        return;
+    }
     if (arg_count < param_count) {
         crb_runtime_error(inter, env, line_number, ARGUMENT_TOO_FEW_ERR, CRB_MESSAGE_ARGUMENT_END);
     } else if (arg_count > param_count) {
@@ -599,7 +597,7 @@ static inline CRB_Value call_fake_method_from_native(CRB_Interpreter *inter, CRB
         push_value(inter, &args[i]);
     }
     CRB_Value value;
-    fmt->func(inter, env, func->u.fake_method.object, &value);
+    fmt->func(inter, env, func->u.fake_method.object, arg_count, &value);
     shrink_stack(inter, arg_count);
     return value;
 }
@@ -714,7 +712,7 @@ static void call_fake_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
         eval_expression(inter, caller_env, (Expression*)node->value.ptr_value);
     }
     CRB_Value result;
-    fmt->func(inter, env, fm->object, &result);
+    fmt->func(inter, env, fm->object, arg_count, &result);
     shrink_stack(inter, arg_count);
     push_value(inter, &result);
 }
@@ -748,14 +746,12 @@ static void call_crowbar_function(CRB_Interpreter *inter, CRB_LocalEnvironment *
         return;
     }
 
-    CRB_Value value;
     StatementResult result = crb_execute_statement_list(inter, env, func->u.closure.function->u.crowbar_f.block->statement_list);
     if (result.type == RETURN_STATEMENT_RESULT) {
-        value = result.u.return_value;
+        push_value(inter, &result.u.return_value);
     } else {
-        value.type = CRB_NULL_VALUE;
+        push_value(inter, &CRB_Null_Value);
     }
-    push_value(inter, &value);
 }
 
 /*
@@ -793,10 +789,10 @@ static void do_function_call(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
     switch (func->u.closure.function->type) {
         case CRB_CROWBAR_FUNCTION_DEFINE:
             call_crowbar_function(inter, env, caller_env, expr, func);
-            break;
+            return;
         case CRB_NATIVE_FUNCTION_DEFINE:
             call_native_function(inter, env, caller_env, expr, func->u.closure.function->u.native_f.proc);
-            break;
+            return;
         case CRB_FUNCTION_DEFINE_TYPE_COUNT_PLUS_1:
         default:
             DBG_assert(0, ("bad case..%d\n", func->u.closure.function->type));

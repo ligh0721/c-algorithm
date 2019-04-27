@@ -105,7 +105,7 @@ parameter_list
         {
             $$ = crb_create_parameter_list($1);
         }
-        | parameter_list COMMA IDENTIFIER
+        | parameter_list comma IDENTIFIER
         {
             $$ = crb_chain_parameter_list($1, $3);
         }
@@ -124,7 +124,7 @@ statement_list
 
 expression
         : assignment_expression
-        | expression COMMA assignment_expression
+        | expression comma assignment_expression
         {
             $$ = crb_create_comma_expression($1, $3);
         }
@@ -335,7 +335,7 @@ argument_list
         {
             $$ = crb_create_argument_list($1);
         }
-        | argument_list COMMA assignment_expression
+        | argument_list comma assignment_expression
         {
             $$ = crb_chain_argument_list($1, $3);
         }
@@ -346,7 +346,7 @@ array_literal
         {
             $$ = crb_create_array_expression($2);
         }
-        | LB expression_list COMMA RB
+        | LB expression_list comma RB
         {
             $$ = crb_create_array_expression($2);
         }
@@ -361,7 +361,7 @@ expression_list
         {
             $$ = crb_create_expression_list($1);
         }
-        | expression_list COMMA assignment_expression
+        | expression_list comma assignment_expression
         {
             $$ = crb_chain_expression_list($1, $3);
         }
@@ -372,7 +372,7 @@ assoc_literal
         {
             $$ = crb_create_assoc_literal_expression($2);
         }
-        | LC assoc_expression_list COMMA RC
+        | LC assoc_expression_list comma RC
         {
             $$ = crb_create_assoc_literal_expression($2);
         }
@@ -387,7 +387,7 @@ assoc_expression_list
         {
             $$ = crb_create_assoc_expression_list($1);
         }
-        | assoc_expression_list COMMA assoc_expression
+        | assoc_expression_list comma assoc_expression
         {
             $$ = crb_chain_assoc_expression_list($1, $3);
         }
@@ -437,7 +437,7 @@ identifier_list
         {
             $$ = crb_create_global_identifier_list($1);
         }
-        | identifier_list COMMA IDENTIFIER
+        | identifier_list comma IDENTIFIER
         {
             $$ = crb_chain_global_identifier_list($1, $3);
         }
@@ -584,5 +584,10 @@ block
 statement_end
         : SEMICOLON
         | LF
+        ;
+
+comma
+        : COMMA
+        | comma LF
         ;
 %%

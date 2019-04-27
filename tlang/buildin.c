@@ -110,7 +110,7 @@ static const char* st_builtin_src[] = {
                 "index++;\n",
             "};\n",
             "this.is_done = closure() {\n",
-                "return index >= array.length();\n",
+                "return index >= array.len();\n",
             "};\n",
             "this.current_item = closure() {\n",
                 "return array[index];\n",

@@ -279,11 +279,13 @@ typedef struct {
     ArgumentList        *argument;
 } FunctionCallExpression;
 
+typedef void FakeMethodProc(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value *result);
+
 typedef struct {
     ObjectType  type;
     const char  *name;
     int         argument_count;
-    void        (*func)(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, CRB_Value *result);
+    FakeMethodProc* func;
 } FakeMethodTable;
 
 //typedef struct ExpressionList_tag {
@@ -546,6 +548,7 @@ struct CRB_Interpreter_tag {
 
 CRB_Interpreter *crb_get_current_interpreter(void);
 void crb_set_current_interpreter(CRB_Interpreter *inter);
+int _crb_asc_order_named_item(VALUE a, VALUE b);
 
 // others
 typedef struct {

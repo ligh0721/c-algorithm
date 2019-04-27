@@ -39,7 +39,10 @@
 <INITIAL>"}"            return RC;
 <INITIAL>"["            return LB;
 <INITIAL>"]"            return RB;
-<INITIAL>"\n"           return LF;
+<INITIAL>"\n"           {
+    crb_increment_line_number();
+    return LF;
+}
 <INITIAL>";"            return SEMICOLON;
 <INITIAL>":"            return COLON;
 <INITIAL>","            return COMMA;

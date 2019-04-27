@@ -62,14 +62,15 @@ static int file_input(char *buf, int max_size) {
         return 0;
     }
 
-    for (int len = 0; len < max_size; len++) {
+    int len;
+    for (len = 0; len < max_size; len++) {
         int ch = getc(yyin);
         if (ch == EOF) {
             return len;
         }
         buf[len] = ch;
     }
-    return 0;
+    return len;
 }
 
 // string mode

@@ -23,7 +23,7 @@ void crb_set_current_interpreter(CRB_Interpreter *inter) {
     st_current_interpreter = inter;
 }
 
-static int asc_order_named_item(VALUE a, VALUE b) {
+int _crb_asc_order_named_item(VALUE a, VALUE b) {
     return strcmp(((NamedItemEntry*)a.ptr_value)->name, ((NamedItemEntry*)b.ptr_value)->name);
 }
 
@@ -32,8 +32,8 @@ CRB_Interpreter* CRB_create_interpreter(void) {
     CRB_Interpreter* interpreter = MEM_storage_malloc(storage, sizeof(struct CRB_Interpreter_tag));
     interpreter->interpreter_storage = storage;
     interpreter->execute_storage = MEM_open_storage(0);
-    interpreter->global_vars = open_rbtree(asc_order_named_item);
-    interpreter->functions = open_rbtree(asc_order_named_item);
+    interpreter->global_vars = open_rbtree(_crb_asc_order_named_item);
+    interpreter->functions = open_rbtree(_crb_asc_order_named_item);
     interpreter->statement_list = NULL;
     interpreter->last_statement_pos = NULL;
     interpreter->current_line_number = 1;
