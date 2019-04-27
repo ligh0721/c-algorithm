@@ -59,6 +59,7 @@
 <INITIAL>">="           return GE;
 <INITIAL>"<"            return LT;
 <INITIAL>"<="           return LE;
+<INITIAL>".."           return CONCAT;
 <INITIAL>"+"            return ADD;
 <INITIAL>"-"            return SUB;
 <INITIAL>"*"            return MUL;

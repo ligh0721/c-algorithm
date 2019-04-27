@@ -152,14 +152,14 @@ inline void CRB_array_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB
     }
 }
 
-CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, const char *name, int param_count, CRB_NativeFunctionFunc *func) {
+CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *inter, const char *name, int param_count, CRB_NativeFunctionFunc *func) {
     CRB_FunctionDefinition* fd = crb_malloc(sizeof(CRB_FunctionDefinition));
     fd->name = name;
     fd->type = CRB_NATIVE_FUNCTION_DEFINE;
     fd->is_closure = CRB_FALSE;
     fd->u.native_f.param_count = param_count;
     fd->u.native_f.func = func;
-    rbtree_set(interpreter->functions, ptr_value(fd));
+    rbtree_set(inter->functions, ptr_value(fd));
     return fd;
 }
 
@@ -171,7 +171,8 @@ void CRB_set_function_definition(const char *name, int param_count, CRB_NativeFu
     fd->u.native_f.func = func;
 }
 
-void CRB_check_argument_count_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int expected_count) {
+void CRB_check_argument_count(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count,
+                              int expected_count) {
     if (expected_count < 0) {
         return;
     }
@@ -182,35 +183,35 @@ void CRB_check_argument_count_func(CRB_Interpreter *inter, CRB_LocalEnvironment 
     }
 }
 
-FakeMethodDefinition* crb_add_fake_method(CRB_Interpreter *interpreter, ObjectType type, const char *name, int param_count, FakeMethodFunc *func) {
+FakeMethodDefinition* crb_add_fake_method(CRB_Interpreter *inter, ObjectType type, const char *name, int param_count, FakeMethodFunc *func) {
     FakeMethodDefinition* fd = crb_malloc(sizeof(FakeMethodDefinition));
     fd->type = type;
     fd->name = name;
     fd->param_count = param_count;
     fd->func = func;
-    rbtree_set(interpreter->fake_methods, ptr_value(fd));
+    rbtree_set(inter->fake_methods, ptr_value(fd));
     return fd;
 }
 
 // functions
-static void nv_print_func(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args, CRB_Value *result){
+static void nv_print_func(CRB_Interpreter *inter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args, CRB_Value *result){
     for (int i=0; i<arg_count; ++i) {
         if (i > 0) {
             fprintf(stdout, " ");
         }
-        CRB_Char* str = CRB_value_to_string(interpreter, env, __LINE__, args+i, NULL);
+        CRB_Char* str = CRB_value_to_string(inter, env, __LINE__, args+i, NULL);
         CRB_print_wcs(stdout, str);
         MEM_free(str);
     }
     result->type = CRB_NULL_VALUE;
 }
 
-static void nv_println_func(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args, CRB_Value *result){
+static void nv_println_func(CRB_Interpreter *inter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args, CRB_Value *result){
     for (int i=0; i<arg_count; ++i) {
         if (i > 0) {
             fprintf(stdout, " ");
         }
-        CRB_Char* str = CRB_value_to_string(interpreter, env, __LINE__, args+i, NULL);
+        CRB_Char* str = CRB_value_to_string(inter, env, __LINE__, args+i, NULL);
         CRB_print_wcs(stdout, str);
         MEM_free(str);
     }
@@ -218,14 +219,14 @@ static void nv_println_func(CRB_Interpreter *interpreter, CRB_LocalEnvironment* 
     result->type = CRB_NULL_VALUE;
 }
 
-static void nv_clock_func(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args, CRB_Value *result){
+static void nv_clock_func(CRB_Interpreter *inter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args, CRB_Value *result){
     result->type = CRB_INT_VALUE;
     result->u.int_value = clock();
 }
 
-static void nv_fopen_func(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args, CRB_Value *result){
+static void nv_fopen_func(CRB_Interpreter *inter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args, CRB_Value *result){
     if (args[0].type != CRB_STRING_VALUE || args[1].type != CRB_STRING_VALUE) {
-        CRB_error(interpreter, env, &st_lib_info, __LINE__, (int)FOPEN_ARGUMENT_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
+        CRB_error(inter, env, &st_lib_info, __LINE__, (int)FOPEN_ARGUMENT_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
 
     char* filename = CRB_wcstombs_alloc(CRB_object_get_string(args[0].u.object));
@@ -235,7 +236,7 @@ static void nv_fopen_func(CRB_Interpreter *interpreter, CRB_LocalEnvironment* en
         result->type = CRB_NULL_VALUE;
     } else {
         result->type = CRB_NATIVE_POINTER_VALUE;
-        result->u.object = CRB_create_native_pointer(interpreter, env, fp, &st_file_type_info);
+        result->u.object = CRB_create_native_pointer(inter, env, fp, &st_file_type_info);
     }
     MEM_free(filename);
     MEM_free(mode);
@@ -248,23 +249,23 @@ static inline void check_file_pointer(CRB_Interpreter *inter, CRB_LocalEnvironme
     }
 }
 
-static void nv_fclose_func(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args, CRB_Value *result){
+static void nv_fclose_func(CRB_Interpreter *inter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args, CRB_Value *result){
     if (args[0].type != CRB_NATIVE_POINTER_VALUE || (!CRB_check_native_pointer_type(args[0].u.object, &st_file_type_info))) {
-        CRB_error(interpreter, env, &st_lib_info, __LINE__, (int)FCLOSE_ARGUMENT_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
+        CRB_error(inter, env, &st_lib_info, __LINE__, (int)FCLOSE_ARGUMENT_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
-    check_file_pointer(interpreter,env, args[0].u.object);
+    check_file_pointer(inter,env, args[0].u.object);
     FILE* fp = CRB_object_get_native_pointer(args[0].u.object);
     fclose(fp);
     CRB_object_set_native_pointer(args[0].u.object, NULL);
     result->type = CRB_NULL_VALUE;
 }
 
-static void nv_fgets_func(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args, CRB_Value *result){
+static void nv_fgets_func(CRB_Interpreter *inter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args, CRB_Value *result){
     if (args[0].type != CRB_NATIVE_POINTER_VALUE || (!CRB_check_native_pointer_type(args[0].u.object, &st_file_type_info))) {
-        CRB_error(interpreter, env, &st_lib_info, __LINE__, (int)FGETS_ARGUMENT_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
+        CRB_error(inter, env, &st_lib_info, __LINE__, (int)FGETS_ARGUMENT_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
 
-    check_file_pointer(interpreter,env, args[0].u.object);
+    check_file_pointer(inter,env, args[0].u.object);
     FILE* fp = CRB_object_get_native_pointer(args[0].u.object);
     int ret_len = 0;
     char* mb_buf = NULL;
@@ -282,24 +283,24 @@ static void nv_fgets_func(CRB_Interpreter *interpreter, CRB_LocalEnvironment* en
             break;
     }
     if (ret_len > 0) {
-        CRB_Char* wc_str = CRB_mbstowcs_alloc(interpreter, env, __LINE__, mb_buf);
+        CRB_Char* wc_str = CRB_mbstowcs_alloc(inter, env, __LINE__, mb_buf);
         if (wc_str == NULL) {
             MEM_free(mb_buf);
-            CRB_error(interpreter, env, &st_lib_info, __LINE__, (int)FGETS_BAD_MULTIBYTE_CHARACTER_ERR, CRB_MESSAGE_ARGUMENT_END);
+            CRB_error(inter, env, &st_lib_info, __LINE__, (int)FGETS_BAD_MULTIBYTE_CHARACTER_ERR, CRB_MESSAGE_ARGUMENT_END);
         }
         result->type = CRB_STRING_VALUE;
-        result->u.object = CRB_create_crowbar_string(interpreter, env, wc_str);
+        result->u.object = CRB_create_crowbar_string(inter, env, wc_str);
     } else {
         result->type = CRB_NULL_VALUE;
     }
     MEM_free(mb_buf);
 }
 
-static void nv_fputs_func(CRB_Interpreter *interpreter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args, CRB_Value *result){
+static void nv_fputs_func(CRB_Interpreter *inter, CRB_LocalEnvironment* env, int arg_count, CRB_Value *args, CRB_Value *result){
     if (args[0].type != CRB_STRING_VALUE || args[1].type != CRB_NATIVE_POINTER_VALUE || (!CRB_check_native_pointer_type(args[1].u.object, &st_file_type_info))) {
-        CRB_error(interpreter, env, &st_lib_info, __LINE__, (int)FPUTS_ARGUMENT_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
+        CRB_error(inter, env, &st_lib_info, __LINE__, (int)FPUTS_ARGUMENT_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
-    check_file_pointer(interpreter,env, args[1].u.object);
+    check_file_pointer(inter,env, args[1].u.object);
     FILE* fp = CRB_object_get_native_pointer(args[1].u.object);
     CRB_print_wcs(fp, CRB_object_get_string(args[0].u.object));
     result->type = CRB_NULL_VALUE;
@@ -328,32 +329,38 @@ static inline void new_array_sub(CRB_Interpreter *inter, CRB_LocalEnvironment *e
     }
 }
 
-static void nv_array_func(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args, CRB_Value *result) {
+static void nv_array_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args, CRB_Value *result) {
     if (arg_count < 1) {
-        CRB_error(interpreter, env, &st_lib_info, __LINE__, (int)NEW_ARRAY_ARGUMENT_TOO_FEW_ERR, CRB_MESSAGE_ARGUMENT_END);
+        CRB_error(inter, env, &st_lib_info, __LINE__, (int)NEW_ARRAY_ARGUMENT_TOO_FEW_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
-    new_array_sub(interpreter, env, arg_count, args, 0, result);
+    new_array_sub(inter, env, arg_count, args, 0, result);
 }
 
-static void nv_object_func(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args, CRB_Value *result) {
+static void nv_object_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args, CRB_Value *result) {
     result->type = CRB_ASSOC_VALUE;
-    result->u.object = CRB_create_assoc(interpreter, env);
+    result->u.object = CRB_create_assoc(inter, env);
 }
 
-static void nv_exception_func(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args, CRB_Value *result) {
+static void nv_exception_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args, CRB_Value *result) {
     if (args[0].type != CRB_STRING_VALUE) {
-        CRB_error(interpreter, env, &st_lib_info, __LINE__, (int)NEW_EXCEPTION_ARGUMENT_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(args[0].type), CRB_MESSAGE_ARGUMENT_END);
+        CRB_error(inter, env, &st_lib_info, __LINE__, (int)NEW_EXCEPTION_ARGUMENT_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(args[0].type), CRB_MESSAGE_ARGUMENT_END);
     }
     result->type = CRB_ASSOC_VALUE;
-    result->u.object = CRB_create_exception(interpreter, env->next, args[0].u.object, env->caller_line_number);
+    result->u.object = CRB_create_exception(inter, env->next, args[0].u.object, env->caller_line_number);
 }
 
-static void nv_exit_func(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args, CRB_Value *result) {
+static void nv_exit_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args, CRB_Value *result) {
     if (args[0].type != CRB_INT_VALUE) {
-        CRB_error(interpreter, env, &st_lib_info, __LINE__, (int)EXIT_ARGUMENT_TYPE_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(args[0].type), CRB_MESSAGE_ARGUMENT_END);
+        CRB_error(inter, env, &st_lib_info, __LINE__, (int)EXIT_ARGUMENT_TYPE_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(args[0].type), CRB_MESSAGE_ARGUMENT_END);
     }
     exit(args[0].u.int_value);
     *result = CRB_Null_Value;
+}
+
+static void nv_str_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args, CRB_Value *result) {
+    CRB_Char* str = CRB_value_to_string(inter, env, __LINE__, args, NULL);
+    result->type = CRB_STRING_VALUE;
+    result->u.object = crb_create_crowbar_string_i(inter, str);
 }
 
 void crb_add_native_functions(CRB_Interpreter *inter) {
@@ -368,6 +375,7 @@ void crb_add_native_functions(CRB_Interpreter *inter) {
     CRB_add_native_function(inter, "object", 0, nv_object_func);
     CRB_add_native_function(inter, "exception", 1, nv_exception_func);
     CRB_add_native_function(inter, "exit", 1, nv_exit_func);
+    CRB_add_native_function(inter, "str", 1, nv_str_func);
 }
 
 // fake methods

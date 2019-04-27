@@ -275,6 +275,7 @@ static void eval_binary_int(CRB_Interpreter *inter, CRB_LocalEnvironment *env, E
         case IDENTIFIER_EXPRESSION: /* FALLTHRU */
         case COMMA_EXPRESSION:      /* FALLTHRU */
         case ASSIGN_EXPRESSION:
+        case CONCAT_STRING_EXPRESSION:
             DBG_assert(0, ("bad case...%d", operator));
             break;
         case ADD_EXPRESSION:
@@ -358,6 +359,7 @@ static void eval_binary_double(CRB_Interpreter *inter, CRB_LocalEnvironment *env
         case IDENTIFIER_EXPRESSION: /* FALLTHRU */
         case COMMA_EXPRESSION:      /* FALLTHRU */
         case ASSIGN_EXPRESSION:
+        case CONCAT_STRING_EXPRESSION:
             DBG_assert(0, ("bad case...%d", operator));
             break;
         case ADD_EXPRESSION:
@@ -427,19 +429,37 @@ void eval_binary_numeric(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expr
 }
 
 /*
- * 连接字符串
+ * 链接字符串(左操作数已经是字符串)
  */
 static void chain_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *left, CRB_Value *right, CRB_Value *result) {
     CRB_Char* right_str = CRB_value_to_string(inter, env, line_number, right, NULL);
     CRB_Object* right_obj = crb_create_crowbar_string_i(inter, right_str);
 
     result->type = CRB_STRING_VALUE;
-//    int len = wstring_len(left->u.object->u.string.string) + wstring_len(right_obj->u.string.string);
     int len = CRB_wcslen(left->u.object->u.string.string) + CRB_wcslen(right_obj->u.string.string);
     CRB_Char* str = MEM_malloc(sizeof(CRB_Char) * (len + 1));
     CRB_wcscpy(str, left->u.object->u.string.string);
     CRB_wcscat(str, right_obj->u.string.string);
     result->u.object = crb_create_crowbar_string_i(inter, str);
+}
+
+/*
+ * 连接字符串
+ */
+
+static void eval_binary_concat_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *left, Expression *right) {
+    eval_expression(inter, env, left);
+    eval_expression(inter, env, right);
+    CRB_Value* left_val = peek_stack(inter, 1);
+    CRB_Value* right_val = peek_stack(inter, 0);
+
+    CRB_Value result;
+    CRB_Char* left_str = CRB_value_to_string(inter, env, left->line_number, left_val, NULL);
+    result.u.object = crb_create_crowbar_string_i(inter, left_str);
+    chain_string(inter, env, left->line_number, &result, right_val, &result);
+
+    shrink_stack(inter, 2);
+    push_value(inter, &result);
 }
 
 /*
@@ -585,7 +605,7 @@ static void call_native_function_from_native(CRB_Interpreter *inter, CRB_LocalEn
 //        push_value(inter, &args[i]);
 //    }
 //    CRB_Value* arg_p = &inter->stack.stack[inter->stack.stack_pointer-arg_count];
-    CRB_check_argument_count_func(inter, env, line_number, arg_count, func->u.closure.function->u.native_f.param_count);
+    CRB_check_argument_count(inter, env, line_number, arg_count, func->u.closure.function->u.native_f.param_count);
     func->u.closure.function->u.native_f.func(inter, env, arg_count, args, result);
 //    shrink_stack(inter, arg_count);
 }
@@ -780,7 +800,7 @@ static void call_native_function(CRB_Interpreter *inter, CRB_LocalEnvironment *e
 
     CRB_Value* args = &inter->stack.stack[inter->stack.stack_pointer-arg_count];
     CRB_Value result;
-    CRB_check_argument_count_func(inter, env, expr->line_number, arg_count, func->u.closure.function->u.native_f.param_count);
+    CRB_check_argument_count(inter, env, expr->line_number, arg_count, func->u.closure.function->u.native_f.param_count);
     func->u.closure.function->u.native_f.func(inter, env, arg_count, args, &result);
     shrink_stack(inter, arg_count);
     push_value(inter, &result);
@@ -1353,6 +1373,9 @@ static void eval_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, E
             break;
         case ASSIGN_EXPRESSION:
             eval_assign_expression(inter, env, expr);
+            break;
+        case CONCAT_STRING_EXPRESSION:
+            eval_binary_concat_string(inter, env, expr->u.binary_expression.left, expr->u.binary_expression.right);
             break;
         case ADD_EXPRESSION:        /* FALLTHRU */
         case SUB_EXPRESSION:        /* FALLTHRU */

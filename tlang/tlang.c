@@ -46,33 +46,7 @@ int file_mode(int argc, char* argv[]) {
     return 0;
 }
 
-CRB_Value return_value(int i) {
-    CRB_Value value;
-    value.type = CRB_INT_VALUE;
-    value.u.int_value = i*i;
-    return value;
-}
-
-void return_value2(int i, CRB_Value* value) {
-    value->type = CRB_INT_VALUE;
-    value->u.int_value = i*i;
-}
-
-void test() {
-    clock_t t = clock();
-    long s = 0;
-    CRB_Value value;
-    for (int i=0; i<100000000; ++i) {
-        return_value2(i, &value);
-//        value = return_value(i);
-        s += value.u.int_value;
-    }
-    printf("cose: %ld ticks, %ld\n", clock()-t, s);
-    exit(0);
-}
-
 int main(int argc, char* argv[]) {
-//    test();
     setlocale(LC_CTYPE, "");
     if (argc == 1) {
         return readline_mode(argc, argv);

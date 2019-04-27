@@ -39,6 +39,9 @@ const char* crb_get_operator_string(ExpressionType type) {
         case ASSIGN_EXPRESSION:
             str = "=";
             break;
+        case CONCAT_STRING_EXPRESSION:
+            str = "..";
+            break;
         case ADD_EXPRESSION:
             str = "+";
             break;

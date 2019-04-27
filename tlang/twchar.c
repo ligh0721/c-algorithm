@@ -20,7 +20,6 @@ int CRB_mbstowcs_len(const char *src) {
         dest_idx++;
         src_idx += status;
     }
-
     return dest_idx;
 }
 

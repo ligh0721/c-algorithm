@@ -203,8 +203,8 @@ void CRB_array_insert(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Obj
 void CRB_array_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int pos, int line_number, CRB_Value *popped);
 CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, const char *name, int param_count, CRB_NativeFunctionFunc *func);
 void CRB_set_function_definition(const char *name, int param_count, CRB_NativeFunctionFunc *func, CRB_FunctionDefinition *fd);
-void CRB_check_argument_count_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int expected_count);
-//#define CRB_check_argument_count(inter, env, arg_count, expected_count) (CRB_check_argument_count_func(inter, env, __LINE__, arg_count, expected_count))
+void CRB_check_argument_count(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int expected_count);
+//#define CRB_check_argument_count_in_native(inter, env, arg_count, expected_count) (CRB_check_argument_count(inter, env, __LINE__, arg_count, expected_count))
 
 
 

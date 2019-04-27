@@ -34,7 +34,7 @@ extern int yyerror(char const *str);
 %token  <identifier>     IDENTIFIER
 %token  FUNCTION IF ELSE ELIF WHILE FOR FOREACH RETURN_T BREAK CONTINUE NULL_T
         LP RP LC RC LB RB LF SEMICOLON COLON COMMA ASSIGN_T LOGICAL_AND LOGICAL_OR
-        EQ NE GT GE LT LE ADD SUB MUL DIV MOD TRUE_T FALSE_T EXCLAMATION DOT
+        EQ NE GT GE LT LE CONCAT ADD SUB MUL DIV MOD TRUE_T FALSE_T EXCLAMATION DOT
         ADD_ASSIGN_T SUB_ASSIGN_T MUL_ASSIGN_T DIV_ASSIGN_T MOD_ASSIGN_T
         INCREMENT DECREMENT CLOSURE GLOBAL_T TRY CATCH FINALLY THROW FINAL
 %type   <parameter_list> parameter_list
@@ -42,7 +42,7 @@ extern int yyerror(char const *str);
 %type   <expression> expression expression_opt
         assignment_expression logical_and_expression logical_or_expression
         equality_expression relational_expression
-        additive_expression multiplicative_expression
+        concat_string_expression additive_expression multiplicative_expression
         unary_expression postfix_expression primary_expression array_literal assoc_literal
         closure_definition
 %type   <expression_list> expression_list
@@ -198,22 +198,30 @@ equality_expression
         ;
 
 relational_expression
-        : additive_expression
-        | relational_expression GT additive_expression
+        : concat_string_expression
+        | relational_expression GT concat_string_expression
         {
             $$ = crb_create_binary_expression(GT_EXPRESSION, $1, $3);
         }
-        | relational_expression GE additive_expression
+        | relational_expression GE concat_string_expression
         {
             $$ = crb_create_binary_expression(GE_EXPRESSION, $1, $3);
         }
-        | relational_expression LT additive_expression
+        | relational_expression LT concat_string_expression
         {
             $$ = crb_create_binary_expression(LT_EXPRESSION, $1, $3);
         }
-        | relational_expression LE additive_expression
+        | relational_expression LE concat_string_expression
         {
             $$ = crb_create_binary_expression(LE_EXPRESSION, $1, $3);
+        }
+        ;
+
+concat_string_expression
+        : additive_expression
+        | concat_string_expression CONCAT additive_expression
+        {
+            $$ = crb_create_binary_expression(CONCAT_STRING_EXPRESSION, $1, $3);
         }
         ;
 
