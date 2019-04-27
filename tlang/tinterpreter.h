@@ -50,10 +50,7 @@ typedef struct {
 
 // object
 struct CRB_Array_tag {
-    CRB_Value_SLICE* array;  //  ARRAY<CRB_Value>  // TODO: 精简结构
-//    int         size;
-//    int         alloc_size;
-//    CRB_Value   *array;
+    CRB_Value_SLICE* array;  //  SLICE<CRB_Value>
 };
 
 struct CRB_String_tag {
@@ -70,8 +67,6 @@ struct AssocMember_tag {
 
 struct CRB_Assoc_tag {
     AssocMember_RBTREE* members;  // RBTREE<AssocMember>
-//    int         member_count;
-//    AssocMember *member;
 };
 
 typedef struct {

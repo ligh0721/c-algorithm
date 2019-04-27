@@ -98,7 +98,7 @@ typedef enum {
     CRB_FUNCTION_DEFINE_TYPE_COUNT_PLUS_1
 } CRB_FunctionDefinitionType;
 
-typedef CRB_Value CRB_NativeFunctionProc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args);  // TODO: *
+typedef CRB_Value CRB_NativeFunctionProc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args);
 CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, const char *name, CRB_NativeFunctionProc *proc);
 CRB_Value CRB_create_closure(CRB_LocalEnvironment *env, CRB_FunctionDefinition *fd);
 
@@ -134,7 +134,7 @@ typedef struct {
 
 void CRB_error(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_NativeLibInfo *info, int line_number, int error_code, ...);
 
-typedef void CRB_NativePointerFinalizeProc(CRB_Interpreter *inter, CRB_Object *obj);  // TODO: *
+typedef void CRB_NativePointerFinalizeProc(CRB_Interpreter *inter, CRB_Object *obj);
 typedef struct {
     const char                          *name;
     CRB_NativePointerFinalizeProc       *finalizer;
