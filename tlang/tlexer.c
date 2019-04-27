@@ -116,7 +116,7 @@ void crb_set_readline(ReadLineModeParams* params) {
 }
 
 static int readline_input(char* buf, int max_size) {
-    if (st_readline_string[st_readline_current_char_index] == 0) {
+    if (st_readline_string != NULL && st_readline_string[st_readline_current_char_index] == 0) {
         CRB_interpret(crb_get_current_interpreter());
         st_readline_string = st_readline_params->readline(st_readline_params->readline_params);
         st_readline_current_char_index = 0;

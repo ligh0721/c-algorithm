@@ -76,7 +76,7 @@ typedef struct {
 
 typedef struct {
     void                        *pointer;
-    CRB_NativePointerInfo       *info;
+    const CRB_NativePointerInfo *info;
 } NativePointer;
 
 typedef enum {
@@ -279,14 +279,14 @@ typedef struct {
     ArgumentList        *argument;
 } FunctionCallExpression;
 
-typedef void FakeMethodProc(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value* args, CRB_Value *result);
+typedef void FakeMethodFunc(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value* args, CRB_Value *result);
 
 typedef struct {
     ObjectType  type;
     const char  *name;
-    int         argument_count;
-    FakeMethodProc* func;
-} FakeMethodTable;
+    int         param_count;
+    FakeMethodFunc* func;
+} FakeMethodDefinition;
 
 //typedef struct ExpressionList_tag {
 //    ExpressionListNode head;
@@ -533,6 +533,7 @@ struct CRB_Interpreter_tag {
     MEM_Storage         execute_storage;
     RBTREE*             global_vars;  // RBTREE<Variable*>
     RBTREE*             functions;  // RBTREE<CRB_FunctionDefinition*>
+    RBTREE*             fake_methods;  // RBTREE<FakeMethodDefinition*>
     StatementList*      statement_list;
     struct lnode*       last_statement_pos;
     int                 current_line_number;

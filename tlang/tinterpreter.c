@@ -27,6 +27,16 @@ int _crb_asc_order_named_item(VALUE a, VALUE b) {
     return strcmp(((NamedItemEntry*)a.ptr_value)->name, ((NamedItemEntry*)b.ptr_value)->name);
 }
 
+int _asc_order_fake_method(VALUE a, VALUE b) {
+    FakeMethodDefinition* fma = (FakeMethodDefinition*)a.ptr_value;
+    FakeMethodDefinition* fmb = (FakeMethodDefinition*)b.ptr_value;
+    int delta = (int)fma->type - (int)fmb->type;
+    if (delta != 0) {
+        return delta;
+    }
+    return strcmp(fma->name, fmb->name);
+}
+
 CRB_Interpreter* CRB_create_interpreter(void) {
     MEM_Storage storage = MEM_open_storage(0);
     CRB_Interpreter* interpreter = MEM_storage_malloc(storage, sizeof(struct CRB_Interpreter_tag));
@@ -34,6 +44,7 @@ CRB_Interpreter* CRB_create_interpreter(void) {
     interpreter->execute_storage = MEM_open_storage(0);
     interpreter->global_vars = open_rbtree(_crb_asc_order_named_item);
     interpreter->functions = open_rbtree(_crb_asc_order_named_item);
+    interpreter->fake_methods = open_rbtree(_asc_order_fake_method);
     interpreter->statement_list = NULL;
     interpreter->last_statement_pos = NULL;
     interpreter->current_line_number = 1;
@@ -61,6 +72,7 @@ CRB_Interpreter* CRB_create_interpreter(void) {
     crb_set_current_interpreter(interpreter);
     crb_init_native_const_values();
     crb_add_native_functions(interpreter);
+    crb_add_fake_methods(interpreter);
 //    crb_add_regexp_functions(interpreter);
 
 #ifndef MINICROWBAR
@@ -87,7 +99,8 @@ static void show_error_stack_trace(CRB_Interpreter *inter) {
         if (func->type != CRB_CLOSURE_VALUE) {
             crb_runtime_error(inter, NULL, 0, PRINT_STACK_TRACE_IS_NOT_CLOSURE_ERR, CRB_MESSAGE_ARGUMENT_END);
         }
-        CRB_call_function(inter, NULL, 0, func, 0, NULL);
+        CRB_Value dummy;
+        CRB_call_function(inter, NULL, 0, func, 0, NULL, &dummy);
     } else {
         fprintf(stderr, "Exception occured in print_stack_trace.\n");
         show_error_stack_trace(inter);
@@ -164,7 +177,7 @@ void CRB_set_command_line_args(CRB_Interpreter *interpreter, int argc, char **ar
     }
     CRB_add_global_variable(interpreter, "ARGS", &args, CRB_TRUE);
 
-    CRB_pop_value(interpreter);
+    CRB_shrink_stack(interpreter, 1);
 }
 
 void CRB_interpret(CRB_Interpreter *interpreter) {
@@ -177,7 +190,8 @@ void CRB_interpret(CRB_Interpreter *interpreter) {
         StatementList* list = interpreter->statement_list;
         struct lnode* last_pos = interpreter->last_statement_pos ? interpreter->last_statement_pos : llist_before_front_node(list);
         interpreter->last_statement_pos = llist_back_node(list);
-        StatementResult result = crb_execute_statement_list_with_pos(interpreter, NULL, last_pos);
+        StatementResult result;
+        crb_execute_statement_list_with_pos(interpreter, NULL, last_pos, &result);
         if (result.type != NORMAL_STATEMENT_RESULT) {
             crb_runtime_error(interpreter, NULL, 0, BREAK_OR_CONTINUE_REACHED_TOPLEVEL_ERR, CRB_MESSAGE_ARGUMENT_END);
         }
@@ -212,6 +226,6 @@ void CRB_dispose_interpreter(CRB_Interpreter *interpreter) {
     MEM_free(interpreter->stack.stack);
 //    crb_dispose_regexp_literals(interpreter);
     close_rbtree(interpreter->functions);
-    interpreter->functions = NULL;
+    close_rbtree(interpreter->fake_methods);
     MEM_dispose_storage(interpreter->interpreter_storage);
 }

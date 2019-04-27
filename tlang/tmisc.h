@@ -18,5 +18,6 @@ void crb_vstr_append_character(VString *v, CRB_Char ch);
 Variable* crb_search_global_variable(CRB_Interpreter *inter, const char *identifier);
 
 CRB_FunctionDefinition* crb_search_function_in_compile(const char *name);
+FakeMethodDefinition* crb_search_fake_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_FakeMethod *fm);
 
 #endif //TLANG_TMISC_H

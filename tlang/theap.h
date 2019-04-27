@@ -22,7 +22,7 @@ CRB_Object* crb_create_assoc_i(CRB_Interpreter *inter);
 CRB_Object* crb_create_scope_chain(CRB_Interpreter *inter, CRB_Object* frame, CRB_Object* next);
 
 // native pointer
-CRB_Object* crb_create_native_pointer_i(CRB_Interpreter *inter, void *pointer, CRB_NativePointerInfo *info);
+CRB_Object* crb_create_native_pointer_i(CRB_Interpreter *inter, void *pointer, const CRB_NativePointerInfo *info);
 
 // gc
 void crb_garbage_collect(CRB_Interpreter* inter);

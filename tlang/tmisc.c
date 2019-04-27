@@ -231,20 +231,26 @@ CRB_Value* CRB_search_local_variable(CRB_LocalEnvironment *env, const char *iden
     return NULL;
 }
 
-CRB_FunctionDefinition* crb_search_function_in_compile(const char *name) {
-    CRB_Interpreter* inter = crb_get_current_interpreter();
-    return CRB_search_function(inter, name);
-}
-
 CRB_FunctionDefinition* CRB_search_function(CRB_Interpreter *inter, const char *name) {
     NamedItemEntry key = {name};
     VALUE res = rbtree_get(inter->functions, ptr_value(&key), NULL);
     return (CRB_FunctionDefinition*)res.ptr_value;
 }
 
-void* CRB_object_get_native_pointer(CRB_Object *obj) {
-    DBG_assert(obj->type == NATIVE_POINTER_OBJECT, ("obj->type..%d\n", obj->type));
-    return obj->u.native_pointer.pointer;
+CRB_FunctionDefinition* crb_search_function_in_compile(const char *name) {
+    CRB_Interpreter* inter = crb_get_current_interpreter();
+    return CRB_search_function(inter, name);
+}
+
+struct _fake_method_entry {
+    ObjectType  type;
+    const char  *name;
+};
+
+FakeMethodDefinition* crb_search_fake_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_FakeMethod *fm) {
+    struct _fake_method_entry key = {fm->object->type, fm->method_name};
+    VALUE res = rbtree_get(inter->fake_methods, ptr_value(&key), NULL);
+    return (FakeMethodDefinition*)res.ptr_value;
 }
 
 // char
@@ -310,6 +316,13 @@ void CRB_wcstombs(const CRB_Char *src, char *dest) {
         dest_idx += status;
     }
     dest[dest_idx] = '\0';
+}
+
+char* CRB_wcstombs_alloc(const CRB_Char *src) {
+    int len = CRB_wcstombs_len(src);
+    char* ret = MEM_malloc(len + 1);
+    CRB_wcstombs(src, ret);
+    return ret;
 }
 
 char CRB_wctochar(CRB_Char src) {

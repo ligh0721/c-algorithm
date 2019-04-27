@@ -108,7 +108,8 @@ static void set_expression(Expression *expr, CRB_Value *v) {
 
 Expression* crb_create_minus_expression(Expression *operand) {
     if (operand->type == INT_EXPRESSION || operand->type == DOUBLE_EXPRESSION) {
-        CRB_Value v = crb_eval_minus_expression(crb_get_current_interpreter(), NULL, operand);
+        CRB_Value v;
+        crb_eval_minus_expression(crb_get_current_interpreter(), NULL, operand, &v);
         /* Notice! Overwriting operand expression. */
         set_expression(operand, &v);
         return operand;
@@ -133,7 +134,8 @@ Expression* crb_create_logical_not_expression(Expression *operand) {
  */
 Expression* crb_create_binary_expression(ExpressionType operator, Expression *left, Expression *right) {
     if ((left->type == INT_EXPRESSION || left->type == DOUBLE_EXPRESSION) && (right->type == INT_EXPRESSION || right->type == DOUBLE_EXPRESSION)) {
-        CRB_Value v = crb_eval_binary_expression(crb_get_current_interpreter(), NULL, operator, left, right);
+        CRB_Value v;
+        crb_eval_binary_expression(crb_get_current_interpreter(), NULL, operator, left, right, &v);
         /* Overwriting left hand expression. */
         set_expression(left, &v);
         return left;

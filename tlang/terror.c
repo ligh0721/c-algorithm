@@ -177,12 +177,11 @@ static void throw_runtime_exception(CRB_Interpreter *inter, CRB_LocalEnvironment
     CRB_push_value(inter, &message_value);
     ++stack_count;
 
-    CRB_Value exception_value;
     if (exception_class == NULL) {
         /* for minicrowbar */
         CRB_Object* exception = CRB_create_exception(inter, env, message_value.u.object, line_number);
-        exception_value.type = CRB_ASSOC_VALUE;
-        exception_value.u.object = exception;
+        inter->current_exception.type = CRB_ASSOC_VALUE;
+        inter->current_exception.u.object = exception;
     } else {
         if (exception_class->type != CRB_ASSOC_VALUE) {
             crb_runtime_error(inter, env, line_number, EXCEPTION_CLASS_IS_NOT_ASSOC_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(exception_class->type), CRB_MESSAGE_ARGUMENT_END);
@@ -191,9 +190,8 @@ static void throw_runtime_exception(CRB_Interpreter *inter, CRB_LocalEnvironment
         if (create_func == NULL) {
             crb_runtime_error(inter, env, line_number, EXCEPTION_CLASS_HAS_NO_CREATE_METHOD_ERR, CRB_MESSAGE_ARGUMENT_END);
         }
-        exception_value = CRB_call_function(inter, env, line_number, create_func, 1, &message_value);
+        CRB_call_function(inter, env, line_number, create_func, 1, &message_value, &inter->current_exception);
     }
-    inter->current_exception = exception_value;
 
     CRB_shrink_stack(inter, stack_count);
 
@@ -211,14 +209,6 @@ void crb_runtime_error(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int li
     va_end(ap);
 
     throw_runtime_exception(inter, env, line_number, message.string, &crb_runtime_error_message_format[id]);
-}
-
-void CRB_check_argument_count_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int expected_count) {
-    if (arg_count < expected_count) {
-        crb_runtime_error(inter, env, line_number, ARGUMENT_TOO_FEW_ERR, CRB_MESSAGE_ARGUMENT_END);
-    } else if (arg_count > expected_count) {
-        crb_runtime_error(inter, env, line_number, ARGUMENT_TOO_MANY_ERR, CRB_MESSAGE_ARGUMENT_END);
-    }
 }
 
 void CRB_error(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_NativeLibInfo *info, int line_number, int error_code, ...) {

@@ -162,11 +162,26 @@ CRB_Object* crb_create_scope_chain(CRB_Interpreter *inter, CRB_Object* frame, CR
 }
 
 // native pointer
-CRB_Object* crb_create_native_pointer_i(CRB_Interpreter *inter, void *pointer, CRB_NativePointerInfo *info) {
+CRB_Object* crb_create_native_pointer_i(CRB_Interpreter *inter, void *pointer, const CRB_NativePointerInfo *info) {
     CRB_Object* ret = alloc_object(inter, NATIVE_POINTER_OBJECT);
     ret->u.native_pointer.pointer = pointer;
     ret->u.native_pointer.info = info;
     return ret;
+}
+
+CRB_Object* CRB_create_native_pointer(CRB_Interpreter *inter, CRB_LocalEnvironment *env, void *pointer, const CRB_NativePointerInfo *info) {
+    CRB_Object* ret = crb_create_native_pointer_i(inter, pointer, info);
+    add_ref_in_native_method(env, ret);
+    return ret;
+}
+
+const CRB_NativePointerInfo* CRB_get_native_pointer_type(CRB_Object *native_pointer) {
+    return native_pointer->u.native_pointer.info;
+}
+
+
+CRB_Boolean CRB_check_native_pointer_type(CRB_Object *native_pointer, const CRB_NativePointerInfo *info) {
+    return native_pointer->u.native_pointer.info == info;
 }
 
 // exception
@@ -208,7 +223,7 @@ static CRB_Object* create_stack_trace_line(CRB_Interpreter *inter, CRB_LocalEnvi
     return new_line;
 }
 
-static CRB_Value print_stack_trace(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args) {
+static void print_stack_trace(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args, CRB_Value *result) {
     CRB_Value* message = CRB_search_local_variable(env, EXCEPTION_MEMBER_MESSAGE, NULL);
     if (message == NULL) {
         crb_runtime_error(inter, env, __LINE__, EXCEPTION_HAS_NO_MESSAGE_ERR, CRB_MESSAGE_ARGUMENT_END);
@@ -255,7 +270,7 @@ static CRB_Value print_stack_trace(CRB_Interpreter *inter, CRB_LocalEnvironment 
         CRB_print_wcs_ln(stderr, str);
         MEM_free(str);
     }
-    return CRB_Null_Value;
+    result->type = CRB_NULL_VALUE;
 }
 
 CRB_Object* CRB_create_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *message, int line_number) {
@@ -309,7 +324,7 @@ CRB_Object* CRB_create_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *e
     value.u.object = line;
     CRB_array_set(inter, env, stack_trace, stack_trace_idx, &value);
 
-    CRB_set_function_definition(NULL, print_stack_trace, &print_stack_trace_fd);
+    CRB_set_function_definition(NULL, 0, print_stack_trace, &print_stack_trace_fd);
 
     CRB_push_value(inter, &value);
     ++stack_count;

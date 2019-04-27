@@ -3,6 +3,7 @@
 //
 
 #include <math.h>
+#include <include/tlang.h>
 #include "tinterpreter.h"
 #include "teval.h"
 #include "terror.h"
@@ -28,14 +29,14 @@ void CRB_push_value(CRB_Interpreter *inter, CRB_Value *value) {
     push_value(inter, value);
 }
 
-static inline CRB_Value pop_value(CRB_Interpreter *inter) {
-    CRB_Value ret = inter->stack.stack[inter->stack.stack_pointer-1];
+static inline void pop_value(CRB_Interpreter *inter, CRB_Value *popped) {
+    DBG_assert(popped != NULL, ("popped cannot be NULL, use shrink_stack() instead\n"));
+    *popped = inter->stack.stack[inter->stack.stack_pointer-1];
     inter->stack.stack_pointer--;
-    return ret;
 }
 
-CRB_Value CRB_pop_value(CRB_Interpreter *inter) {
-    return pop_value(inter);
+void CRB_pop_value(CRB_Interpreter *inter, CRB_Value* popped) {
+    pop_value(inter, popped);
 }
 
 static inline CRB_Value* peek_stack(CRB_Interpreter *inter, int index) {
@@ -169,7 +170,7 @@ static void eval_array_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *
     CRB_Value* data = CRB_Value_slice_data(v.u.object->u.array.array);
     for (; node!=NULL; node=node->next) {
         eval_expression(inter, env, (Expression*)node->value.ptr_value);
-        *(data++) = pop_value(inter);
+        pop_value(inter, data++);
     }
 
 //    for (ExpressionList* pos = list, i = 0; pos; pos = pos->next, i++) {
@@ -465,7 +466,8 @@ static void eval_logical_and_or_expression(CRB_Interpreter *inter, CRB_LocalEnvi
     CRB_Value result;
     result.type = CRB_BOOLEAN_VALUE;
     eval_expression(inter, env, left);
-    CRB_Value left_val = pop_value(inter);
+    CRB_Value left_val;
+    pop_value(inter, &left_val);
     if (left_val.type != CRB_BOOLEAN_VALUE) {
         crb_runtime_error(inter, env, left->line_number, NOT_BOOLEAN_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
@@ -484,7 +486,8 @@ static void eval_logical_and_or_expression(CRB_Interpreter *inter, CRB_LocalEnvi
     }
 
     eval_expression(inter, env, right);
-    CRB_Value right_val = pop_value(inter);
+    CRB_Value right_val;
+    pop_value(inter, &right_val);
     result.u.boolean_value = right_val.u.boolean_value;
 
     FUNC_END:
@@ -506,9 +509,9 @@ static void eval_minus_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *
     }
 }
 
-CRB_Value crb_eval_minus_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *operand) {
+void crb_eval_minus_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *operand, CRB_Value* result) {
     eval_minus_expression(inter, env, operand);
-    return pop_value(inter);
+    pop_value(inter, result);
 }
 
 /*
@@ -546,7 +549,16 @@ static void dispose_local_environment(CRB_Interpreter *inter) {
     MEM_free(temp);
 }
 
-static CRB_Value call_crowbar_function_from_native(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_LocalEnvironment *caller_env, CRB_Value *func, int arg_count, CRB_Value *args) {
+/*
+ * 创建匿名函数值
+ */
+void CRB_create_closure(CRB_LocalEnvironment *env, CRB_FunctionDefinition *fd, CRB_Value* closure) {
+    closure->type = CRB_CLOSURE_VALUE;
+    closure->u.closure.function = fd;
+    closure->u.closure.environment = env->variable;
+}
+
+static void call_crowbar_function_from_native(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_LocalEnvironment *caller_env, CRB_Value *func, int arg_count, CRB_Value *args, CRB_Value *result) {
     CRB_ParameterList* param_list = func->u.closure.function->u.crowbar_f.parameter;
     struct lnode* param_node = param_list ? llist_front_node(param_list) : NULL;
     for (int arg_idx=0; arg_idx<arg_count; ++arg_idx, param_node=param_node->next) {
@@ -559,24 +571,23 @@ static CRB_Value call_crowbar_function_from_native(CRB_Interpreter *inter, CRB_L
         crb_runtime_error(inter, caller_env, line_number, ARGUMENT_TOO_FEW_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
 
-    CRB_Value value;
-    StatementResult result = crb_execute_statement_list(inter, env, func->u.closure.function->u.crowbar_f.block->statement_list);
-    if (result.type == RETURN_STATEMENT_RESULT) {
-        value = result.u.return_value;
+    StatementResult stmt_result;
+    crb_execute_statement_list(inter, env, func->u.closure.function->u.crowbar_f.block->statement_list, &stmt_result);
+    if (stmt_result.type == RETURN_STATEMENT_RESULT) {
+        *result = stmt_result.u.return_value;
     } else {
-        value.type = CRB_NULL_VALUE;
+        result->type = CRB_NULL_VALUE;
     }
-    return value;
 }
 
-static CRB_Value call_native_function_from_native(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_LocalEnvironment *caller_env, CRB_Value *func, int arg_count, CRB_Value *args) {
+static void call_native_function_from_native(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_LocalEnvironment *caller_env, CRB_Value *func, int arg_count, CRB_Value *args, CRB_Value *result) {
 //    for (int i=0; i<arg_count; ++i) {
 //        push_value(inter, &args[i]);
 //    }
 //    CRB_Value* arg_p = &inter->stack.stack[inter->stack.stack_pointer-arg_count];
-    CRB_Value value = func->u.closure.function->u.native_f.proc(inter, env, arg_count, args);
+    CRB_check_argument_count_func(inter, env, line_number, arg_count, func->u.closure.function->u.native_f.param_count);
+    func->u.closure.function->u.native_f.func(inter, env, arg_count, args, result);
 //    shrink_stack(inter, arg_count);
-    return value;
 }
 
 static inline void check_method_argument_count(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int param_count) {
@@ -590,22 +601,20 @@ static inline void check_method_argument_count(CRB_Interpreter *inter, CRB_Local
     }
 }
 
-static inline CRB_Value call_fake_method_from_native(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_LocalEnvironment *caller_env, CRB_Value *func, int arg_count, CRB_Value *args) {
-    FakeMethodTable* fmt = crb_search_fake_method(inter, env, line_number, &func->u.fake_method);
-    check_method_argument_count(inter, env, line_number, arg_count, fmt->argument_count);
+static inline void call_fake_method_from_native(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_LocalEnvironment *caller_env, CRB_Value *func, int arg_count, CRB_Value *args, CRB_Value *result) {
+    FakeMethodDefinition* fmt = crb_search_fake_method(inter, env, line_number, &func->u.fake_method);
+    check_method_argument_count(inter, env, line_number, arg_count, fmt->param_count);
 //    for (int i=0; i<arg_count; ++i) {
 //        push_value(inter, &args[i]);
 //    }
-    CRB_Value value;
-    fmt->func(inter, env, func->u.fake_method.object, arg_count, args, &value);
+    fmt->func(inter, env, func->u.fake_method.object, arg_count, args, result);
 //    shrink_stack(inter, arg_count);
-    return value;
 }
 
 /*
  * 调用函数
  */
-CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *func, int arg_count, CRB_Value *args) {
+void CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *func, int arg_count, CRB_Value *args, CRB_Value *result) {
     const char* func_name;
     CRB_Object* closure_env;
     if (func->type == CRB_CLOSURE_VALUE) {
@@ -624,24 +633,23 @@ CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, i
         CRB_add_assoc_member(inter, local_env->variable->u.scope_chain.frame, func->u.closure.function->name, func, CRB_TRUE);
     }
 
-    CRB_Value ret;
     int stack_pointer_backup = crb_get_stack_pointer(inter);
     RecoveryEnvironment env_backup = inter->current_recovery_environment;
     if (setjmp(inter->current_recovery_environment.environment) == 0) {
         if (func->type == CRB_CLOSURE_VALUE) {
             switch (func->u.closure.function->type) {
                 case CRB_CROWBAR_FUNCTION_DEFINE:
-                    ret = call_crowbar_function_from_native(inter, local_env, line_number, env, func, arg_count, args);
+                    call_crowbar_function_from_native(inter, local_env, line_number, env, func, arg_count, args, result);
                     break;
                 case CRB_NATIVE_FUNCTION_DEFINE:
-                    ret = call_native_function_from_native(inter, local_env, line_number, env, func, arg_count, args);
+                    call_native_function_from_native(inter, local_env, line_number, env, func, arg_count, args, result);
                     break;
                 case CRB_FUNCTION_DEFINE_TYPE_COUNT_PLUS_1:
                 default:
                     DBG_assert(0, ("bad case..%d\n", func->u.closure.function->type));
             }
         } else if (func->type == CRB_FAKE_METHOD_VALUE) {
-            ret = call_fake_method_from_native(inter, local_env, line_number, env, func, arg_count, args);
+            call_fake_method_from_native(inter, local_env, line_number, env, func, arg_count, args, result);
         } else {
             DBG_panic(("func->type..%d\n", func->type));
         }
@@ -652,26 +660,25 @@ CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, i
     }
     inter->current_recovery_environment = env_backup;
     dispose_local_environment(inter);
-
-    return ret;
 }
 
 /*
  * 根据函数名调用函数
  */
-CRB_Value CRB_call_function_by_name(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const char *func_name, int arg_count, CRB_Value *args) {
+void CRB_call_function_by_name(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const char *func_name, int arg_count, CRB_Value *args, CRB_Value *result) {
     CRB_FunctionDefinition* fd = CRB_search_function(inter, func_name);
     if (fd == NULL) {
         crb_runtime_error(inter, env, line_number, FUNCTION_NOT_FOUND_ERR, "name", func_name, CRB_MESSAGE_ARGUMENT_END);
     }
-    CRB_Value func = CRB_create_closure(env, fd);
-    return CRB_call_function(inter, env, line_number, &func, arg_count, args);
+    CRB_Value func;
+    CRB_create_closure(env, fd, &func);
+    CRB_call_function(inter, env, line_number, &func, arg_count, args, result);
 }
 
 /*
  * 调用成员函数
  */
-CRB_Value CRB_call_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Object *obj, const char *method_name, int arg_count, CRB_Value *args) {
+void CRB_call_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Object *obj, const char *method_name, int arg_count, CRB_Value *args, CRB_Value *result) {
     CRB_Value func;
     if (obj->type == STRING_OBJECT || obj->type == ARRAY_OBJECT) {
         func.type = CRB_FAKE_METHOD_VALUE;
@@ -686,9 +693,8 @@ CRB_Value CRB_call_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int
     }
 
     push_value(inter, &func);
-    CRB_Value result = CRB_call_function(inter, env, line_number, &func, arg_count, args);
-    pop_value(inter);
-    return result;
+    CRB_call_function(inter, env, line_number, &func, arg_count, args, result);
+    shrink_stack(inter, 1);
 }
 
 /*
@@ -706,8 +712,8 @@ static void call_fake_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
         node = llist_front_node(arg_list);
     }
 
-    FakeMethodTable* fmt = crb_search_fake_method(inter, env, expr->line_number, fm);
-    check_method_argument_count(inter, env, expr->line_number, arg_count, fmt->argument_count);
+    FakeMethodDefinition* fmt = crb_search_fake_method(inter, env, expr->line_number, fm);
+    check_method_argument_count(inter, env, expr->line_number, arg_count, fmt->param_count);
     for (; node!=NULL; node=node->next) {
         eval_expression(inter, caller_env, (Expression*)node->value.ptr_value);
     }
@@ -737,7 +743,7 @@ static void call_crowbar_function(CRB_Interpreter *inter, CRB_LocalEnvironment *
 
         const char* param_name = (const char*)param_node->value.ptr_value;
         CRB_add_local_variable(inter, env, param_name, arg_val, CRB_FALSE);
-        pop_value(inter);
+        shrink_stack(inter, 1);
 
         arg_node = arg_node->next;
         param_node = param_node->next;
@@ -747,7 +753,8 @@ static void call_crowbar_function(CRB_Interpreter *inter, CRB_LocalEnvironment *
         return;
     }
 
-    StatementResult result = crb_execute_statement_list(inter, env, func->u.closure.function->u.crowbar_f.block->statement_list);
+    StatementResult result;
+    crb_execute_statement_list(inter, env, func->u.closure.function->u.crowbar_f.block->statement_list, &result);
     if (result.type == RETURN_STATEMENT_RESULT) {
         push_value(inter, &result.u.return_value);
     } else {
@@ -758,7 +765,7 @@ static void call_crowbar_function(CRB_Interpreter *inter, CRB_LocalEnvironment *
 /*
  * 调用原生函数
  */
-static void call_native_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_LocalEnvironment *caller_env, Expression *expr, CRB_NativeFunctionProc *proc) {
+static void call_native_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_LocalEnvironment *caller_env, Expression *expr, CRB_Value *func) {
     ArgumentList* arg_list = expr->u.function_call_expression.argument;
     int arg_count;
     if (arg_list != NULL) {
@@ -772,9 +779,11 @@ static void call_native_function(CRB_Interpreter *inter, CRB_LocalEnvironment *e
     }
 
     CRB_Value* args = &inter->stack.stack[inter->stack.stack_pointer-arg_count];
-    CRB_Value value = proc(inter, env, arg_count, args);
+    CRB_Value result;
+    CRB_check_argument_count_func(inter, env, expr->line_number, arg_count, func->u.closure.function->u.native_f.param_count);
+    func->u.closure.function->u.native_f.func(inter, env, arg_count, args, &result);
     shrink_stack(inter, arg_count);
-    push_value(inter, &value);
+    push_value(inter, &result);
 }
 
 /*
@@ -792,7 +801,7 @@ static void do_function_call(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
             call_crowbar_function(inter, env, caller_env, expr, func);
             return;
         case CRB_NATIVE_FUNCTION_DEFINE:
-            call_native_function(inter, env, caller_env, expr, func->u.closure.function->u.native_f.proc);
+            call_native_function(inter, env, caller_env, expr, func);
             return;
         case CRB_FUNCTION_DEFINE_TYPE_COUNT_PLUS_1:
         default:
@@ -837,8 +846,9 @@ static void eval_function_call_expression(CRB_Interpreter *inter, CRB_LocalEnvir
     inter->current_recovery_environment = env_backup;
     dispose_local_environment(inter);
 
-    CRB_Value return_value = pop_value(inter);
-    pop_value(inter); /* func */
+    CRB_Value return_value;
+    pop_value(inter, &return_value);
+    shrink_stack(inter, 1); /* func */
     push_value(inter, &return_value);
 }
 
@@ -846,8 +856,9 @@ static void eval_function_call_expression(CRB_Interpreter *inter, CRB_LocalEnvir
  * 成员表达式求值
  */
 static void eval_member_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
-    eval_expression(inter,env, expr->u.member_expression.expression);
-    CRB_Value left = pop_value(inter);
+    eval_expression(inter, env, expr->u.member_expression.expression);
+    CRB_Value left;
+    pop_value(inter, &left);
     if (left.type == CRB_ASSOC_VALUE) {
         CRB_Value* v = CRB_search_assoc_member(left.u.object, expr->u.member_expression.member_name, NULL);
         if (v == NULL) {
@@ -944,14 +955,13 @@ static void eval_binary_expression(CRB_Interpreter *inter, CRB_LocalEnvironment 
         const char* op_str = crb_get_operator_string(operator);
         crb_runtime_error(inter, env, left->line_number, BAD_OPERAND_TYPE_ERR, CRB_STRING_MESSAGE_ARGUMENT, "operator", op_str, CRB_MESSAGE_ARGUMENT_END);
     }
-    pop_value(inter);
-    pop_value(inter);
+    shrink_stack(inter, 2);
     push_value(inter, &result);
 }
 
-CRB_Value crb_eval_binary_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, ExpressionType operator, Expression *left, Expression *right) {
+void crb_eval_binary_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, ExpressionType operator, Expression *left, Expression *right, CRB_Value *result) {
     eval_binary_expression(inter, env, operator, left, right);
-    return pop_value(inter);
+    pop_value(inter, result);
 }
 
 /*
@@ -1020,7 +1030,7 @@ static void assign_to_member(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
         }
         do_assign(inter, env, src, dest, expr->u.assign_expression.operator, expr->line_number);
     }
-    pop_value(inter);
+    shrink_stack(inter, 1);
 }
 
 /*
@@ -1043,7 +1053,8 @@ CRB_Value* crb_get_identifier_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironmen
  */
 static inline CRB_Value* get_array_element_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr, CRB_Value* array) {
     eval_expression(inter, env, expr->u.index_expression.index);
-    CRB_Value index = pop_value(inter);
+    CRB_Value index;
+    pop_value(inter, &index);
     if (index.type != CRB_INT_VALUE) {
         crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_INT_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
@@ -1063,11 +1074,11 @@ static inline CRB_Value* get_array_element_lvalue(CRB_Interpreter *inter, CRB_Lo
  */
 static inline CRB_Value* get_element_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     eval_expression(inter, env, expr->u.index_expression.array);
-    CRB_Value array = pop_value(inter);
+    CRB_Value array;
+    pop_value(inter, &array);
     if (array.type != CRB_ARRAY_VALUE) {
         crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_ARRAY_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
-
     return get_array_element_lvalue(inter, env, expr, &array);
 }
 
@@ -1076,7 +1087,8 @@ static inline CRB_Value* get_element_lvalue(CRB_Interpreter *inter, CRB_LocalEnv
  */
 static CRB_Value* get_member_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     eval_expression(inter, env, expr->u.member_expression.expression);
-    CRB_Value assoc = pop_value(inter);
+    CRB_Value assoc;
+    pop_value(inter, &assoc);
     if (assoc.type != CRB_ASSOC_VALUE) {
         crb_runtime_error(inter, env, expr->line_number, NOT_OBJECT_MEMBER_UPDATE_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
@@ -1115,7 +1127,8 @@ static inline void eval_sub_string_value(CRB_Interpreter *inter, CRB_LocalEnviro
         start_value = 0;
     } else {
         eval_expression(inter, env, start_expr);
-        CRB_Value start = pop_value(inter);
+        CRB_Value start;
+        pop_value(inter, &start);
         if (start.type != CRB_INT_VALUE) {
             crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_INT_ERR, CRB_MESSAGE_ARGUMENT_END);
         }
@@ -1133,7 +1146,8 @@ static inline void eval_sub_string_value(CRB_Interpreter *inter, CRB_LocalEnviro
             end_value = len;
         } else {
             eval_expression(inter, env, end_expr);
-            CRB_Value end = pop_value(inter);
+            CRB_Value end;
+            pop_value(inter, &end);
             if (end.type != CRB_INT_VALUE) {
                 crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_INT_ERR, CRB_MESSAGE_ARGUMENT_END);
             }
@@ -1152,7 +1166,8 @@ static inline void eval_sub_string_value(CRB_Interpreter *inter, CRB_LocalEnviro
  */
 static void eval_index_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     eval_expression(inter, env, expr->u.index_expression.array);
-    CRB_Value array = pop_value(inter);
+    CRB_Value array;
+    pop_value(inter, &array);
 
     CRB_Value* value;
     switch (array.type) {
@@ -1177,7 +1192,8 @@ static void eval_array_slice_expression(CRB_Interpreter *inter, CRB_LocalEnviron
         start_value = 0;
     } else {
         eval_expression(inter, env, start_expr);
-        CRB_Value start = pop_value(inter);
+        CRB_Value start;
+        pop_value(inter, &start);
         if (start.type != CRB_INT_VALUE) {
             crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_INT_ERR, CRB_MESSAGE_ARGUMENT_END);
         }
@@ -1191,7 +1207,8 @@ static void eval_array_slice_expression(CRB_Interpreter *inter, CRB_LocalEnviron
         end_value = CRB_Value_slice_len(arr);
     } else {
         eval_expression(inter, env, end_expr);
-        CRB_Value end = pop_value(inter);
+        CRB_Value end;
+        pop_value(inter, &end);
         if (end.type != CRB_INT_VALUE) {
             crb_runtime_error(inter, env, expr->line_number, INDEX_OPERAND_NOT_INT_ERR, CRB_MESSAGE_ARGUMENT_END);
         }
@@ -1215,7 +1232,8 @@ static void eval_array_slice_expression(CRB_Interpreter *inter, CRB_LocalEnviron
  */
 static void eval_slice_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     eval_expression(inter, env, expr->u.slice_expression.array);
-    CRB_Value array = pop_value(inter);
+    CRB_Value array;
+    pop_value(inter, &array);
     switch (array.type) {
         case CRB_ARRAY_VALUE:
             eval_array_slice_expression(inter, env, expr, &array, expr->u.slice_expression.start, expr->u.slice_expression.end);
@@ -1293,7 +1311,7 @@ static void eval_assign_expression(CRB_Interpreter *inter, CRB_LocalEnvironment 
  */
 static void eval_comma_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     eval_expression(inter, env, expr->u.comma.left);
-    pop_value(inter);
+    shrink_stack(inter, 1);
     eval_expression(inter, env, expr->u.comma.right);
 }
 
@@ -1393,9 +1411,9 @@ static void eval_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, E
     }
 }
 
-CRB_Value crb_eval_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
+void crb_eval_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr, CRB_Value *result) {
     eval_expression(inter, env, expr);
-    return pop_value(inter);
+    pop_value(inter, result);
 }
 
 CRB_Value* crb_eval_expression_peek(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {

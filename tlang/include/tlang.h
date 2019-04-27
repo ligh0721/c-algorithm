@@ -98,31 +98,26 @@ typedef enum {
     CRB_FUNCTION_DEFINE_TYPE_COUNT_PLUS_1
 } CRB_FunctionDefinitionType;
 
-typedef CRB_Value CRB_NativeFunctionProc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args);
-CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, const char *name, CRB_NativeFunctionProc *proc);
-CRB_Value CRB_create_closure(CRB_LocalEnvironment *env, CRB_FunctionDefinition *fd);
+typedef void CRB_NativeFunctionFunc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args, CRB_Value *result);
 
 struct CRB_FunctionDefinition_tag {
-    const char                *name;
+    const char                  *name;
     CRB_FunctionDefinitionType  type;
-    CRB_Boolean         is_closure;
+    CRB_Boolean                 is_closure;
     union {
         struct {
             CRB_ParameterList   *parameter;
             CRB_Block           *block;
         } crowbar_f;
         struct {
-            CRB_NativeFunctionProc      *proc;
+            int                         param_count;
+            CRB_NativeFunctionFunc      *func;
         } native_f;
     } u;
     struct CRB_FunctionDefinition_tag   *next;
 };
 
 // Error
-void CRB_check_argument_count_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int expected_count);
-
-#define CRB_check_argument_count(inter, env, arg_count, expected_count) (CRB_check_argument_count_func(inter, env, __LINE__, arg_count, expected_count))
-
 typedef struct {
     const char *format;
     const char *class_name;
@@ -158,16 +153,21 @@ CRB_Object* CRB_create_assoc(CRB_Interpreter *inter, CRB_LocalEnvironment *env);
 CRB_Value* CRB_add_assoc_member(CRB_Interpreter *inter, CRB_Object *assoc, const char *name, CRB_Value *value, CRB_Boolean is_final);
 CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, CRB_Boolean* is_final);
 
+CRB_Object* CRB_create_native_pointer(CRB_Interpreter *inter, CRB_LocalEnvironment *env, void *pointer, const CRB_NativePointerInfo *info);
+const CRB_NativePointerInfo* CRB_get_native_pointer_type(CRB_Object *native_pointer);
+CRB_Boolean CRB_check_native_pointer_type(CRB_Object *native_pointer, const CRB_NativePointerInfo *info);
+
 CRB_Object* CRB_create_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *message, int line_number);
 
 // teval
 void CRB_push_value(CRB_Interpreter *inter, CRB_Value *value);
-CRB_Value CRB_pop_value(CRB_Interpreter *inter);
+void CRB_pop_value(CRB_Interpreter *inter, CRB_Value *poped);
 CRB_Value* CRB_peek_stack(CRB_Interpreter *inter, int index);
 void CRB_shrink_stack(CRB_Interpreter *inter, int shrink_size);
-CRB_Value CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *func, int arg_count, CRB_Value *args);
-CRB_Value CRB_call_function_by_name(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const char *func_name, int arg_count, CRB_Value *args);
-CRB_Value CRB_call_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Object *obj, const char *method_name, int arg_count, CRB_Value *args);
+void CRB_create_closure(CRB_LocalEnvironment *env, CRB_FunctionDefinition *fd, CRB_Value *result);
+void CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *func, int arg_count, CRB_Value *args, CRB_Value *result);
+void CRB_call_function_by_name(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const char *func_name, int arg_count, CRB_Value *args, CRB_Value *result);
+void CRB_call_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Object *obj, const char *method_name, int arg_count, CRB_Value *args, CRB_Value *result);
 
 // tmisc
 CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Value *value, CRB_Boolean is_final);
@@ -187,18 +187,23 @@ void CRB_mbstowcs(const char *src, CRB_Char *dest);
 CRB_Char* CRB_mbstowcs_alloc(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const char *src);
 int CRB_wcstombs_len(const CRB_Char *src);
 void CRB_wcstombs(const CRB_Char *src, char *dest);
+char* CRB_wcstombs_alloc(const CRB_Char *src);
 char CRB_wctochar(CRB_Char src);
 int CRB_print_wcs(FILE *fp, const CRB_Char *str);
 int CRB_print_wcs_ln(FILE *fp, const CRB_Char *str);
 CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const CRB_Value *value, void* param);
 
 // tnative
+CRB_Char* CRB_object_get_string(CRB_Object *obj);
+void* CRB_object_get_native_pointer(CRB_Object *obj);
 void CRB_array_set(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int index, CRB_Value *value);
 void CRB_array_append(CRB_Interpreter *inter, CRB_Object *obj, CRB_Value *new_value);
 void CRB_array_insert(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int pos, CRB_Value *new_value, int line_number);
-CRB_Value CRB_array_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int pos, int line_number);
-void CRB_set_function_definition(const char *name, CRB_NativeFunctionProc *proc, CRB_FunctionDefinition *fd);
-
+void CRB_array_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int pos, int line_number, CRB_Value *popped);
+CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, const char *name, int param_count, CRB_NativeFunctionFunc *func);
+void CRB_set_function_definition(const char *name, int param_count, CRB_NativeFunctionFunc *func, CRB_FunctionDefinition *fd);
+void CRB_check_argument_count_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int expected_count);
+//#define CRB_check_argument_count(inter, env, arg_count, expected_count) (CRB_check_argument_count_func(inter, env, __LINE__, arg_count, expected_count))
 
 
 

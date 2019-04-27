@@ -6,9 +6,9 @@
 #define TLANG_TNATIVE_H
 
 void crb_init_native_const_values();
-void crb_add_native_functions(CRB_Interpreter* inter);
 void crb_add_std_fp(CRB_Interpreter *inter);
-
-FakeMethodTable* crb_search_fake_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_FakeMethod *fm);
+void crb_add_native_functions(CRB_Interpreter* inter);
+FakeMethodDefinition* crb_add_fake_method(CRB_Interpreter *interpreter, ObjectType type, const char *name, int param_count, FakeMethodFunc *func);
+void crb_add_fake_methods(CRB_Interpreter *inter);
 
 #endif //TLANG_TNATIVE_H
