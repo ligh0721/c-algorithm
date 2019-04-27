@@ -35,7 +35,7 @@ CRB_ErrorDefinition crb_runtime_error_message_format[] = {
         {"双目操作符$(operator)的操作数类型不正确。",
                 "BadOperandTypeException"},
         {"&&, ||运算符不能接受实数型的操作数。",
-                "LogicalOperatorDoubleOperandException"},
+                "LogicalOperatorFloatOperandException"},
         {"&&, ||运算符不能接受整数型的操作数。",
                 "LogicalOperatorIntegerOperandException"},
         {"$(operator)运算符不能用于boolean型。",

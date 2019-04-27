@@ -236,7 +236,7 @@ typedef enum {
     EXPRESSION_TYPE_COUNT_PLUS_1
 } ExpressionType;
 
-#define crb_is_numeric_type(type) ((type) == CRB_INT_VALUE || (type) == CRB_DOUBLE_VALUE)
+#define crb_is_numeric_type(type) ((type) == CRB_INT_VALUE || (type) == CRB_FLOAT_VALUE)
 #define crb_is_math_operator(operator) ((operator) == ADD_EXPRESSION || (operator) == SUB_EXPRESSION || (operator) == MUL_EXPRESSION || (operator) == DIV_EXPRESSION || (operator) == MOD_EXPRESSION)
 #define crb_is_compare_operator(operator) ((operator) == EQ_EXPRESSION || (operator) == NE_EXPRESSION || (operator) == GT_EXPRESSION || (operator) == GE_EXPRESSION || (operator) == LT_EXPRESSION || (operator) == LE_EXPRESSION)
 #define crb_is_logical_operator(operator) ((operator) == LOGICAL_AND_EXPRESSION || (operator) == LOGICAL_OR_EXPRESSION)
@@ -279,7 +279,7 @@ typedef struct {
     ArgumentList        *argument;
 } FunctionCallExpression;
 
-typedef void FakeMethodProc(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value *result);
+typedef void FakeMethodProc(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value* args, CRB_Value *result);
 
 typedef struct {
     ObjectType  type;
@@ -342,7 +342,7 @@ struct Expression_tag {
     union {
         CRB_Boolean             boolean_value;
         long                    int_value;
-        double                  double_value;
+        double                  float_value;
         CRB_Char                *string_value;
 //        CRB_Regexp              *regexp_value;
         const char              *identifier;

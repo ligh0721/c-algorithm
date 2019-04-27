@@ -97,9 +97,9 @@ static void set_expression(Expression *expr, CRB_Value *v) {
     if (v->type == CRB_INT_VALUE) {
         expr->type = INT_EXPRESSION;
         expr->u.int_value = v->u.int_value;
-    } else if (v->type == CRB_DOUBLE_VALUE) {
+    } else if (v->type == CRB_FLOAT_VALUE) {
         expr->type = DOUBLE_EXPRESSION;
-        expr->u.double_value = v->u.double_value;
+        expr->u.float_value = v->u.float_value;
     } else if (v->type == CRB_BOOLEAN_VALUE) {
         expr->type = BOOLEAN_EXPRESSION;
         expr->u.boolean_value = v->u.boolean_value;

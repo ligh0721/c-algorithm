@@ -134,10 +134,10 @@ static void eval_int_expression(CRB_Interpreter *inter, int int_value) {
 /*
  * 浮点类型字面量
  */
-static void eval_double_expression(CRB_Interpreter *inter, double double_value) {
+static void eval_double_expression(CRB_Interpreter *inter, double float_value) {
     CRB_Value v;
-    v.type = CRB_DOUBLE_VALUE;
-    v.u.double_value = double_value;
+    v.type = CRB_FLOAT_VALUE;
+    v.u.float_value = float_value;
     push_value(inter, &v);
 }
 
@@ -340,7 +340,7 @@ static void eval_binary_int(CRB_Interpreter *inter, CRB_LocalEnvironment *env, E
  */
 static void eval_binary_double(CRB_Interpreter *inter, CRB_LocalEnvironment *env, ExpressionType operator, double left, double right, CRB_Value *result, int line_number) {
     if (crb_is_math_operator(operator)) {
-        result->type = CRB_DOUBLE_VALUE;
+        result->type = CRB_FLOAT_VALUE;
     } else if (crb_is_compare_operator(operator)) {
         result->type = CRB_BOOLEAN_VALUE;
     } else {
@@ -360,19 +360,19 @@ static void eval_binary_double(CRB_Interpreter *inter, CRB_LocalEnvironment *env
             DBG_assert(0, ("bad case...%d", operator));
             break;
         case ADD_EXPRESSION:
-            result->u.double_value = left + right;
+            result->u.float_value = left + right;
             break;
         case SUB_EXPRESSION:
-            result->u.double_value = left - right;
+            result->u.float_value = left - right;
             break;
         case MUL_EXPRESSION:
-            result->u.double_value = left * right;
+            result->u.float_value = left * right;
             break;
         case DIV_EXPRESSION:
-            result->u.double_value = left / right;
+            result->u.float_value = left / right;
             break;
         case MOD_EXPRESSION:
-            result->u.double_value = fmod(left, right);
+            result->u.float_value = fmod(left, right);
             break;
         case EQ_EXPRESSION:
             result->u.boolean_value = left == right;
@@ -416,12 +416,12 @@ static void eval_binary_double(CRB_Interpreter *inter, CRB_LocalEnvironment *env
 void eval_binary_numeric(CRB_Interpreter *inter, CRB_LocalEnvironment *env, ExpressionType operator, CRB_Value *left_val, CRB_Value *right_val, CRB_Value *result, int line_number) {
     if (left_val->type == CRB_INT_VALUE && right_val->type == CRB_INT_VALUE) {
         eval_binary_int(inter, env, operator, left_val->u.int_value, right_val->u.int_value, result, line_number);
-    } else if (left_val->type == CRB_DOUBLE_VALUE && right_val->type == CRB_DOUBLE_VALUE) {
-        eval_binary_double(inter, env, operator, left_val->u.double_value, right_val->u.double_value, result, line_number);
-    } else if (left_val->type == CRB_INT_VALUE && right_val->type == CRB_DOUBLE_VALUE) {
-        eval_binary_double(inter, env, operator, (double)left_val->u.int_value, right_val->u.double_value, result, line_number);
-    } else if (left_val->type == CRB_DOUBLE_VALUE && right_val->type == CRB_INT_VALUE) {
-        eval_binary_double(inter, env, operator, left_val->u.double_value, (double)right_val->u.int_value, result, line_number);
+    } else if (left_val->type == CRB_FLOAT_VALUE && right_val->type == CRB_FLOAT_VALUE) {
+        eval_binary_double(inter, env, operator, left_val->u.float_value, right_val->u.float_value, result, line_number);
+    } else if (left_val->type == CRB_INT_VALUE && right_val->type == CRB_FLOAT_VALUE) {
+        eval_binary_double(inter, env, operator, (double)left_val->u.int_value, right_val->u.float_value, result, line_number);
+    } else if (left_val->type == CRB_FLOAT_VALUE && right_val->type == CRB_INT_VALUE) {
+        eval_binary_double(inter, env, operator, left_val->u.float_value, (double)right_val->u.int_value, result, line_number);
     }
 }
 
@@ -499,8 +499,8 @@ static void eval_minus_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *
     CRB_Value* operand_val = peek_stack(inter, 0);
     if (operand_val->type == CRB_INT_VALUE) {
         operand_val->u.int_value = -operand_val->u.int_value;
-    } else if (operand_val->type == CRB_DOUBLE_VALUE) {
-        operand_val->u.double_value = -operand_val->u.double_value;
+    } else if (operand_val->type == CRB_FLOAT_VALUE) {
+        operand_val->u.float_value = -operand_val->u.float_value;
     } else {
         crb_runtime_error(inter, env, operand->line_number, MINUS_OPERAND_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
@@ -570,12 +570,12 @@ static CRB_Value call_crowbar_function_from_native(CRB_Interpreter *inter, CRB_L
 }
 
 static CRB_Value call_native_function_from_native(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_LocalEnvironment *caller_env, CRB_Value *func, int arg_count, CRB_Value *args) {
-    for (int i=0; i<arg_count; ++i) {
-        push_value(inter, &args[i]);
-    }
-    CRB_Value* arg_p = &inter->stack.stack[inter->stack.stack_pointer-arg_count];
-    CRB_Value value = func->u.closure.function->u.native_f.proc(inter, env, arg_count, arg_p);
-    shrink_stack(inter, arg_count);
+//    for (int i=0; i<arg_count; ++i) {
+//        push_value(inter, &args[i]);
+//    }
+//    CRB_Value* arg_p = &inter->stack.stack[inter->stack.stack_pointer-arg_count];
+    CRB_Value value = func->u.closure.function->u.native_f.proc(inter, env, arg_count, args);
+//    shrink_stack(inter, arg_count);
     return value;
 }
 
@@ -593,12 +593,12 @@ static inline void check_method_argument_count(CRB_Interpreter *inter, CRB_Local
 static inline CRB_Value call_fake_method_from_native(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_LocalEnvironment *caller_env, CRB_Value *func, int arg_count, CRB_Value *args) {
     FakeMethodTable* fmt = crb_search_fake_method(inter, env, line_number, &func->u.fake_method);
     check_method_argument_count(inter, env, line_number, arg_count, fmt->argument_count);
-    for (int i=0; i<arg_count; ++i) {
-        push_value(inter, &args[i]);
-    }
+//    for (int i=0; i<arg_count; ++i) {
+//        push_value(inter, &args[i]);
+//    }
     CRB_Value value;
-    fmt->func(inter, env, func->u.fake_method.object, arg_count, &value);
-    shrink_stack(inter, arg_count);
+    fmt->func(inter, env, func->u.fake_method.object, arg_count, args, &value);
+//    shrink_stack(inter, arg_count);
     return value;
 }
 
@@ -711,8 +711,9 @@ static void call_fake_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
     for (; node!=NULL; node=node->next) {
         eval_expression(inter, caller_env, (Expression*)node->value.ptr_value);
     }
+    CRB_Value* args = &inter->stack.stack[inter->stack.stack_pointer-arg_count];
     CRB_Value result;
-    fmt->func(inter, env, fm->object, arg_count, &result);
+    fmt->func(inter, env, fm->object, arg_count, args, &result);
     shrink_stack(inter, arg_count);
     push_value(inter, &result);
 }
@@ -1318,7 +1319,7 @@ static void eval_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, E
             eval_int_expression(inter, expr->u.int_value);
             break;
         case DOUBLE_EXPRESSION:
-            eval_double_expression(inter, expr->u.double_value);
+            eval_double_expression(inter, expr->u.float_value);
             break;
         case STRING_EXPRESSION:
             eval_string_expression(inter, expr->u.string_value);

@@ -45,7 +45,7 @@ typedef enum {
 typedef enum {
     CRB_BOOLEAN_VALUE = 1,
     CRB_INT_VALUE,
-    CRB_DOUBLE_VALUE,
+    CRB_FLOAT_VALUE,
     CRB_STRING_VALUE,
     CRB_NATIVE_POINTER_VALUE,
     CRB_NULL_VALUE,
@@ -81,7 +81,7 @@ typedef struct {
     union {
         CRB_Boolean     boolean_value;
         long            int_value;
-        double          double_value;
+        double          float_value;
         CRB_Object      *object;
         CRB_Closure     closure;
         CRB_FakeMethod  fake_method;

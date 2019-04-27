@@ -111,8 +111,8 @@ const char* CRB_get_type_name(CRB_ValueType type) {
         case CRB_INT_VALUE:
             return "int";
             break;
-        case CRB_DOUBLE_VALUE:
-            return "dobule";
+        case CRB_FLOAT_VALUE:
+            return "float";
             break;
         case CRB_STRING_VALUE:
             return "string";
@@ -422,8 +422,8 @@ CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
             CRB_mbstowcs(params->buf, params->wc_buf);
             crb_vstr_append_string(&params->vstr, params->wc_buf);
             break;
-        case CRB_DOUBLE_VALUE:
-            sprintf(params->buf, "%lf", value->u.double_value);
+        case CRB_FLOAT_VALUE:
+            sprintf(params->buf, "%lf", value->u.float_value);
             CRB_mbstowcs(params->buf, params->wc_buf);
             crb_vstr_append_string(&params->vstr, params->wc_buf);
             break;

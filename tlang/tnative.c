@@ -2,6 +2,7 @@
 // Created by t5w0rd on 19-4-20.
 //
 
+#include <include/tlang.h>
 #include "tinterpreter.h"
 #include "tnative.h"
 #include "tmisc.h"
@@ -273,26 +274,25 @@ inline CRB_Value CRB_array_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env
     return CRB_Value_slice_pop(sli, pos);
 }
 
-static void array_method_len(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value *result) {
+static void array_method_len(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value* args, CRB_Value *result) {
     result->type = CRB_INT_VALUE;
     result->u.int_value = CRB_Value_slice_len(obj->u.array.array);
 }
 
-static void array_method_append(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value *result) {
+static void array_method_append(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value* args, CRB_Value *result) {
     CRB_Value_SLICE* sli = obj->u.array.array;
     struct _array_record record;
-    for (int i=arg_count-1; i>=0; --i) {
+    for (int i=0; i<arg_count; ++i) {
         record_slice_state(sli, &record);
-        CRB_Value* new_value = CRB_peek_stack(inter, i);
-        CRB_Value_slice_append(sli, *new_value);
+        CRB_Value_slice_append(sli, args[i]);
         check_slice_state(sli, &record, &inter->heap);
     }
     result->type = CRB_NULL_VALUE;
 }
 
-static void array_method_insert(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value *result) {
-    CRB_Value* new_value = CRB_peek_stack(inter, 0);
-    CRB_Value* pos = CRB_peek_stack(inter, 1);
+static void array_method_insert(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value* args, CRB_Value *result) {
+    CRB_Value* pos = &args[0];
+    CRB_Value* new_value = &args[1];
     if (pos->type != CRB_INT_VALUE) {
         crb_runtime_error(inter, env, __LINE__, ARRAY_INSERT_ARGUMENT_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(pos->type), CRB_MESSAGE_ARGUMENT_END);
     }
@@ -300,22 +300,23 @@ static void array_method_insert(CRB_Interpreter *inter, CRB_LocalEnvironment *en
     result->type = CRB_NULL_VALUE;
 }
 
-static void array_method_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value *result) {
-    CRB_Value* pos = CRB_peek_stack(inter, 0);
+static void array_method_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value* args, CRB_Value *result) {
+    CRB_Value* pos = args;
+    args->u.int_value = 0;
     if (pos->type != CRB_INT_VALUE) {
         crb_runtime_error(inter, env, __LINE__, ARRAY_REMOVE_ARGUMENT_ERR, CRB_STRING_MESSAGE_ARGUMENT, "type", CRB_get_type_name(pos->type), CRB_MESSAGE_ARGUMENT_END);
     }
     *result = CRB_array_pop(inter, env, obj, pos->u.int_value, __LINE__);
 }
 
-static void array_iterator_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value *result) {
+static void array_iterator_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value* args, CRB_Value *result) {
     CRB_Value array;
     array.type = CRB_ARRAY_VALUE;
     array.u.object = obj;
     *result = CRB_call_function_by_name(inter, env, __LINE__, ARRAY_ITERATOR_METHOD_NAME, 1, &array);
 }
 
-static void string_len_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value *result) {
+static void string_len_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int arg_count, CRB_Value* args, CRB_Value *result) {
     result->type = CRB_INT_VALUE;
     result->u.int_value = CRB_wcslen(obj->u.string.string);
 }

@@ -87,7 +87,7 @@
 }
 <INITIAL>((?:[1-9][0-9]*)|0)\.[0-9]+ {
     Expression  *expression = crb_alloc_expression(DOUBLE_EXPRESSION);
-    sscanf(yytext, "%lf", &expression->u.double_value);
+    sscanf(yytext, "%lf", &expression->u.float_value);
     yylval.expression = expression;
     return DOUBLE_LITERAL;
 }

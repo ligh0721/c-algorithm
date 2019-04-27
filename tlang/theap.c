@@ -88,9 +88,6 @@ CRB_Object* crb_string_substr_i(CRB_Interpreter *inter, CRB_LocalEnvironment *en
 CRB_Object* crb_create_array_i(CRB_Interpreter *inter, int size) {
     CRB_Object* ret = alloc_object(inter, ARRAY_OBJECT);
     ret->u.array.array = open_CRB_Value_slice(size, size);
-//    ret->u.array.size = size;
-//    ret->u.array.alloc_size = size;
-//    ret->u.array.array = MEM_malloc(sizeof(CRB_Value) * size);
     inter->heap.current_heap_size += sizeof(CRB_Value) * size;
     return ret;
 }
@@ -115,8 +112,6 @@ static int _AssocMember_compare(AssocMember a, AssocMember b) {
 CRB_Object* crb_create_assoc_i(CRB_Interpreter *inter) {
     CRB_Object* ret = alloc_object(inter, ASSOC_OBJECT);
     ret->u.assoc.members = open_AssocMember_rbtree(_AssocMember_compare);
-//    ret->u.assoc.member_count = 0;
-//    ret->u.assoc.member = NULL;
     return ret;
 }
 
@@ -142,14 +137,6 @@ CRB_Value* CRB_add_assoc_member(CRB_Interpreter *inter, CRB_Object *assoc, const
     inter->heap.current_heap_size += sizeof(AssocMember);
     AssocMember* value_entry = AssocMember_rbtree_fast_value(tr, where);
     return &value_entry->value;
-//    AssocMember* member_p = MEM_realloc(assoc->u.assoc.members, sizeof(AssocMember) * (assoc->u.assoc.member_count+1));
-//    member_p[assoc->u.assoc.member_count].name = name;
-//    member_p[assoc->u.assoc.member_count].value = *value;
-//    member_p[assoc->u.assoc.member_count].is_final = is_final;
-//    assoc->u.assoc.member = member_p;
-//    assoc->u.assoc.member_count++;
-//    inter->heap.current_heap_size += sizeof(AssocMember);
-//    return &member_p[assoc->u.assoc.member_count-1].value;
 }
 
 CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, CRB_Boolean* is_final) {
@@ -164,20 +151,6 @@ CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, C
         *is_final = value_entry->is_final;
     }
     return &value_entry->value;
-//    if (assoc->u.assoc.member_count == 0) {
-//        return NULL;
-//    }
-//
-//    for (int i = 0; i < assoc->u.assoc.member_count; i++) {
-//        if (!strcmp(assoc->u.assoc.member[i].name, member_name)) {
-//            AssocMember* ret = assoc->u.assoc.member+i;
-//            if (is_final) {
-//                *is_final = ret->is_final;
-//            }
-//            return &ret->value;
-//        }
-//    }
-//    return NULL;
 }
 
 // scope chain
@@ -385,15 +358,9 @@ static void gc_mark(CRB_Object *obj) {
         for (long i=0; i<len; ++i) {
             gc_mark_value(data++);
         }
-//        for (int i = 0; i < obj->u.array.size; i++) {
-//            gc_mark_value(&obj->u.array.array[i]);
-//        }
     } else if (obj->type == ASSOC_OBJECT) {
         AssocMember_RBTREE* tr = obj->u.assoc.members;
         AssocMember_rbtree_ldr(tr, _gc_mark_every_assoc_member, NULL);
-//        for (int i = 0; i < obj->u.assoc.member_count; i++) {
-//            gc_mark_value(&obj->u.assoc.member[i].value);
-//        }
     } else if (obj->type == SCOPE_CHAIN_OBJECT) {
         gc_mark(obj->u.scope_chain.frame);
         gc_mark(obj->u.scope_chain.next);
@@ -436,9 +403,6 @@ static void gc_mark_objects(CRB_Interpreter *inter) {
     if (inter->global_vars != NULL) {
         rbtree_ldr(inter->global_vars, _every_variable_gc_mark_value, NULL);
     }
-//    for (Variable* v = inter->variable; v; v = v->next) {
-//        gc_mark_value(&v->value);
-//    }
 
     for (CRB_LocalEnvironment* lv = inter->top_environment; lv; lv = lv->next) {
         gc_mark(lv->variable);
@@ -458,7 +422,6 @@ static void gc_dispose_object(CRB_Interpreter *inter, CRB_Object *obj) {
             if (CRB_Value_array_ref(CRB_Value_slice_array_ref(obj->u.array.array)) == 1) {
                 inter->heap.current_heap_size -= sizeof(CRB_Value) * CRB_Value_slice_cap(obj->u.array.array);
             }
-//            MEM_free(obj->u.array.array);
             close_CRB_Value_slice(obj->u.array.array);
             break;
         case STRING_OBJECT:
@@ -470,7 +433,6 @@ static void gc_dispose_object(CRB_Interpreter *inter, CRB_Object *obj) {
         case ASSOC_OBJECT:
             inter->heap.current_heap_size -= sizeof(AssocMember) * AssocMember_rbtree_len(obj->u.assoc.members);
             close_AssocMember_rbtree(obj->u.assoc.members);
-//            MEM_free(obj->u.assoc.member);
             break;
         case SCOPE_CHAIN_OBJECT:
             break;
