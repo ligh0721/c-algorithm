@@ -177,6 +177,7 @@ CRB_Value* CRB_search_local_variable(CRB_LocalEnvironment *env, const char *iden
 CRB_FunctionDefinition* CRB_search_function(CRB_Interpreter *inter, const char *name);
 void* CRB_object_get_native_pointer(CRB_Object *obj);
 
+// twchar
 #define CRB_wcslen(s) wcslen(s)
 #define CRB_wcscpy(dst, src) wcscpy(dst, src)
 #define CRB_wcsncpy(dst, src, n) wcsncpy(dst, src, n)
