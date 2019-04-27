@@ -1,3 +1,4 @@
+rec = clock()
 ############################################################
 # Check lexical analyzer
 ############################################################
@@ -708,7 +709,41 @@ c = closure decrement(a) {
 
 c(10);
 
+func _quick_sort(arr, l, r) {
+    k = arr[l]
+    i = l
+    j = r
+    while (i < j) {
+        for (; j>i && k<=arr[j]; j--) {}
+        if (j > i) {
+            arr[i++] = arr[j]
+        }
+        for (; i<j && arr[i]<=k; i++) {}
+        if (i < j) {
+            arr[j--] = arr[i]
+        }
+    }
+    arr[i] = k
+    if (l < i-1) {
+        _quick_sort(arr, l, i-1)
+    }
+    if (i+1 < r) {
+        _quick_sort(arr, i+1, r)
+    }
+}
 
+func quick_sort(arr) {
+    if (arr.len() > 1) {
+        _quick_sort(arr, 0, arr.len()-1)
+    }
+}
+
+arr = [3,4,123,4,123,4,1456,608,45,1,234,123,4,34,3,5,46,54,34,72,978,8,234,6,34,82,34,5,344]
+println(arr)
+quick_sort(arr)
+println(arr)
+
+println("cost " .. clock() - rec .. " ticks")
 ############################################################
 # exception happen and exit
 ############################################################
