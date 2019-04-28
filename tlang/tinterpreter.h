@@ -102,10 +102,7 @@ struct CRB_Object_tag {
     struct CRB_Object_tag *next;
 };
 
-#define crb_is_object_value(type) \
-  ((type) == CRB_STRING_VALUE || (type) == CRB_ARRAY_VALUE\
-   || (type) == CRB_ASSOC_VALUE || (type) == CRB_NATIVE_POINTER_VALUE\
-   || (type) == CRB_SCOPE_CHAIN_VALUE)
+#define crb_is_object_value(type) ((type) == CRB_STRING_VALUE || (type) == CRB_ARRAY_VALUE || (type) == CRB_ASSOC_VALUE || (type) == CRB_NATIVE_POINTER_VALUE || (type) == CRB_SCOPE_CHAIN_VALUE)
 
 // Method
 #define ARRAY_ITERATOR_METHOD_NAME ("__create_array_iterator")
