@@ -64,5 +64,6 @@ Statement* crb_create_continue_statement(const char *label);
 
 Statement* crb_create_try_statement(CRB_Block *try_block, const char *exception, CRB_Block *catch_block, CRB_Block *finally_block);
 Statement* crb_create_throw_statement(Expression *expression);
+Statement* crb_create_import_statement(Expression* name);
 
 #endif //TLANG_TCODE_H

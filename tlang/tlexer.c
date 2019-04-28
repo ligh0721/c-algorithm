@@ -46,7 +46,7 @@ CRB_Char* crb_close_string_literal(void) {
     return new_str;
 }
 
-char* crb_create_identifier(char *str) {
+const char* crb_create_identifier(char *str) {
     char* new_str = crb_malloc(strlen(str) + 1);
     strcpy(new_str, str);
     return new_str;

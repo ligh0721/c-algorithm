@@ -171,8 +171,7 @@ void CRB_set_function_definition(const char *name, int param_count, CRB_NativeFu
     fd->u.native_f.func = func;
 }
 
-void CRB_check_argument_count(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count,
-                              int expected_count) {
+void CRB_check_argument_count(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int expected_count) {
     if (expected_count < 0) {
         return;
     }

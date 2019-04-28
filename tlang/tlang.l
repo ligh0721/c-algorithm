@@ -41,6 +41,7 @@
 <INITIAL>"finally"      return FINALLY;
 <INITIAL>"throw"        return THROW;
 <INITIAL>"final"        return FINAL;
+<INITIAL>"import"       return IMPORT;
 <INITIAL>"("            return LP;
 <INITIAL>")"            return RP;
 <INITIAL>"{"            return LC;

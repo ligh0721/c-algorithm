@@ -7,6 +7,7 @@
 #include "terror.h"
 #include "tmisc.h"
 #include "teval.h"
+#include "heap.h"
 
 
 static void execute_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Statement *statement, StatementResult* result);
@@ -318,6 +319,17 @@ static void execute_throw_statement(CRB_Interpreter *inter, CRB_LocalEnvironment
 }
 
 /*
+ * 执行import语句
+ */
+static void execute_import_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Statement *statement, StatementResult* result) {
+    result->type = NORMAL_STATEMENT_RESULT;
+    int len = CRB_wcstombs_len(statement->u.import_s.name->u.string_value);
+    char* name = crb_execute_malloc(inter, len+1);
+    CRB_wcstombs(statement->u.import_s.name->u.string_value, name);
+    CRB_import_model(inter, name);
+}
+
+/*
  * 执行语句
  */
 static void execute_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Statement *statement, StatementResult* result) {
@@ -355,6 +367,9 @@ static void execute_statement(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
             break;
         case THROW_STATEMENT:
             execute_throw_statement(inter, env, statement, result);
+            break;
+        case IMPORT_STATEMENT:
+            execute_import_statement(inter, env, statement, result);
             break;
         case STATEMENT_TYPE_COUNT_PLUS_1:   /* FALLTHRU */
         default:

@@ -259,7 +259,7 @@ static void print_stack_trace(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
         }
 
         // print line number
-        fprintf(stderr, "line ");
+        fprintf(stderr, "module %s, line ", inter->current_model_name);
         CRB_Char* str = CRB_value_to_string(inter, NULL, line_number->u.int_value, line_number, NULL);
         CRB_print_wcs(stderr, str);
         MEM_free(str);

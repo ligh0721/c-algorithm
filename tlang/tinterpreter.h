@@ -374,6 +374,7 @@ typedef enum {
     CONTINUE_STATEMENT,
     TRY_STATEMENT,
     THROW_STATEMENT,
+    IMPORT_STATEMENT,
     STATEMENT_TYPE_COUNT_PLUS_1
 } StatementType;
 
@@ -457,11 +458,15 @@ typedef struct {
     Expression  *exception;
 } ThrowStatement;
 
+typedef struct {
+    Expression *name;
+} ImportStatement;
+
 struct Statement_tag {
     StatementType       type;
     int                 line_number;
     union {
-        Expression      *expression_s;
+        Expression*     expression_s;
         GlobalStatement global_s;
         IfStatement     if_s;
         WhileStatement  while_s;
@@ -472,6 +477,7 @@ struct Statement_tag {
         ReturnStatement return_s;
         TryStatement    try_s;
         ThrowStatement  throw_s;
+        ImportStatement import_s;
     } u;
 };
 
@@ -534,6 +540,7 @@ struct CRB_Interpreter_tag {
     RBTREE*             fake_methods;  // RBTREE<FakeMethodDefinition*>
     StatementList*      statement_list;
     struct lnode*       last_statement_pos;
+    const char*         current_model_name;
     int                 current_line_number;
     Stack               stack;
     Heap                heap;

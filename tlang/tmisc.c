@@ -185,7 +185,6 @@ CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, const char *identifie
 
 Variable* crb_search_global_variable(CRB_Interpreter *inter, const char *identifier) {
     if (inter->global_vars == NULL) {
-        printf("@@@@@@crb_search_global_variable\n");
         return NULL;
     }
     NamedItemEntry key = {identifier};
@@ -195,7 +194,6 @@ Variable* crb_search_global_variable(CRB_Interpreter *inter, const char *identif
 
 CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Boolean *is_final) {
     if (inter->global_vars == NULL) {
-        printf("@@@@@@CRB_search_global_variable\n");
         return NULL;
     }
     int ok;

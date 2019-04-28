@@ -688,7 +688,7 @@ void CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int li
 void CRB_call_function_by_name(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const char *func_name, int arg_count, CRB_Value *args, CRB_Value *result) {
     CRB_FunctionDefinition* fd = CRB_search_function(inter, func_name);
     if (fd == NULL) {
-        crb_runtime_error(inter, env, line_number, FUNCTION_NOT_FOUND_ERR, "name", func_name, CRB_MESSAGE_ARGUMENT_END);
+        crb_runtime_error(inter, env, line_number, FUNCTION_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", func_name, CRB_MESSAGE_ARGUMENT_END);
     }
     CRB_Value func;
     CRB_create_closure(env, fd, &func);

@@ -36,7 +36,7 @@ extern int yyerror(char const *str);
         LP RP LC RC LB RB LF SEMICOLON COLON COMMA ASSIGN_T LOGICAL_AND LOGICAL_OR
         EQ NE GT GE LT LE CONCAT ADD SUB MUL DIV MOD TRUE_T FALSE_T EXCLAMATION DOT
         ADD_ASSIGN_T SUB_ASSIGN_T MUL_ASSIGN_T DIV_ASSIGN_T MOD_ASSIGN_T
-        INCREMENT DECREMENT CLOSURE GLOBAL_T TRY CATCH FINALLY THROW FINAL
+        INCREMENT DECREMENT CLOSURE GLOBAL_T TRY CATCH FINALLY THROW FINAL IMPORT
 %type   <parameter_list> parameter_list
 %type   <argument_list> argument_list
 %type   <expression> expression expression_opt
@@ -48,10 +48,9 @@ extern int yyerror(char const *str);
 %type   <expression_list> expression_list
 %type   <assoc_expression> assoc_expression
 %type   <assoc_expression_list> assoc_expression_list
-%type   <statement> statement global_statement
+%type   <statement> statement global_statement import_statement
         if_statement while_statement for_statement foreach_statement
-        return_statement break_statement continue_statement try_statement
-        throw_statement
+        return_statement break_statement continue_statement try_statement throw_statement
 %type   <statement_list> statement_list
 %type   <block> block
 %type   <elif> elif
@@ -431,6 +430,7 @@ statement
         | continue_statement
         | try_statement
         | throw_statement
+        | import_statement
         ;
 
 global_statement
@@ -576,6 +576,13 @@ throw_statement
         : THROW expression statement_end
         {
             $$ = crb_create_throw_statement($2);
+        }
+        ;
+
+import_statement
+        : IMPORT STRING_LITERAL
+        {
+            $$ = crb_create_import_statement($2);
         }
         ;
 

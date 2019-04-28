@@ -281,8 +281,6 @@ void crb_function_define(const char *identifier, CRB_ParameterList *parameter_li
     CRB_FunctionDefinition* f = create_function_definition(identifier, parameter_list, CRB_FALSE, block);
     CRB_Interpreter* inter = crb_get_current_interpreter();
     rbtree_set(inter->functions, ptr_value(f));
-//    f->next = inter->function_list;
-//    inter->function_list = f;
 }
 
 /*
@@ -419,6 +417,9 @@ ElifList* crb_chain_elif_list(ElifList* list, Elif* elif) {
     return chain_list(list, elif);
 }
 
+/*
+ * 创建while语句
+ */
 Statement* crb_create_while_statement(const char *label, Expression *condition, CRB_Block *block) {
     Statement* st = alloc_statement(WHILE_STATEMENT);
     st->u.while_s.label = label;
@@ -427,6 +428,9 @@ Statement* crb_create_while_statement(const char *label, Expression *condition, 
     return st;
 }
 
+/*
+ * 创建for语句
+ */
 Statement* crb_create_for_statement(const char *label, Expression *init, Expression *cond, Expression *post, CRB_Block *block) {
     Statement* st = alloc_statement(FOR_STATEMENT);
     st->u.for_s.label = label;
@@ -437,6 +441,9 @@ Statement* crb_create_for_statement(const char *label, Expression *init, Express
     return st;
 }
 
+/*
+ * 创建foreach语句
+ */
 Statement* crb_create_foreach_statement(const char *label, const char *variable, Expression *collection, CRB_Block *block) {
     Statement* st = alloc_statement(FOREACH_STATEMENT);
     st->u.foreach_s.label = label;
@@ -446,18 +453,27 @@ Statement* crb_create_foreach_statement(const char *label, const char *variable,
     return st;
 }
 
+/*
+ * 创建break语句
+ */
 Statement* crb_create_break_statement(const char* label) {
     Statement* st = alloc_statement(BREAK_STATEMENT);
     st->u.break_s.label = label;
     return st;
 }
 
+/*
+ * 创建continue语句
+ */
 Statement* crb_create_continue_statement(const char *label) {
     Statement* st = alloc_statement(CONTINUE_STATEMENT);
     st->u.continue_s.label = label;
     return st;
 }
 
+/*
+ * 创建try语句
+ */
 Statement* crb_create_try_statement(CRB_Block *try_block, const char *exception, CRB_Block *catch_block, CRB_Block *finally_block) {
     Statement* st = alloc_statement(TRY_STATEMENT);
     st->u.try_s.try_block = try_block;
@@ -467,8 +483,20 @@ Statement* crb_create_try_statement(CRB_Block *try_block, const char *exception,
     return st;
 }
 
+/*
+ * 创建throw语句
+ */
 Statement* crb_create_throw_statement(Expression *expression) {
     Statement* st = alloc_statement(THROW_STATEMENT);
     st->u.throw_s.exception = expression;
+    return st;
+}
+
+/*
+ * 创建call语句
+ */
+Statement* crb_create_import_statement(Expression* name) {
+    Statement* st = alloc_statement(IMPORT_STATEMENT);
+    st->u.import_s.name = name;
     return st;
 }
