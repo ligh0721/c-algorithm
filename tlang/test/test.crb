@@ -1,4 +1,1 @@
 import "test2"
-
-quick_sort(arr)
-println(arr)
