@@ -59,13 +59,13 @@ void crb_add_std_fp(CRB_Interpreter *inter) {
     CRB_Value fp_value;
     fp_value.type = CRB_NATIVE_POINTER_VALUE;
     fp_value.u.object = crb_create_native_pointer_i(inter, stdin, &st_file_type_info);
-    CRB_add_global_variable(inter, "STDIN", &fp_value, CRB_TRUE);
+    CRB_add_global_variable(inter, NULL, "STDIN", &fp_value, CRB_TRUE);
 
     fp_value.u.object = crb_create_native_pointer_i(inter, stdout, &st_file_type_info);
-    CRB_add_global_variable(inter, "STDOUT", &fp_value, CRB_TRUE);
+    CRB_add_global_variable(inter, NULL, "STDOUT", &fp_value, CRB_TRUE);
 
     fp_value.u.object = crb_create_native_pointer_i(inter, stderr, &st_file_type_info);
-    CRB_add_global_variable(inter, "STDERR", &fp_value, CRB_TRUE);
+    CRB_add_global_variable(inter, NULL, "STDERR", &fp_value, CRB_TRUE);
 }
 
 // object functions
@@ -152,14 +152,15 @@ inline void CRB_array_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB
     }
 }
 
-CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *inter, const char *name, int param_count, CRB_NativeFunctionFunc *func) {
+CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *inter, CRB_Module *module, const char *name, int param_count, CRB_NativeFunctionFunc *func) {
+    RBTREE* global_funcs = CRB_global_funcs(inter, module);
     CRB_FunctionDefinition* fd = crb_malloc(sizeof(CRB_FunctionDefinition));
     fd->name = name;
     fd->type = CRB_NATIVE_FUNCTION_DEFINE;
     fd->is_closure = CRB_FALSE;
     fd->u.native_f.param_count = param_count;
     fd->u.native_f.func = func;
-    rbtree_set(inter->functions, ptr_value(fd));
+    rbtree_set(global_funcs, ptr_value(fd));
     return fd;
 }
 
@@ -363,18 +364,18 @@ static void nv_str_func(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int a
 }
 
 void crb_add_native_functions(CRB_Interpreter *inter) {
-    CRB_add_native_function(inter, "print", -1, nv_print_func);
-    CRB_add_native_function(inter, "println", -1, nv_println_func);
-    CRB_add_native_function(inter, "clock", 0, nv_clock_func);
-    CRB_add_native_function(inter, "fopen", 2, nv_fopen_func);
-    CRB_add_native_function(inter, "fclose", 1, nv_fclose_func);
-    CRB_add_native_function(inter, "fgets", 1, nv_fgets_func);
-    CRB_add_native_function(inter, "fputs", 2, nv_fputs_func);
-    CRB_add_native_function(inter, "array", -1, nv_array_func);
-    CRB_add_native_function(inter, "object", 0, nv_object_func);
-    CRB_add_native_function(inter, "exception", 1, nv_exception_func);
-    CRB_add_native_function(inter, "exit", 1, nv_exit_func);
-    CRB_add_native_function(inter, "str", 1, nv_str_func);
+    CRB_add_native_function(inter, NULL, "print", -1, nv_print_func);
+    CRB_add_native_function(inter, NULL, "println", -1, nv_println_func);
+    CRB_add_native_function(inter, NULL, "clock", 0, nv_clock_func);
+    CRB_add_native_function(inter, NULL, "fopen", 2, nv_fopen_func);
+    CRB_add_native_function(inter, NULL, "fclose", 1, nv_fclose_func);
+    CRB_add_native_function(inter, NULL, "fgets", 1, nv_fgets_func);
+    CRB_add_native_function(inter, NULL, "fputs", 2, nv_fputs_func);
+    CRB_add_native_function(inter, NULL, "array", -1, nv_array_func);
+    CRB_add_native_function(inter, NULL, "object", 0, nv_object_func);
+    CRB_add_native_function(inter, NULL, "exception", 1, nv_exception_func);
+    CRB_add_native_function(inter, NULL, "exit", 1, nv_exit_func);
+    CRB_add_native_function(inter, NULL, "str", 1, nv_str_func);
 }
 
 // fake methods

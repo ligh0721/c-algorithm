@@ -15,6 +15,8 @@
 
 
 extern FILE* yyin;
+extern int yyparse(void);
+
 static CRB_Interpreter *st_current_interpreter;
 
 CRB_Interpreter* crb_get_current_interpreter(void) {
@@ -44,12 +46,13 @@ CRB_Interpreter* CRB_create_interpreter(void) {
     CRB_Interpreter* interpreter = MEM_storage_malloc(storage, sizeof(struct CRB_Interpreter_tag));
     interpreter->interpreter_storage = storage;
     interpreter->execute_storage = MEM_open_storage(0);
-    interpreter->global_vars = open_rbtree(_crb_asc_order_named_item);
-    interpreter->functions = open_rbtree(_crb_asc_order_named_item);
+    interpreter->modules = open_rbtree(_crb_asc_order_named_item);
+    interpreter->global_vars000 = open_rbtree(_crb_asc_order_named_item);
+    interpreter->global_funcs000 = open_rbtree(_crb_asc_order_named_item);
     interpreter->fake_methods = open_rbtree(_asc_order_fake_method);
     interpreter->statement_list = NULL;
     interpreter->last_statement_pos = NULL;
-    interpreter->current_model_name = "<main>";
+    interpreter->current_module = NULL;
     interpreter->current_line_number = 1;
     interpreter->stack.stack_alloc_size = 0;
     interpreter->stack.stack_pointer = 0;
@@ -111,7 +114,6 @@ static void show_error_stack_trace(CRB_Interpreter *inter) {
 }
 
 static void do_compile(CRB_Interpreter *inter) {
-    extern int yyparse(void);
     if ((setjmp(inter->current_recovery_environment.environment)) == 0) {
         if (yyparse()) {
             fprintf(stderr, "Error ! Error ! Error !\n");
@@ -128,12 +130,11 @@ static void do_compile(CRB_Interpreter *inter) {
 
 void CRB_compile(CRB_Interpreter *interpreter, FILE *fp) {
     crb_set_current_interpreter(interpreter);
-    interpreter->current_model_name = "<main>";
+    interpreter->current_module = CRB_add_module_if_not_exist(interpreter, "<main>", NULL);
     interpreter->current_line_number = 1;
     interpreter->input_mode = CRB_FILE_INPUT_MODE;
 
     yyin = fp;
-
     do_compile(interpreter);
 
     crb_reset_string_literal_buffer();
@@ -142,6 +143,19 @@ void CRB_compile(CRB_Interpreter *interpreter, FILE *fp) {
 void CRB_compile_string(CRB_Interpreter *interpreter, const char** lines) {
     crb_set_current_interpreter(interpreter);
     crb_set_source_string(lines);
+    interpreter->current_module = CRB_add_module_if_not_exist(interpreter, "<main>", NULL);
+    interpreter->current_line_number = 1;
+    interpreter->input_mode = CRB_STRING_INPUT_MODE;
+
+    do_compile(interpreter);
+
+    crb_reset_string_literal_buffer();
+}
+
+void CRB_compile_builtin_string(CRB_Interpreter *interpreter, const char** lines) {
+    crb_set_current_interpreter(interpreter);
+    crb_set_source_string(lines);
+    interpreter->current_module =  NULL;
     interpreter->current_line_number = 1;
     interpreter->input_mode = CRB_STRING_INPUT_MODE;
 
@@ -153,6 +167,7 @@ void CRB_compile_string(CRB_Interpreter *interpreter, const char** lines) {
 void CRB_compile_readline(CRB_Interpreter* interpreter, ReadLineModeParams* params) {
     crb_set_current_interpreter(interpreter);
     crb_set_readline(params);
+    interpreter->current_module = CRB_add_module_if_not_exist(interpreter, "<main>", NULL);
     interpreter->current_line_number = 1;
     interpreter->input_mode = CRB_READLINE_INPUT_MODE;
 
@@ -178,7 +193,7 @@ void CRB_set_command_line_args(CRB_Interpreter *interpreter, int argc, char **ar
         elem.u.object = crb_create_crowbar_string_i(interpreter, wc_str);
         CRB_array_set(interpreter, NULL, args.u.object, i, &elem);
     }
-    CRB_add_global_variable(interpreter, "ARGS", &args, CRB_TRUE);
+    CRB_add_global_variable(interpreter, NULL, "ARGS", &args, CRB_TRUE);
 
     CRB_shrink_stack(interpreter, 1);
 }
@@ -209,7 +224,7 @@ void CRB_interpret(CRB_Interpreter *interpreter) {
 }
 
 static void release_global_strings(CRB_Interpreter *interpreter) {
-    rbtree_clear(interpreter->global_vars);
+//    rbtree_clear(interpreter->global_vars);
 }
 
 void CRB_dispose_interpreter(CRB_Interpreter *interpreter) {
@@ -218,27 +233,18 @@ void CRB_dispose_interpreter(CRB_Interpreter *interpreter) {
     if (interpreter->execute_storage) {
         MEM_dispose_storage(interpreter->execute_storage);
     }
-    close_rbtree(interpreter->global_vars);
-    interpreter->global_vars = NULL;
+    close_rbtree(interpreter->global_vars000);
+    interpreter->global_vars000 = NULL;
+    // TODO: dispose modules global_vars
     crb_garbage_collect(interpreter);
     DBG_assert(interpreter->heap.current_heap_size == 0, ("%d bytes leaked.\n", interpreter->heap.current_heap_size));
     MEM_free(interpreter->stack.stack);
 //    crb_dispose_regexp_literals(interpreter);
-    close_rbtree(interpreter->functions);
+    close_rbtree(interpreter->global_funcs000);
+    interpreter->global_funcs000 = NULL;
     close_rbtree(interpreter->fake_methods);
     MEM_dispose_storage(interpreter->interpreter_storage);
 }
-
-struct _interpreter_state {
-    RBTREE* global_vars;
-    RBTREE* functions;
-    StatementList* statement_list;
-    struct lnode* last_statement_pos;
-    const char* current_model_name;
-
-    int current_line_number;
-    CRB_InputMode input_mode;
-};
 
 static inline void save_interpreter_state(CRB_Interpreter* interpreter, CRB_Interpreter* state) {
 //    memcpy(state, interpreter, sizeof(CRB_Interpreter));
@@ -246,7 +252,7 @@ static inline void save_interpreter_state(CRB_Interpreter* interpreter, CRB_Inte
 //    state->functions = interpreter->functions;
     state->statement_list = interpreter->statement_list;
     state->last_statement_pos = interpreter->last_statement_pos;
-    state->current_model_name = interpreter->current_model_name;
+    state->current_module = interpreter->current_module;
     state->current_line_number = interpreter->current_line_number;
     state->input_mode = interpreter->input_mode;
     state->current_recovery_environment = interpreter->current_recovery_environment;
@@ -258,13 +264,19 @@ static inline void recovery_interpreter_state(CRB_Interpreter* interpreter, cons
 //    interpreter->functions = state->functions;
     interpreter->statement_list = state->statement_list;
     interpreter->last_statement_pos = state->last_statement_pos;
-    interpreter->current_model_name = state->current_model_name;
+    interpreter->current_module = state->current_module;
     interpreter->current_line_number = state->current_line_number;
     interpreter->input_mode = state->input_mode;
     interpreter->current_recovery_environment = state->current_recovery_environment;
 }
 
 void CRB_import_model(CRB_Interpreter* interpreter, const char* name) {
+    CRB_Boolean exist;
+    CRB_Module* module = CRB_add_module_if_not_exist(interpreter, name, &exist);
+    if (exist) {
+        return;
+    }
+
     char* file_name = MEM_malloc(strlen(name)+5);
     sprintf(file_name, "%s.crb", name);
     FILE* fp = fopen(file_name, "r");
@@ -281,7 +293,7 @@ void CRB_import_model(CRB_Interpreter* interpreter, const char* name) {
 //    interpreter->functions = open_rbtree(_crb_asc_order_named_item);
     interpreter->statement_list = NULL;
     interpreter->last_statement_pos = NULL;
-    interpreter->current_model_name = name;
+    interpreter->current_module = module;
     interpreter->current_line_number = 1;
     interpreter->input_mode = CRB_FILE_INPUT_MODE;
 //    crb_add_native_functions(interpreter);

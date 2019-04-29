@@ -28,6 +28,7 @@ typedef struct {
 CRB_Interpreter *CRB_create_interpreter(void);
 void CRB_compile(CRB_Interpreter* interpreter, FILE *fp);
 void CRB_compile_string(CRB_Interpreter* interpreter, const char** lines);
+void CRB_compile_builtin_string(CRB_Interpreter *interpreter, const char** lines);
 void CRB_compile_readline(CRB_Interpreter* interpreter, ReadLineModeParams* params);
 void CRB_set_command_line_args(CRB_Interpreter* interpreter, int argc, char** argv);
 void CRB_interpret(CRB_Interpreter* interpreter);
@@ -65,7 +66,11 @@ typedef LLIST CRB_ParameterList;  // LLIST<char*>
 typedef struct CRB_Block_tag CRB_Block;
 typedef struct CRB_FunctionDefinition_tag CRB_FunctionDefinition;
 typedef struct CRB_LocalEnvironment_tag CRB_LocalEnvironment;
+typedef struct CRB_Module_tag CRB_Module;
 
+#define CRB_env_module(inter, env) ((env) ? (env)->module : (inter)->current_module)
+#define CRB_global_vars(inter, module) ((module) ? (module)->global_vars : (inter)->global_vars000)
+#define CRB_global_funcs(inter, module) ((module) ? (module)->global_funcs : (inter)->global_funcs000)
 
 typedef struct {
     CRB_FunctionDefinition *function;
@@ -116,6 +121,12 @@ struct CRB_FunctionDefinition_tag {
         } native_f;
     } u;
     struct CRB_FunctionDefinition_tag   *next;
+};
+
+struct CRB_Module_tag {
+    const char* name;
+    RBTREE*     global_vars;  // RBTREE<Variable*>
+    RBTREE*     global_funcs;  // RBTREE<CRB_FunctionDefinition*>
 };
 
 // Error
@@ -171,11 +182,14 @@ void CRB_call_function_by_name(CRB_Interpreter *inter, CRB_LocalEnvironment *env
 void CRB_call_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Object *obj, const char *method_name, int arg_count, CRB_Value *args, CRB_Value *result);
 
 // tmisc
-CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Value *value, CRB_Boolean is_final);
-CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Boolean *is_final);
+CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, CRB_Module* module, const char *identifier, CRB_Value *value, CRB_Boolean is_final);
+CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, CRB_Module* module, const char *identifier, CRB_Boolean *is_final);
 CRB_Value* CRB_add_local_variable(CRB_Interpreter *inter, CRB_LocalEnvironment *env, const char *identifier, CRB_Value *value, CRB_Boolean is_final);
 CRB_Value* CRB_search_local_variable(CRB_LocalEnvironment *env, const char *identifier, CRB_Boolean *is_final);
-CRB_FunctionDefinition* CRB_search_function(CRB_Interpreter *inter, const char *name);
+CRB_FunctionDefinition* CRB_search_function(CRB_Interpreter *inter, CRB_Module* module, const char *name);
+CRB_Module* CRB_add_module(CRB_Interpreter* inter, const char* name);
+CRB_Module* CRB_add_module_if_not_exist(CRB_Interpreter* inter, const char* name, CRB_Boolean* exist);
+CRB_Module* CRB_search_module(CRB_Interpreter* inter, const char* name);
 void* CRB_object_get_native_pointer(CRB_Object *obj);
 
 // twchar
@@ -202,7 +216,7 @@ void CRB_array_set(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object
 void CRB_array_append(CRB_Interpreter *inter, CRB_Object *obj, CRB_Value *new_value);
 void CRB_array_insert(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int pos, CRB_Value *new_value, int line_number);
 void CRB_array_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int pos, int line_number, CRB_Value *popped);
-CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, const char *name, int param_count, CRB_NativeFunctionFunc *func);
+CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, CRB_Module *module, const char *name, int param_count, CRB_NativeFunctionFunc *func);
 void CRB_set_function_definition(const char *name, int param_count, CRB_NativeFunctionFunc *func, CRB_FunctionDefinition *fd);
 void CRB_check_argument_count(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int expected_count);
 //#define CRB_check_argument_count_in_native(inter, env, arg_count, expected_count) (CRB_check_argument_count(inter, env, __LINE__, arg_count, expected_count))

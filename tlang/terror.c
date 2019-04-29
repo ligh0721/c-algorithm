@@ -157,7 +157,7 @@ void crb_compile_error(CompileError id, ...) {
     int line_number = inter->current_line_number;
     crb_vstr_clear(&message);
     format_message(inter, NULL, line_number, &crb_compile_error_message_format[id], &message, ap);
-    fprintf(stderr, "module %s, line %d: ", inter->current_model_name, line_number);
+    fprintf(stderr, "module %s, line %d: ", inter->current_module->name, line_number);
     CRB_print_wcs_ln(stderr, message.string);
     va_end(ap);
 
@@ -169,7 +169,7 @@ void crb_compile_error(CompileError id, ...) {
 static void throw_runtime_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Char *message, CRB_ErrorDefinition *def) {
     int stack_count = 0;
 
-    CRB_Value* exception_class = CRB_search_global_variable(inter, def->class_name, NULL);
+    CRB_Value* exception_class = CRB_search_global_variable(inter, NULL, def->class_name, NULL);
 
     CRB_Value message_value;
     message_value.type = CRB_STRING_VALUE;

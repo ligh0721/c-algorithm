@@ -44,7 +44,7 @@ static void execute_global_statement(CRB_Interpreter *inter, CRB_LocalEnvironmen
             }
         }
 
-        Variable* variable = crb_search_global_variable(inter, identifier_name);
+        Variable* variable = crb_search_global_variable(inter, CRB_env_module(inter, env), identifier_name);
         if (variable == NULL) {
             crb_runtime_error(inter, env, statement->line_number, GLOBAL_VARIABLE_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", identifier_name, CRB_MESSAGE_ARGUMENT_END);
         }
@@ -201,10 +201,10 @@ static CRB_Value* assign_to_variable(CRB_Interpreter *inter, CRB_LocalEnvironmen
         if (env != NULL) {
             ret = CRB_add_local_variable(inter, env, name, value, CRB_FALSE);
         } else {
-            if (CRB_search_function(inter, name)) {
+            if (CRB_search_function(inter, CRB_env_module(inter, env), name)) {
                 crb_runtime_error(inter, env, line_number, FUNCTION_EXISTS_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", name, CRB_MESSAGE_ARGUMENT_END);
             }
-            ret = CRB_add_global_variable(inter,  name, value, CRB_FALSE);
+            ret = CRB_add_global_variable(inter, CRB_env_module(inter, env), name, value, CRB_FALSE);
         }
     } else {
         *ret = *value;

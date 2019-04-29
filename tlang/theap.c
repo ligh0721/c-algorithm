@@ -259,7 +259,7 @@ static void print_stack_trace(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
         }
 
         // print line number
-        fprintf(stderr, "module %s, line ", inter->current_model_name);
+        fprintf(stderr, "module %s, line ", CRB_env_module(inter, env)->name);
         CRB_Char* str = CRB_value_to_string(inter, NULL, line_number->u.int_value, line_number, NULL);
         CRB_print_wcs(stderr, str);
         MEM_free(str);
@@ -404,9 +404,17 @@ static void gc_mark_ref_in_native_method(CRB_LocalEnvironment *env) {
     }
 }
 
-static int _every_variable_gc_mark_value(const VALUE* value, void *param) {
+static int _every_variable_gc_mark_value(const VALUE* value, void* param) {
     Variable* v = (Variable*)value->ptr_value;
     gc_mark_value(&v->value);
+    return 0;
+}
+
+static int _every_module(const VALUE* value, void* param) {
+    CRB_Module* module = (CRB_Module*)value->ptr_value;
+    if (module->global_vars != NULL) {
+        rbtree_ldr(module->global_vars, _every_variable_gc_mark_value, NULL);
+    }
     return 0;
 }
 
@@ -415,16 +423,18 @@ static void gc_mark_objects(CRB_Interpreter *inter) {
         gc_reset_mark(obj);
     }
 
-    if (inter->global_vars != NULL) {
-        rbtree_ldr(inter->global_vars, _every_variable_gc_mark_value, NULL);
+    if (inter->global_vars000 != NULL) {
+        rbtree_ldr(inter->global_vars000, _every_variable_gc_mark_value, NULL);
     }
 
-    for (CRB_LocalEnvironment* lv = inter->top_environment; lv; lv = lv->next) {
+    rbtree_ldr(inter->modules, _every_module, NULL);
+
+    for (CRB_LocalEnvironment* lv=inter->top_environment; lv; lv=lv->next) {
         gc_mark(lv->variable);
         gc_mark_ref_in_native_method(lv);
     }
 
-    for (int i = 0; i < inter->stack.stack_pointer; i++) {
+    for (int i=0; i<inter->stack.stack_pointer; ++i) {
         gc_mark_value(&inter->stack.stack[i]);
     }
 

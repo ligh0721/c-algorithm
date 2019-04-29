@@ -172,33 +172,36 @@ void crb_vstr_append_character(VString *v, CRB_Char ch) {
     v->string[current_len+1] = L'\0';
 }
 
-CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Value *value, CRB_Boolean is_final) {
+CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, CRB_Module* module, const char *identifier, CRB_Value *value, CRB_Boolean is_final) {
+    RBTREE* global_vars = CRB_global_vars(inter, module);
     Variable* new_var = crb_execute_malloc(inter, sizeof(Variable));
     new_var->is_final = is_final;
     char* name = crb_execute_malloc(inter, strlen(identifier) + 1);
     strcpy(name, identifier);
     new_var->name = name;
     new_var->value = *value;
-    rbtree_set(inter->global_vars, ptr_value(new_var));
+    rbtree_set(global_vars, ptr_value(new_var));
     return &new_var->value;
 }
 
-Variable* crb_search_global_variable(CRB_Interpreter *inter, const char *identifier) {
-    if (inter->global_vars == NULL) {
+Variable* crb_search_global_variable(CRB_Interpreter *inter, CRB_Module* module, const char *identifier) {
+    RBTREE* global_vars = CRB_global_vars(inter, module);
+    if (global_vars == NULL) {
         return NULL;
     }
     NamedItemEntry key = {identifier};
-    VALUE res = rbtree_get(inter->global_vars, ptr_value(&key), NULL);
+    VALUE res = rbtree_get(global_vars, ptr_value(&key), NULL);
     return (Variable*)res.ptr_value;
 }
 
-CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, const char *identifier, CRB_Boolean *is_final) {
-    if (inter->global_vars == NULL) {
+CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, CRB_Module* module, const char *identifier, CRB_Boolean *is_final) {
+    RBTREE* global_vars = CRB_global_vars(inter, module);
+    if (global_vars == NULL) {
         return NULL;
     }
     int ok;
     NamedItemEntry key = {identifier};
-    VALUE res = rbtree_get(inter->global_vars, ptr_value(&key), &ok);
+    VALUE res = rbtree_get(global_vars, ptr_value(&key), &ok);
     if (ok) {
         Variable* var = (Variable*)res.ptr_value;
         if (is_final) {
@@ -231,15 +234,16 @@ CRB_Value* CRB_search_local_variable(CRB_LocalEnvironment *env, const char *iden
     return NULL;
 }
 
-CRB_FunctionDefinition* CRB_search_function(CRB_Interpreter *inter, const char *name) {
+CRB_FunctionDefinition* CRB_search_function(CRB_Interpreter *inter, CRB_Module* module, const char *name) {
+    RBTREE* global_funcs = CRB_global_funcs(inter, module);
     NamedItemEntry key = {name};
-    VALUE res = rbtree_get(inter->functions, ptr_value(&key), NULL);
+    VALUE res = rbtree_get(global_funcs, ptr_value(&key), NULL);
     return (CRB_FunctionDefinition*)res.ptr_value;
 }
 
 CRB_FunctionDefinition* crb_search_function_in_compile(const char *name) {
     CRB_Interpreter* inter = crb_get_current_interpreter();
-    return CRB_search_function(inter, name);
+    return CRB_search_function(inter, inter->current_module, name);
 }
 
 struct _fake_method_entry {
@@ -251,6 +255,45 @@ FakeMethodDefinition* crb_search_fake_method(CRB_Interpreter *inter, CRB_LocalEn
     struct _fake_method_entry key = {fm->object->type, fm->method_name};
     VALUE res = rbtree_get(inter->fake_methods, ptr_value(&key), NULL);
     return (FakeMethodDefinition*)res.ptr_value;
+}
+
+CRB_Module* CRB_add_module(CRB_Interpreter* inter, const char* name) {
+    CRB_Module* module = (CRB_Module*)crb_malloc(sizeof(CRB_Module));
+    module->name = name;
+    module->global_vars = open_rbtree(_crb_asc_order_named_item);
+    module->global_funcs = open_rbtree(_crb_asc_order_named_item);
+    rbtree_set(inter->modules, ptr_value(module));
+    return module;
+}
+
+CRB_Module* CRB_add_module_if_not_exist(CRB_Interpreter* inter, const char* name, CRB_Boolean* exist) {
+    CRB_Module* module;
+    RBNODE* parent;
+    NamedItemEntry key = {name};
+    RBNODE** where = rbtree_fast_get(inter->modules, ptr_value(&key), &parent);
+    if (rbtree_node_not_found(inter->modules, where)) {
+        module = (CRB_Module*)crb_malloc(sizeof(CRB_Module));
+        module->name = name;
+        module->global_vars = open_rbtree(_crb_asc_order_named_item);
+        module->global_funcs = open_rbtree(_crb_asc_order_named_item);
+        RBNODE *node = rbtree_open_node(inter->modules, ptr_value(module), parent);
+        rbtree_fast_set(inter->modules, where, node);
+        if (exist != NULL) {
+            *exist = CRB_FALSE;
+        }
+    } else {
+        module = (CRB_Module*)rbtree_fast_value(inter->modules, where)->ptr_value;
+        if (exist != NULL) {
+            *exist = CRB_TRUE;
+        }
+    }
+    return module;
+}
+
+CRB_Module* CRB_search_module(CRB_Interpreter* inter, const char* name) {
+    NamedItemEntry key = {name};
+    VALUE res = rbtree_get(inter->modules, ptr_value(&key), NULL);
+    return (CRB_Module*)res.ptr_value;
 }
 
 struct _value_to_string_params {

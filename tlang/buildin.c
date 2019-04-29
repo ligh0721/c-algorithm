@@ -5,6 +5,8 @@
 #include "tinterpreter.h"
 
 
+
+
 static const char* st_builtin_src[] = {
         "func create_exception_class(parent) {\n",
             "this = {};\n",
@@ -125,6 +127,6 @@ static const char **st_src_array[] = {
 
 void crb_compile_built_in_script(CRB_Interpreter *inter) {
     for (int i = 0; i < sizeof(st_src_array) / sizeof(st_src_array[0]); i++) {
-        CRB_compile_string(inter, st_src_array[i]);
+        CRB_compile_builtin_string(inter, st_src_array[i]);
     }
 }

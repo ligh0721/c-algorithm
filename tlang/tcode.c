@@ -280,7 +280,8 @@ void crb_function_define(const char *identifier, CRB_ParameterList *parameter_li
     }
     CRB_FunctionDefinition* f = create_function_definition(identifier, parameter_list, CRB_FALSE, block);
     CRB_Interpreter* inter = crb_get_current_interpreter();
-    rbtree_set(inter->functions, ptr_value(f));
+    RBTREE* global_funcs = inter->current_module ? inter->current_module->global_funcs : inter->global_funcs000;
+    rbtree_set(global_funcs, ptr_value(f));
 }
 
 /*

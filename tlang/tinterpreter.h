@@ -502,7 +502,9 @@ typedef struct RefInNativeFunc_tag {
     struct RefInNativeFunc_tag *next;
 } RefInNativeFunc;
 
+// 作用域
 struct CRB_LocalEnvironment_tag {
+    CRB_Module          *module;
     const char          *current_function_name;
     int                 caller_line_number;
     CRB_Object          *variable;      /* ScopeChain */
@@ -535,12 +537,13 @@ typedef enum {
 struct CRB_Interpreter_tag {
     MEM_Storage         interpreter_storage;
     MEM_Storage         execute_storage;
-    RBTREE*             global_vars;  // RBTREE<Variable*>
-    RBTREE*             functions;  // RBTREE<CRB_FunctionDefinition*>
+    RBTREE*             modules;  // RBTREE<CRB_Module*>
+    RBTREE*             global_vars000;  // RBTREE<Variable*>
+    RBTREE*             global_funcs000;  // RBTREE<CRB_FunctionDefinition*>
     RBTREE*             fake_methods;  // RBTREE<FakeMethodDefinition*>
     StatementList*      statement_list;
     struct lnode*       last_statement_pos;
-    const char*         current_model_name;
+    CRB_Module*         current_module;
     int                 current_line_number;
     Stack               stack;
     Heap                heap;
