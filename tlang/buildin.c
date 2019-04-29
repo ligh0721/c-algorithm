@@ -16,7 +16,7 @@ static const char* st_builtin_src[] = {
                 "return e;\n",
             "};\n",
             "this.child_of = closure(o) {\n",
-                "for p=this; p!=null; p=p.parent {\n",
+                "for (p=this; p!=null; p=p.parent) {\n",
                     "if (p == o) {\n",
                         "return true;\n",
                     "}\n",

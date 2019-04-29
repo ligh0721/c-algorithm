@@ -113,7 +113,7 @@ print("a.." + a + "\n");
 ############################################################
 # Check flow control
 ############################################################
-if true {
+if (true) {
     print("true\n");
 }
 if (false) {
@@ -126,7 +126,7 @@ if (false) {
 }
 
 i = 0;
-for ;; {
+for (;;) {
     print(" i.." + i);
     if (i > 5) {
         break;
@@ -135,8 +135,8 @@ for ;; {
 }
 print("\n");
 
-label: for i = 0; i < 10; i++ {
-    for j = 0; j < 10; j++ {
+label: for (i = 0; i < 10; i++) {
+    for (j = 0; j < 10; j++) {
         print(" i.." + i + ", j.." + j + "\n");
         if (j == 5) {
             break label;
@@ -144,42 +144,42 @@ label: for i = 0; i < 10; i++ {
     }
 }
 
-for i = 0; i < 5; i++ {
+for (i = 0; i < 5; i++) {
     print("*** i.." + i + "***\n");
-    if i == 0 {
+    if (i == 0) {
         print("i == 0\n");
-    } elif i == 1 {
+    } elif (i == 1) {
         print("i == 1\n");
-    } elif i == 2 {
+    } elif (i == 2) {
         print("i == 2\n");
     } else {
         print("i == else\n");
     }
-    if i != 3 {
+    if (i != 3) {
         print("i != 3\n");
     }
     if (i == 2 || i == 3) {
         print("i == 2 || i == 3\n");
     }
-    for j = 0; j < 5; j = j + 1 {
+    for (j = 0; j < 5; j = j + 1) {
         if (i == 2 && j == 3) {
             print("i == 2 && j == " + j + "\n");
         }
     }
 }
 
-for i = 0; i <= 5; i++ {
+for (i = 0; i <= 5; i++) {
     print(" i.." + i);
 }
 print("\n");
 
-for i = 5; i >= 0; i-- {
+for (i = 5; i >= 0; i--) {
     print(" i.." + i);
 }
 print("\n");
 
 i = 5;
-while i > 0 {
+while (i > 0) {
     print(" i.." + i);
     i = i - 1;
 }
@@ -195,7 +195,7 @@ while (i < 10) {
 print("\n");
 
 i = 0;
-label: while i < 10 {
+label: while (i < 10) {
     j = 0;
     while (j < 10) {
         print(" i.." + i + ", j.." + j + "\n");
@@ -217,7 +217,7 @@ while (i < 10) {
 }
 print("\n");
 
-for i = 0; i < 10; i = i + 1 {
+for (i = 0; i < 10; i = i + 1) {
     print(" i.." + i);
     if (i == 5) {
         break;
@@ -225,7 +225,7 @@ for i = 0; i < 10; i = i + 1 {
 }
 print("\n");
 
-for i = 0; i < 10; i = i + 1 {
+for (i = 0; i < 10; i = i + 1) {
     if (i < 5) {
         continue;
     }
@@ -235,7 +235,7 @@ print("\n");
 
 a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 print("foreach\n");
-foreach v : a {
+foreach (v : a) {
     print("(" + v + ")");
     if (v < 3) {
         continue;
@@ -363,7 +363,7 @@ func hoge(a, b) {
 
 func int_func() {
     print("int func in\n");
-    for i = 0; i < 10; i = i + 1 {
+    for (i = 0; i < 10; i = i + 1) {
         print("i.." + i + "\n");
         return 1;
     }
@@ -372,7 +372,7 @@ func int_func() {
 
 func real_func() {
     print("real func in\n");
-    for i = 0; i < 10; i = i + 1 {
+    for (i = 0; i < 10; i = i + 1) {
         print("i.." + i + "\n");
         return 0.1;
     }
@@ -712,27 +712,27 @@ func _quick_sort(arr, l, r) {
     k = arr[l]
     i = l
     j = r
-    while i < j {
+    while (i < j) {
         for (; j>i && k<=arr[j]; j--) {}
-        if j > i {
+        if (j > i) {
             arr[i++] = arr[j]
         }
         for (; i<j && arr[i]<=k; i++) {}
-        if i < j {
+        if (i < j) {
             arr[j--] = arr[i]
         }
     }
     arr[i] = k
-    if l < i-1 {
+    if (l < i-1) {
         _quick_sort(arr, l, i-1)
     }
-    if i+1 < r {
+    if (i+1 < r) {
         _quick_sort(arr, i+1, r)
     }
 }
 
 func quick_sort(arr) {
-    if arr.len() > 1 {
+    if (arr.len() > 1) {
         _quick_sort(arr, 0, arr.len()-1)
     }
 }
