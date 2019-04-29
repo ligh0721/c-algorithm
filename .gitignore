@@ -7,6 +7,8 @@ cmake_install.cmake
 install_manifest.txt
 cmake-build-debug
 cmake-build-release
+release
+debug
 
 # ---> JetBrains
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio
