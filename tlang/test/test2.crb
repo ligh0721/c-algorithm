@@ -1,3 +1,4 @@
+import "test3"
 arr = [1,2,34,5,7]
 println()
 foreach(i: arr) {
