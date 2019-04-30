@@ -1173,16 +1173,32 @@ static CRB_Value* get_member_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment
     eval_expression(inter, env, expr->u.member_expression.expression);
     CRB_Value assoc;
     pop_value(inter, &assoc);
-    if (assoc.type != CRB_ASSOC_VALUE) {
+    if (assoc.type == CRB_ASSOC_VALUE) {
+        CRB_Boolean is_final = CRB_FALSE;
+        CRB_Value* dest = CRB_search_assoc_member(assoc.u.object, expr->u.member_expression.member_name, &is_final);
+        if (is_final) {
+            crb_runtime_error(inter, env, expr->line_number, ASSIGN_TO_FINAL_VARIABLE_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", expr->u.member_expression.member_name, CRB_MESSAGE_ARGUMENT_END);
+        }
+        return dest;
+    } else if (assoc.type == CRB_MODULE_VALUE) {
+        CRB_Boolean is_final = CRB_FALSE;
+        CRB_Value* dest = CRB_search_global_variable(inter, assoc.u.module, expr->u.member_expression.member_name, &is_final);
+        if (dest != NULL) {
+            return dest;
+        }
+        // TODO: function -> identifier
+        CRB_FunctionDefinition* fd = CRB_search_function(inter, assoc.u.module, expr->u.member_expression.member_name);
+        if (fd != NULL) {
+            CRB_Value func;
+            CRB_create_closure(NULL, fd, &func);
+            push_value(inter, &func);
+            return;
+        }
+        return NULL;
+    } else {
         crb_runtime_error(inter, env, expr->line_number, NOT_OBJECT_MEMBER_UPDATE_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
-
-    CRB_Boolean is_final = CRB_FALSE;
-    CRB_Value* dest = CRB_search_assoc_member(assoc.u.object, expr->u.member_expression.member_name, &is_final);
-    if (is_final) {
-        crb_runtime_error(inter, env, expr->line_number, ASSIGN_TO_FINAL_VARIABLE_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", expr->u.member_expression.member_name, CRB_MESSAGE_ARGUMENT_END);
-    }
-    return dest;
+    return NULL;
 }
 
 /*
@@ -1372,6 +1388,13 @@ static void eval_assign_expression(CRB_Interpreter *inter, CRB_LocalEnvironment 
 
     // 获取左值地址
     CRB_Value* dest = get_lvalue(inter, env, left);
+
+
+
+
+
+
+
     if (left->type == IDENTIFIER_EXPRESSION && dest == NULL) {
         if (expr->u.assign_expression.operator != NORMAL_ASSIGN) {
             crb_runtime_error(inter, env, expr->line_number, IDENTIFIER_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", left->u.identifier, CRB_MESSAGE_ARGUMENT_END);
