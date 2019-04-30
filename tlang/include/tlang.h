@@ -55,7 +55,8 @@ typedef enum {
     CRB_ASSOC_VALUE,
     CRB_CLOSURE_VALUE,
     CRB_FAKE_METHOD_VALUE,
-    CRB_SCOPE_CHAIN_VALUE
+    CRB_SCOPE_CHAIN_VALUE,
+    CRB_MODULE_VALUE,
 } CRB_ValueType;
 
 typedef struct CRB_Object_tag CRB_Object;
@@ -73,13 +74,13 @@ typedef struct CRB_Module_tag CRB_Module;
 #define CRB_global_funcs(inter, module) ((module) ? (module)->global_funcs : (inter)->global_funcs)
 
 typedef struct {
-    CRB_FunctionDefinition  *function;
-    CRB_Object              *scope_chain; /* CRB_ScopeChain */
+    CRB_FunctionDefinition* function_definition;
+    CRB_Object*             scope_chain; /* CRB_ScopeChain */
 } CRB_Closure;
 
 typedef struct {
-    const char  *method_name;
-    CRB_Object  *object;
+    const char* method_name;
+    CRB_Object* object;
 } CRB_FakeMethod;
 
 typedef struct {
@@ -88,9 +89,10 @@ typedef struct {
         CRB_Boolean     boolean_value;
         long            int_value;
         double          float_value;
-        CRB_Object      *object;
+        CRB_Object*     object;
         CRB_Closure     closure;
         CRB_FakeMethod  fake_method;
+        CRB_Module*     module;
     } u;
 } CRB_Value;
 
@@ -107,21 +109,21 @@ typedef enum {
 typedef void CRB_NativeFunctionFunc(CRB_Interpreter *interpreter, CRB_LocalEnvironment *env, int arg_count, CRB_Value *args, CRB_Value *result);
 
 struct CRB_FunctionDefinition_tag {
-    const char                  *name;
+    const char*                 name;
     CRB_FunctionDefinitionType  type;
     CRB_Boolean                 is_closure;
     union {
         struct {
-            CRB_ParameterList   *parameter;
-            CRB_Block           *block;
+            CRB_ParameterList*  parameter;
+            CRB_Block*          block;
         } crowbar_f;
         struct {
             int                         param_count;
-            CRB_NativeFunctionFunc      *func;
+            CRB_NativeFunctionFunc*     func;
         } native_f;
     } u;
-    CRB_Module                  *module;
-    struct CRB_FunctionDefinition_tag   *next;
+    CRB_Module*                 module;
+    struct CRB_FunctionDefinition_tag*  next;
 };
 
 struct CRB_Module_tag {
@@ -132,12 +134,12 @@ struct CRB_Module_tag {
 
 // Error
 typedef struct {
-    const char *format;
-    const char *class_name;
+    const char* format;
+    const char* class_name;
 } CRB_ErrorDefinition;
 
 typedef struct {
-    CRB_ErrorDefinition *message_format;
+    CRB_ErrorDefinition* message_format;
 } CRB_NativeLibInfo;
 
 void CRB_error(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_NativeLibInfo *info, int line_number, int error_code, ...);

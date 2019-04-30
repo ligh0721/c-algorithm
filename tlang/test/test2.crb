@@ -1,6 +1,7 @@
-arr = [1,2,34,5,7]
-println()
-foreach(i: arr) {
-    println(i)
+func test(arr) {
+    foreach (i: arr) {
+        println(i)
+    }
 }
-import "test3"
+
+test2 = 1234

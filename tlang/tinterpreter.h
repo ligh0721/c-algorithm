@@ -133,7 +133,7 @@ typedef enum {
 } CompileError;
 
 typedef enum {
-    VARIABLE_NOT_FOUND_ERR = 1,
+    IDENTIFIER_NOT_FOUND_ERR = 1,
     ARGUMENT_TOO_MANY_ERR,
     ARGUMENT_TOO_FEW_ERR,
     NOT_BOOLEAN_TYPE_ERR,

@@ -324,7 +324,7 @@ CRB_Object* CRB_create_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *e
         next_line_number = env_pos->caller_line_number;
     }
 
-    line = create_stack_trace_line(inter, env, "top_level", next_line_number);
+    line = create_stack_trace_line(inter, env, "<top>", next_line_number);
     value.type = CRB_ASSOC_VALUE;
     value.u.object = line;
     CRB_array_set(inter, env, stack_trace, stack_trace_idx, &value);
@@ -335,7 +335,7 @@ CRB_Object* CRB_create_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *e
     ++stack_count;
 
     value.type = CRB_CLOSURE_VALUE;
-    value.u.closure.function = &print_stack_trace_fd;
+    value.u.closure.function_definition = &print_stack_trace_fd;
     value.u.closure.scope_chain = NULL; /* to stop marking by GC */
 
     CRB_Value scope_chain;

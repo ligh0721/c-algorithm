@@ -22,7 +22,7 @@ CRB_ErrorDefinition crb_compile_error_message_format[] = {
 
 CRB_ErrorDefinition crb_runtime_error_message_format[] = {
         {"dummy", NULL},
-        {"找不到变量或函数($(name))。",
+        {"找不到标识符($(name))。",
                 "VariableNotFoundException"},
         {"传入的参数数量多于函数定义。",
                 "ArgumentTooManyException"},

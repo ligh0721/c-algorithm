@@ -219,7 +219,7 @@ static void eval_assoc_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *
 static void eval_closure_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     CRB_Value   result;
     result.type = CRB_CLOSURE_VALUE;
-    result.u.closure.function = expr->u.closure.function_definition;
+    result.u.closure.function_definition = expr->u.closure.function_definition;
     if (env) {
         result.u.closure.scope_chain = env->scope_chain;
     } else {
@@ -247,22 +247,30 @@ static void eval_identifier_expression(CRB_Interpreter *inter, CRB_LocalEnvironm
         return;
     }
 
-    // 查找定义的全局函数，找到后分配一个值类型
-    CRB_FunctionDefinition* func = CRB_search_function(inter, CRB_env_module(inter, env), expr->u.identifier);
-    if (func == NULL) {
-        func = CRB_search_function(inter, NULL, expr->u.identifier);
+    // 查找定义的全局函数，找到后分配一个函数值类型压栈返回
+    CRB_FunctionDefinition* fd = CRB_search_function(inter, CRB_env_module(inter, env), expr->u.identifier);
+    if (fd == NULL) {
+        fd = CRB_search_function(inter, NULL, expr->u.identifier);
     }
-    if (func != NULL) {
+    if (fd != NULL) {
+        CRB_Value func;
+        CRB_create_closure(NULL, fd, &func);
+        push_value(inter, &func);
+        return;
+    }
+
+    // 查找已加的载模块，找到后分配一个模块值类型，压栈返回
+    CRB_Module* module = CRB_search_module(inter, expr->u.identifier);
+    if (module != NULL) {
         CRB_Value v;
-        v.type = CRB_CLOSURE_VALUE;
-        v.u.closure.function = func;
-        v.u.closure.scope_chain = NULL;
+        v.type = CRB_MODULE_VALUE;
+        v.u.module = module;
         push_value(inter, &v);
         return;
     }
 
     // 标识符不存在
-    crb_runtime_error(inter, env, expr->line_number, VARIABLE_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", expr->u.identifier, CRB_MESSAGE_ARGUMENT_END);
+    crb_runtime_error(inter, env, expr->line_number, IDENTIFIER_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", expr->u.identifier, CRB_MESSAGE_ARGUMENT_END);
 }
 
 /*
@@ -584,14 +592,14 @@ static void dispose_local_environment(CRB_Interpreter *inter) {
 /*
  * 创建匿名函数值
  */
-void CRB_create_closure(CRB_LocalEnvironment *env, CRB_FunctionDefinition *fd, CRB_Value* closure) {
+inline void CRB_create_closure(CRB_LocalEnvironment *env, CRB_FunctionDefinition *fd, CRB_Value* closure) {
     closure->type = CRB_CLOSURE_VALUE;
-    closure->u.closure.function = fd;
-    closure->u.closure.scope_chain = env->scope_chain;
+    closure->u.closure.function_definition = fd;
+    closure->u.closure.scope_chain = env ? env->scope_chain : NULL;
 }
 
 static void call_crowbar_function_from_native(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_LocalEnvironment *caller_env, CRB_Value *func, int arg_count, CRB_Value *args, CRB_Value *result) {
-    CRB_ParameterList* param_list = func->u.closure.function->u.crowbar_f.parameter;
+    CRB_ParameterList* param_list = func->u.closure.function_definition->u.crowbar_f.parameter;
     struct lnode* param_node = param_list ? llist_front_node(param_list) : NULL;
     for (int arg_idx=0; arg_idx<arg_count; ++arg_idx, param_node=param_node->next) {
         if (param_node == NULL) {
@@ -604,7 +612,7 @@ static void call_crowbar_function_from_native(CRB_Interpreter *inter, CRB_LocalE
     }
 
     StatementResult stmt_result;
-    crb_execute_statement_list(inter, env, func->u.closure.function->u.crowbar_f.block->statement_list, &stmt_result);
+    crb_execute_statement_list(inter, env, func->u.closure.function_definition->u.crowbar_f.block->statement_list, &stmt_result);
     if (stmt_result.type == RETURN_STATEMENT_RESULT) {
         *result = stmt_result.u.return_value;
     } else {
@@ -617,8 +625,8 @@ static void call_native_function_from_native(CRB_Interpreter *inter, CRB_LocalEn
 //        push_value(inter, &args[i]);
 //    }
 //    CRB_Value* arg_p = &inter->stack.stack[inter->stack.stack_pointer-arg_count];
-    CRB_check_argument_count(inter, env, line_number, arg_count, func->u.closure.function->u.native_f.param_count);
-    func->u.closure.function->u.native_f.func(inter, env, arg_count, args, result);
+    CRB_check_argument_count(inter, env, line_number, arg_count, func->u.closure.function_definition->u.native_f.param_count);
+    func->u.closure.function_definition->u.native_f.func(inter, env, arg_count, args, result);
 //    shrink_stack(inter, arg_count);
 }
 
@@ -651,9 +659,9 @@ void CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int li
     CRB_Object* closure_scope_chain;
     CRB_Module* module;
     if (func->type == CRB_CLOSURE_VALUE) {
-        func_name = func->u.closure.function->name;
+        func_name = func->u.closure.function_definition->name;
         closure_scope_chain = func->u.closure.scope_chain;
-        module = func->u.closure.function->module;
+        module = func->u.closure.function_definition->module;
     } else if (func->type == CRB_FAKE_METHOD_VALUE) {
         func_name = func->u.fake_method.method_name;
         closure_scope_chain = NULL;
@@ -665,15 +673,15 @@ void CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int li
         module = NULL;
     }
     CRB_LocalEnvironment* local_env = alloc_local_environment(inter, module, func_name, line_number, closure_scope_chain);
-    if (func->type == CRB_CLOSURE_VALUE && func->u.closure.function->is_closure && func->u.closure.function->name) {
-        CRB_add_assoc_member(inter, local_env->scope_chain->u.scope_chain.frame, func->u.closure.function->name, func, CRB_TRUE);
+    if (func->type == CRB_CLOSURE_VALUE && func->u.closure.function_definition->is_closure && func->u.closure.function_definition->name) {
+        CRB_add_assoc_member(inter, local_env->scope_chain->u.scope_chain.frame, func->u.closure.function_definition->name, func, CRB_TRUE);
     }
 
     int stack_pointer_backup = crb_get_stack_pointer(inter);
     RecoveryEnvironment env_backup = inter->current_recovery_environment;
     if (setjmp(inter->current_recovery_environment.environment) == 0) {
         if (func->type == CRB_CLOSURE_VALUE) {
-            switch (func->u.closure.function->type) {
+            switch (func->u.closure.function_definition->type) {
                 case CRB_CROWBAR_FUNCTION_DEFINE:
                     call_crowbar_function_from_native(inter, local_env, line_number, env, func, arg_count, args, result);
                     break;
@@ -682,7 +690,7 @@ void CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int li
                     break;
                 case CRB_FUNCTION_DEFINE_TYPE_COUNT_PLUS_1:
                 default:
-                    DBG_assert(0, ("bad case..%d\n", func->u.closure.function->type));
+                    DBG_assert(0, ("bad case..%d\n", func->u.closure.function_definition->type));
             }
         } else if (func->type == CRB_FAKE_METHOD_VALUE) {
             call_fake_method_from_native(inter, local_env, line_number, env, func, arg_count, args, result);
@@ -768,7 +776,7 @@ static void call_fake_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
  */
 static void call_crowbar_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_LocalEnvironment *caller_env, Expression *expr, CRB_Value *func) {
     ArgumentList* arg_p = expr->u.function_call_expression.argument;  // 实参
-    CRB_ParameterList* param_p = func->u.closure.function->u.crowbar_f.parameter;  // 形参
+    CRB_ParameterList* param_p = func->u.closure.function_definition->u.crowbar_f.parameter;  // 形参
     struct lnode* arg_node = arg_p ? llist_front_node(arg_p) : NULL;
     struct lnode* param_node = param_p ? llist_front_node(param_p) : NULL;
     while (arg_node != NULL) {
@@ -793,7 +801,7 @@ static void call_crowbar_function(CRB_Interpreter *inter, CRB_LocalEnvironment *
     }
 
     StatementResult result;
-    crb_execute_statement_list(inter, env, func->u.closure.function->u.crowbar_f.block->statement_list, &result);
+    crb_execute_statement_list(inter, env, func->u.closure.function_definition->u.crowbar_f.block->statement_list, &result);
     if (result.type == RETURN_STATEMENT_RESULT) {
         push_value(inter, &result.u.return_value);
     } else {
@@ -819,8 +827,8 @@ static void call_native_function(CRB_Interpreter *inter, CRB_LocalEnvironment *e
 
     CRB_Value* args = &inter->stack.stack[inter->stack.stack_pointer-arg_count];
     CRB_Value result;
-    CRB_check_argument_count(inter, env, expr->line_number, arg_count, func->u.closure.function->u.native_f.param_count);
-    func->u.closure.function->u.native_f.func(inter, env, arg_count, args, &result);
+    CRB_check_argument_count(inter, env, expr->line_number, arg_count, func->u.closure.function_definition->u.native_f.param_count);
+    func->u.closure.function_definition->u.native_f.func(inter, env, arg_count, args, &result);
     shrink_stack(inter, arg_count);
     push_value(inter, &result);
 }
@@ -835,7 +843,7 @@ static void do_function_call(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
     }
 
     DBG_assert(func->type == CRB_CLOSURE_VALUE, ("func->type..%d\n", func->type));
-    switch (func->u.closure.function->type) {
+    switch (func->u.closure.function_definition->type) {
         case CRB_CROWBAR_FUNCTION_DEFINE:
             call_crowbar_function(inter, env, caller_env, expr, func);
             return;
@@ -844,7 +852,7 @@ static void do_function_call(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
             return;
         case CRB_FUNCTION_DEFINE_TYPE_COUNT_PLUS_1:
         default:
-            DBG_assert(0, ("bad case..%d\n", func->u.closure.function->type));
+            DBG_assert(0, ("bad case..%d\n", func->u.closure.function_definition->type));
     }
 }
 
@@ -858,9 +866,9 @@ static void eval_function_call_expression(CRB_Interpreter *inter, CRB_LocalEnvir
     eval_expression(inter, env, expr->u.function_call_expression.function);
     CRB_Value* func = peek_stack(inter, 0);
     if (func->type == CRB_CLOSURE_VALUE) {
-        func_name = func->u.closure.function->name;
+        func_name = func->u.closure.function_definition->name;
         closure_scope_chain = func->u.closure.scope_chain;
-        module = func->u.closure.function->module;
+        module = func->u.closure.function_definition->module;
     } else if (func->type == CRB_FAKE_METHOD_VALUE) {
         func_name = func->u.fake_method.method_name;
         closure_scope_chain = NULL;
@@ -873,8 +881,8 @@ static void eval_function_call_expression(CRB_Interpreter *inter, CRB_LocalEnvir
     }
 
     CRB_LocalEnvironment* local_env = alloc_local_environment(inter, module, func_name, expr->line_number, closure_scope_chain);
-    if (func->type == CRB_CLOSURE_VALUE && func->u.closure.function->is_closure && func->u.closure.function->name) {
-        CRB_add_assoc_member(inter, local_env->scope_chain->u.scope_chain.frame, func->u.closure.function->name, func, CRB_TRUE);
+    if (func->type == CRB_CLOSURE_VALUE && func->u.closure.function_definition->is_closure && func->u.closure.function_definition->name) {
+        CRB_add_assoc_member(inter, local_env->scope_chain->u.scope_chain.frame, func->u.closure.function_definition->name, func, CRB_TRUE);
     }
 
     int stack_pointer_backup = crb_get_stack_pointer(inter);
@@ -902,20 +910,51 @@ static void eval_member_expression(CRB_Interpreter *inter, CRB_LocalEnvironment 
     eval_expression(inter, env, expr->u.member_expression.expression);
     CRB_Value left;
     pop_value(inter, &left);
-    if (left.type == CRB_ASSOC_VALUE) {
-        CRB_Value* v = CRB_search_assoc_member(left.u.object, expr->u.member_expression.member_name, NULL);
-        if (v == NULL) {
+    switch (left.type) {
+        case CRB_ASSOC_VALUE:
+            // 关联数组成员
+        {
+            CRB_Value *value_p = CRB_search_assoc_member(left.u.object, expr->u.member_expression.member_name, NULL);
+            if (value_p != NULL) {
+                push_value(inter, value_p);
+                return;
+            }
             crb_runtime_error(inter, env, expr->line_number, NO_SUCH_MEMBER_ERR, CRB_STRING_MESSAGE_ARGUMENT, "member_name", expr->u.member_expression.member_name, CRB_MESSAGE_ARGUMENT_END);
+            return;
         }
-        push_value(inter, v);
-    } else if (left.type == CRB_STRING_VALUE || left.type == CRB_ARRAY_VALUE) {
-        CRB_Value v;
-        v.type = CRB_FAKE_METHOD_VALUE;
-        v.u.fake_method.method_name = expr->u.member_expression.member_name;
-        v.u.fake_method.object = left.u.object;
-        push_value(inter, &v);
-    } else {
-        crb_runtime_error(inter, env, expr->line_number, NO_MEMBER_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
+        case CRB_STRING_VALUE:  /* FALLTHRU */
+        case CRB_ARRAY_VALUE:
+            // 字符串或数组的内置成员方法
+        {
+            CRB_Value value;
+            value.type = CRB_FAKE_METHOD_VALUE;
+            value.u.fake_method.method_name = expr->u.member_expression.member_name;
+            value.u.fake_method.object = left.u.object;
+            push_value(inter, &value);
+            return;
+        }
+        case CRB_MODULE_VALUE:
+            // 模块内全局变量或全局函数
+        {
+            CRB_FunctionDefinition* fd = CRB_search_function(inter, left.u.module, expr->u.member_expression.member_name);
+            if (fd != NULL) {
+                CRB_Value func;
+                CRB_create_closure(NULL, fd, &func);
+                push_value(inter, &func);
+                return;
+            }
+            CRB_Value* value_p = CRB_search_global_variable(inter, left.u.module, expr->u.member_expression.member_name, NULL);
+            if (value_p != NULL) {
+                push_value(inter, value_p);
+                return;
+            }
+
+            // TODO: MODULE_IDENTIFIER_NOT_FOUND_ERR
+            crb_runtime_error(inter, env, expr->line_number, IDENTIFIER_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", expr->u.member_expression.member_name, CRB_MESSAGE_ARGUMENT_END);
+
+        }
+        default:
+            crb_runtime_error(inter, env, expr->line_number, NO_MEMBER_TYPE_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
 }
 
@@ -1049,13 +1088,15 @@ static void do_assign(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Val
 
 /*
  * 关联数组赋值
- * expr: left.right = rvalue
+ * expr: left = rvalue
+ *       expression.member_name = rvalue
  * src: rvalue
  */
 static void assign_to_member(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr, CRB_Value *src) {
     Expression *left = expr->u.assign_expression.left;
     eval_expression(inter, env, left->u.member_expression.expression);
     CRB_Value* assoc = peek_stack(inter, 0);
+    // TODO: support module.global
     if (assoc->type != CRB_ASSOC_VALUE) {
         crb_runtime_error(inter, env, expr->line_number, NOT_OBJECT_MEMBER_ASSIGN_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
@@ -1333,7 +1374,7 @@ static void eval_assign_expression(CRB_Interpreter *inter, CRB_LocalEnvironment 
     CRB_Value* dest = get_lvalue(inter, env, left);
     if (left->type == IDENTIFIER_EXPRESSION && dest == NULL) {
         if (expr->u.assign_expression.operator != NORMAL_ASSIGN) {
-            crb_runtime_error(inter, env, expr->line_number, VARIABLE_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", left->u.identifier, CRB_MESSAGE_ARGUMENT_END);
+            crb_runtime_error(inter, env, expr->line_number, IDENTIFIER_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", left->u.identifier, CRB_MESSAGE_ARGUMENT_END);
         }
         if (env != NULL) {
             CRB_add_local_variable(inter, env, left->u.identifier, src, expr->u.assign_expression.is_final);

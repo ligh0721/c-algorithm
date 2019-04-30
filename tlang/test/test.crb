@@ -1,1 +1,9 @@
 import "test2"
+arr = [1,2,[34],5,7]
+func test(arr, i) {
+    return arr[i];
+}
+
+clock()
+test2.test2 = 3
+test2.test(arr)

@@ -425,10 +425,10 @@ CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
             break;
         case CRB_CLOSURE_VALUE:
             crb_vstr_append_string(&params->vstr, L"closure(");
-            if (value->u.closure.function->name == NULL) {
+            if (value->u.closure.function_definition->name == NULL) {
                 crb_vstr_append_string(&params->vstr, L"null");
             } else {
-                CRB_Char* new_str = CRB_mbstowcs_alloc(inter, env, line_number, value->u.closure.function->name);
+                CRB_Char* new_str = CRB_mbstowcs_alloc(inter, env, line_number, value->u.closure.function_definition->name);
                 DBG_assert(new_str != NULL, ("new_str is null.\n"));
                 crb_vstr_append_string(&params->vstr, new_str);
                 MEM_free(new_str);
