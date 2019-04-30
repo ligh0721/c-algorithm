@@ -153,23 +153,25 @@ inline void CRB_array_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB
 }
 
 CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *inter, CRB_Module *module, const char *name, int param_count, CRB_NativeFunctionFunc *func) {
-    RBTREE* global_funcs = CRB_global_funcs(inter, module);
     CRB_FunctionDefinition* fd = crb_malloc(sizeof(CRB_FunctionDefinition));
     fd->name = name;
     fd->type = CRB_NATIVE_FUNCTION_DEFINE;
     fd->is_closure = CRB_FALSE;
     fd->u.native_f.param_count = param_count;
     fd->u.native_f.func = func;
+    fd->module = module;
+    RBTREE* global_funcs = CRB_global_funcs(inter, module);
     rbtree_set(global_funcs, ptr_value(fd));
     return fd;
 }
 
-void CRB_set_function_definition(const char *name, int param_count, CRB_NativeFunctionFunc *func, CRB_FunctionDefinition *fd) {
+void CRB_set_function_definition(CRB_Module *module, const char *name, int param_count, CRB_NativeFunctionFunc *func, CRB_FunctionDefinition *fd) {
     fd->name = name;
     fd->type = CRB_NATIVE_FUNCTION_DEFINE;
     fd->is_closure = CRB_TRUE;
     fd->u.native_f.param_count = param_count;
     fd->u.native_f.func = func;
+    fd->module = module;
 }
 
 void CRB_check_argument_count(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int expected_count) {

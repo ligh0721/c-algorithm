@@ -260,13 +260,14 @@ AssocExpressionList* crb_chain_assoc_expression_list(AssocExpressionList* list, 
 /*
  * 创建函数定义
  */
-static inline CRB_FunctionDefinition* create_function_definition(const char *identifier, CRB_ParameterList *parameter_list, CRB_Boolean is_closure, CRB_Block *block) {
+static inline CRB_FunctionDefinition* create_function_definition(CRB_Module* module, const char *identifier, CRB_ParameterList *parameter_list, CRB_Boolean is_closure, CRB_Block *block) {
     CRB_FunctionDefinition* f = crb_malloc(sizeof(CRB_FunctionDefinition));
     f->name = identifier;
     f->type = CRB_CROWBAR_FUNCTION_DEFINE;
     f->is_closure = is_closure;
     f->u.crowbar_f.parameter = parameter_list;
     f->u.crowbar_f.block = block;
+    f->module = module;
     return f;
 }
 
@@ -278,9 +279,9 @@ void crb_function_define(const char *identifier, CRB_ParameterList *parameter_li
         crb_compile_error(FUNCTION_MULTIPLE_DEFINE_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", identifier, CRB_MESSAGE_ARGUMENT_END);
         return;
     }
-    CRB_FunctionDefinition* f = create_function_definition(identifier, parameter_list, CRB_FALSE, block);
     CRB_Interpreter* inter = crb_get_current_interpreter();
-    RBTREE* global_funcs = inter->current_module ? inter->current_module->global_funcs : inter->global_funcs000;
+    CRB_FunctionDefinition* f = create_function_definition(inter->current_module, identifier, parameter_list, CRB_FALSE, block);
+    RBTREE* global_funcs = CRB_global_funcs(inter, inter->current_module);
     rbtree_set(global_funcs, ptr_value(f));
 }
 
@@ -289,7 +290,8 @@ void crb_function_define(const char *identifier, CRB_ParameterList *parameter_li
  */
 Expression* crb_create_closure_definition(const char *identifier, CRB_ParameterList *parameter_list, CRB_Block *block) {
     Expression* exp = crb_alloc_expression(CLOSURE_EXPRESSION);
-    exp->u.closure.function_definition = create_function_definition(identifier, parameter_list, CRB_TRUE, block);
+    CRB_Interpreter* inter = crb_get_current_interpreter();
+    exp->u.closure.function_definition = create_function_definition(inter->current_module, identifier, parameter_list, CRB_TRUE, block);
     return exp;
 }
 

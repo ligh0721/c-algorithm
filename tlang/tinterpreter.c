@@ -227,6 +227,24 @@ static void release_global_strings(CRB_Interpreter *interpreter) {
 //    rbtree_clear(interpreter->global_vars);
 }
 
+static void _dispose_vars(CRB_Module* module) {
+    close_rbtree(module->global_vars);
+    module->global_vars = NULL;
+}
+
+static void _dispose_funcs(CRB_Module* module) {
+    close_rbtree(module->global_funcs);
+    module->global_funcs = NULL;
+}
+
+static int _every_module(const VALUE* value, void* param) {
+    CRB_Module* module = (CRB_Module*)value->ptr_value;
+    void (*disposer)(CRB_Module*);
+    disposer = (void(*)(CRB_Module*))param;
+    disposer(module);
+    return 0;
+}
+
 void CRB_dispose_interpreter(CRB_Interpreter *interpreter) {
     release_global_strings(interpreter);
 
@@ -235,13 +253,14 @@ void CRB_dispose_interpreter(CRB_Interpreter *interpreter) {
     }
     close_rbtree(interpreter->global_vars000);
     interpreter->global_vars000 = NULL;
-    // TODO: dispose modules global_vars
+    rbtree_ldr(interpreter->modules, _every_module, _dispose_vars);
     crb_garbage_collect(interpreter);
     DBG_assert(interpreter->heap.current_heap_size == 0, ("%d bytes leaked.\n", interpreter->heap.current_heap_size));
     MEM_free(interpreter->stack.stack);
 //    crb_dispose_regexp_literals(interpreter);
     close_rbtree(interpreter->global_funcs000);
     interpreter->global_funcs000 = NULL;
+    rbtree_ldr(interpreter->modules, _every_module, _dispose_funcs);
     close_rbtree(interpreter->fake_methods);
     MEM_dispose_storage(interpreter->interpreter_storage);
 }
@@ -251,23 +270,23 @@ static inline void save_interpreter_state(CRB_Interpreter* interpreter, CRB_Inte
 //    state->global_vars = interpreter->global_vars;
 //    state->functions = interpreter->functions;
     state->statement_list = interpreter->statement_list;
-    state->last_statement_pos = interpreter->last_statement_pos;
+//    state->last_statement_pos = interpreter->last_statement_pos;
     state->current_module = interpreter->current_module;
     state->current_line_number = interpreter->current_line_number;
     state->input_mode = interpreter->input_mode;
-    state->current_recovery_environment = interpreter->current_recovery_environment;
+//    state->current_recovery_environment = interpreter->current_recovery_environment;
 }
 
 static inline void recovery_interpreter_state(CRB_Interpreter* interpreter, const CRB_Interpreter* state) {
 //    memcpy(interpreter, state, sizeof(CRB_Interpreter));
 //    interpreter->global_vars = state->global_vars;
 //    interpreter->functions = state->functions;
-    interpreter->statement_list = state->statement_list;
-    interpreter->last_statement_pos = state->last_statement_pos;
+//    interpreter->statement_list = state->statement_list;
+//    interpreter->last_statement_pos = state->last_statement_pos;
     interpreter->current_module = state->current_module;
     interpreter->current_line_number = state->current_line_number;
     interpreter->input_mode = state->input_mode;
-    interpreter->current_recovery_environment = state->current_recovery_environment;
+//    interpreter->current_recovery_environment = state->current_recovery_environment;
 }
 
 void CRB_import_model(CRB_Interpreter* interpreter, const char* name) {

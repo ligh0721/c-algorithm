@@ -94,7 +94,6 @@ static CRB_Value* search_global_variable_from_env(CRB_Interpreter *inter, CRB_Lo
         if (ret != NULL) {
             return ret;
         }
-        // FIXME: double searching
         return CRB_search_global_variable(inter, NULL, name, is_final);
     }
 
@@ -246,8 +245,7 @@ static void eval_identifier_expression(CRB_Interpreter *inter, CRB_LocalEnvironm
 
     // 查找定义的全局函数，找到后分配一个值类型
     CRB_FunctionDefinition* func = CRB_search_function(inter, CRB_env_module(inter, env), expr->u.identifier);
-    if (env == NULL && func == NULL) {
-        // FIXME: double searching
+    if (func == NULL) {
         func = CRB_search_function(inter, NULL, expr->u.identifier);
     }
     if (func != NULL) {
@@ -647,18 +645,22 @@ static inline void call_fake_method_from_native(CRB_Interpreter *inter, CRB_Loca
 void CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *func, int arg_count, CRB_Value *args, CRB_Value *result) {
     const char* func_name;
     CRB_Object* closure_env;
+    CRB_Module* module;
     if (func->type == CRB_CLOSURE_VALUE) {
         func_name = func->u.closure.function->name;
         closure_env = func->u.closure.environment;
+        module = func->u.closure.function->module;
     } else if (func->type == CRB_FAKE_METHOD_VALUE) {
         func_name = func->u.fake_method.method_name;
         closure_env = NULL;
+        module = NULL;
     } else {
         DBG_panic(("func->type..%d\n", func->type));
         func_name = NULL;
         closure_env = NULL;
+        module = NULL;
     }
-    CRB_LocalEnvironment* local_env = alloc_local_environment(inter, CRB_env_module(inter, env), func_name, line_number, closure_env);
+    CRB_LocalEnvironment* local_env = alloc_local_environment(inter, module, func_name, line_number, closure_env);
     if (func->type == CRB_CLOSURE_VALUE && func->u.closure.function->is_closure && func->u.closure.function->name) {
         CRB_add_assoc_member(inter, local_env->variable->u.scope_chain.frame, func->u.closure.function->name, func, CRB_TRUE);
     }
@@ -697,6 +699,9 @@ void CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int li
  */
 void CRB_call_function_by_name(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, const char *func_name, int arg_count, CRB_Value *args, CRB_Value *result) {
     CRB_FunctionDefinition* fd = CRB_search_function(inter, CRB_env_module(inter, env), func_name);
+    if (fd == NULL) {
+        fd = CRB_search_function(inter, NULL, func_name);
+    }
     if (fd == NULL) {
         crb_runtime_error(inter, env, line_number, FUNCTION_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", func_name, CRB_MESSAGE_ARGUMENT_END);
     }
@@ -843,23 +848,27 @@ static void do_function_call(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
  * 函数调用表达式求值
  */
 static void eval_function_call_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
-    CRB_Object* closure_env;
     const char* func_name;
+    CRB_Object* closure_env;
+    CRB_Module* module;
     eval_expression(inter, env, expr->u.function_call_expression.function);
     CRB_Value* func = peek_stack(inter, 0);
     if (func->type == CRB_CLOSURE_VALUE) {
         func_name = func->u.closure.function->name;
         closure_env = func->u.closure.environment;
+        module = func->u.closure.function->module;
     } else if (func->type == CRB_FAKE_METHOD_VALUE) {
         func_name = func->u.fake_method.method_name;
         closure_env = NULL;
+        module = NULL;
     } else {
         crb_runtime_error(inter, env, expr->line_number, NOT_FUNCTION_ERR, CRB_MESSAGE_ARGUMENT_END);
-        closure_env = NULL;
         func_name = NULL;
+        closure_env = NULL;
+        module = NULL;
     }
 
-    CRB_LocalEnvironment* local_env = alloc_local_environment(inter, CRB_env_module(inter, env), func_name, expr->line_number, closure_env);
+    CRB_LocalEnvironment* local_env = alloc_local_environment(inter, module, func_name, expr->line_number, closure_env);
     if (func->type == CRB_CLOSURE_VALUE && func->u.closure.function->is_closure && func->u.closure.function->name) {
         CRB_add_assoc_member(inter, local_env->variable->u.scope_chain.frame, func->u.closure.function->name, func, CRB_TRUE);
     }
@@ -1325,7 +1334,11 @@ static void eval_assign_expression(CRB_Interpreter *inter, CRB_LocalEnvironment 
         if (env != NULL) {
             CRB_add_local_variable(inter, env, left->u.identifier, src, expr->u.assign_expression.is_final);
         } else {
-            if (CRB_search_function(inter, CRB_env_module(inter, env), left->u.identifier)) {
+            CRB_FunctionDefinition* fd = CRB_search_function(inter, CRB_env_module(inter, env), left->u.identifier);
+            if (fd == NULL) {
+                fd = CRB_search_function(inter, NULL, left->u.identifier);
+            }
+            if (fd != NULL) {
                 crb_runtime_error(inter, env, expr->line_number, FUNCTION_EXISTS_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", left->u.identifier, CRB_MESSAGE_ARGUMENT_END);
             }
             CRB_add_global_variable(inter, CRB_env_module(inter, env), left->u.identifier, src, expr->u.assign_expression.is_final);

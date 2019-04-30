@@ -324,7 +324,7 @@ CRB_Object* CRB_create_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *e
     value.u.object = line;
     CRB_array_set(inter, env, stack_trace, stack_trace_idx, &value);
 
-    CRB_set_function_definition(NULL, 0, print_stack_trace, &print_stack_trace_fd);
+    CRB_set_function_definition(CRB_env_module(inter, env), NULL, 0, print_stack_trace, &print_stack_trace_fd);
 
     CRB_push_value(inter, &value);
     ++stack_count;
