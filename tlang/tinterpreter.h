@@ -105,11 +105,11 @@ struct CRB_Object_tag {
 #define crb_is_object_value(type) ((type) == CRB_STRING_VALUE || (type) == CRB_ARRAY_VALUE || (type) == CRB_ASSOC_VALUE || (type) == CRB_NATIVE_POINTER_VALUE || (type) == CRB_SCOPE_CHAIN_VALUE)
 
 // Method
-#define ARRAY_ITERATOR_METHOD_NAME ("__create_array_iterator")
-#define ITERATOR_METHOD_NAME    ("iterator")
-#define IS_DONE_METHOD_NAME     ("is_done")
-#define NEXT_METHOD_NAME        ("next")
-#define CURRENT_ITEM_METHOD_NAME        ("current_item")
+#define ARRAY_ITERATOR_METHOD_NAME  ("__create_array_iterator")
+#define ITERATOR_METHOD_NAME        ("iterator")
+#define IS_DONE_METHOD_NAME         ("is_done")
+#define NEXT_METHOD_NAME            ("next")
+#define CURRENT_ITEM_METHOD_NAME    ("current_item")
 
 // Error
 #define EXCEPTION_MEMBER_MESSAGE                ("message")
@@ -502,12 +502,12 @@ typedef struct RefInNativeFunc_tag {
     struct RefInNativeFunc_tag *next;
 } RefInNativeFunc;
 
-// 作用域
+// 函数的执行环境：上下文（Context）
 struct CRB_LocalEnvironment_tag {
     CRB_Module          *module;
     const char          *current_function_name;
     int                 caller_line_number;
-    CRB_Object          *variable;      /* ScopeChain */
+    CRB_Object          *scope_chain;      /* ScopeChain 作用域链，每次函数嵌套定义将追加作用域 */
     GlobalVariableRef   *global_var_refs;  // RBTREE<Variable*>
     RefInNativeFunc     *ref_in_native_method;
     struct CRB_LocalEnvironment_tag     *next;
@@ -538,8 +538,8 @@ struct CRB_Interpreter_tag {
     MEM_Storage         interpreter_storage;
     MEM_Storage         execute_storage;
     RBTREE*             modules;  // RBTREE<CRB_Module*>
-    RBTREE*             global_vars000;  // RBTREE<Variable*>
-    RBTREE*             global_funcs000;  // RBTREE<CRB_FunctionDefinition*>
+    RBTREE*             global_vars;  // RBTREE<Variable*>
+    RBTREE*             global_funcs;  // RBTREE<CRB_FunctionDefinition*>
     RBTREE*             fake_methods;  // RBTREE<FakeMethodDefinition*>
     StatementList*      statement_list;
     struct lnode*       last_statement_pos;

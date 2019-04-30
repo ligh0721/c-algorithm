@@ -213,8 +213,8 @@ CRB_Value* CRB_search_global_variable(CRB_Interpreter *inter, CRB_Module* module
 }
 
 CRB_Value* CRB_add_local_variable(CRB_Interpreter *inter, CRB_LocalEnvironment *env, const char *identifier, CRB_Value *value, CRB_Boolean is_final) {
-    DBG_assert(env->variable->type == SCOPE_CHAIN_OBJECT, ("type..%d\n", env->variable->type));
-    CRB_Value* ret = CRB_add_assoc_member(inter, env->variable->u.scope_chain.frame, identifier, value, is_final);
+    DBG_assert(env->scope_chain->type == SCOPE_CHAIN_OBJECT, ("type..%d\n", env->scope_chain->type));
+    CRB_Value* ret = CRB_add_assoc_member(inter, env->scope_chain->u.scope_chain.frame, identifier, value, is_final);
     return ret;
 }
 
@@ -222,9 +222,9 @@ CRB_Value* CRB_search_local_variable(CRB_LocalEnvironment *env, const char *iden
     if (env == NULL) {
         return NULL;
     }
-    DBG_assert(env->variable->type == SCOPE_CHAIN_OBJECT, ("type..%d\n", env->variable->type));
+    DBG_assert(env->scope_chain->type == SCOPE_CHAIN_OBJECT, ("type..%d\n", env->scope_chain->type));
 
-    for (CRB_Object* sc = env->variable; sc; sc = sc->u.scope_chain.next) {
+    for (CRB_Object* sc=env->scope_chain; sc; sc=sc->u.scope_chain.next) {
         DBG_assert(sc->type == SCOPE_CHAIN_OBJECT, ("sc->type..%d\n", sc->type));
         CRB_Value* value = CRB_search_assoc_member(sc->u.scope_chain.frame, identifier, is_final);
         if (value) {

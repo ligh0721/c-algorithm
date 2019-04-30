@@ -16,9 +16,9 @@ static void check_gc(CRB_Interpreter *inter) {
     crb_garbage_collect(inter);
 #endif
     if (inter->heap.current_heap_size > inter->heap.current_threshold) {
-//        fprintf(stderr, "garbage collecting...");
+        fprintf(stderr, "garbage collecting...");
         crb_garbage_collect(inter);
-//        fprintf(stderr, "done.\n");
+        fprintf(stderr, "done.\n");
 
         inter->heap.current_threshold = inter->heap.current_heap_size + HEAP_THRESHOLD_SIZE;
     }
@@ -154,10 +154,10 @@ CRB_Value* CRB_search_assoc_member(CRB_Object *assoc, const char *member_name, C
 }
 
 // scope chain
-CRB_Object* crb_create_scope_chain(CRB_Interpreter *inter, CRB_Object* frame, CRB_Object* next) {
+CRB_Object* crb_create_scope_chain(CRB_Interpreter *inter) {
     CRB_Object *ret = alloc_object(inter, SCOPE_CHAIN_OBJECT);
-    ret->u.scope_chain.frame = frame;
-    ret->u.scope_chain.next = next;
+    ret->u.scope_chain.frame = NULL;
+    ret->u.scope_chain.next = NULL;
     return ret;
 }
 
@@ -273,6 +273,9 @@ static void print_stack_trace(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
     result->type = CRB_NULL_VALUE;
 }
 
+/*
+ * 创建exception对象，message时字符串对象
+ */
 CRB_Object* CRB_create_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *message, int line_number) {
     static CRB_FunctionDefinition print_stack_trace_fd;
 
@@ -289,7 +292,7 @@ CRB_Object* CRB_create_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *e
     value.u.object = message;
     CRB_push_value(inter, &value);
     ++stack_count;
-    CRB_add_assoc_member(inter, ret, EXCEPTION_MEMBER_MESSAGE, &value, CRB_TRUE);
+    CRB_add_assoc_member(inter, ret, EXCEPTION_MEMBER_MESSAGE, &value, CRB_TRUE);  // 添加.message(string)
 
     int stack_trace_depth = count_stack_trace_depth(env);
     CRB_Object* stack_trace = crb_create_array_i(inter, stack_trace_depth);
@@ -297,8 +300,7 @@ CRB_Object* CRB_create_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *e
     value.u.object = stack_trace;
     CRB_push_value(inter, &value);
     ++stack_count;
-
-    CRB_add_assoc_member(inter, ret, EXCEPTION_MEMBER_STACK_TRACE, &value, CRB_TRUE);
+    CRB_add_assoc_member(inter, ret, EXCEPTION_MEMBER_STACK_TRACE, &value, CRB_TRUE);  // 添加.stack_trace(array)
 
     CRB_Object* line;  /* CRB_Assoc */
     int next_line_number = line_number;
@@ -311,8 +313,7 @@ CRB_Object* CRB_create_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *e
         } else {
             func_name = "anonymous closure";
         }
-        line = create_stack_trace_line(inter, env, func_name,
-                                       next_line_number);
+        line = create_stack_trace_line(inter, env, func_name, next_line_number);
         value.type = CRB_ASSOC_VALUE;
         value.u.object = line;
         CRB_array_set(inter, env, stack_trace, stack_trace_idx, &value);
@@ -324,24 +325,25 @@ CRB_Object* CRB_create_exception(CRB_Interpreter *inter, CRB_LocalEnvironment *e
     value.u.object = line;
     CRB_array_set(inter, env, stack_trace, stack_trace_idx, &value);
 
-    CRB_set_function_definition(CRB_env_module(inter, env), NULL, 0, print_stack_trace, &print_stack_trace_fd);
+    CRB_set_native_function(CRB_env_module(inter, env), NULL, 0, print_stack_trace, &print_stack_trace_fd);
 
     CRB_push_value(inter, &value);
     ++stack_count;
 
     value.type = CRB_CLOSURE_VALUE;
     value.u.closure.function = &print_stack_trace_fd;
-    value.u.closure.environment = NULL; /* to stop marking by GC */
+    value.u.closure.scope_chain = NULL; /* to stop marking by GC */
 
     CRB_Value scope_chain;
     scope_chain.type = CRB_SCOPE_CHAIN_VALUE;
-    scope_chain.u.object = crb_create_scope_chain(inter, ret, NULL);
+    scope_chain.u.object = crb_create_scope_chain(inter);
+    scope_chain.u.object->u.scope_chain.frame = ret;
     CRB_push_value(inter, &scope_chain);
     ++stack_count;
 
-    value.u.closure.environment = scope_chain.u.object;
+    value.u.closure.scope_chain = scope_chain.u.object;
 
-    CRB_add_assoc_member(inter, ret, EXCEPTION_MEMBER_PRINT_STACK_TRACE, &value, CRB_TRUE);
+    CRB_add_assoc_member(inter, ret, EXCEPTION_MEMBER_PRINT_STACK_TRACE, &value, CRB_TRUE);  // 添加.print_stack_trace(native function)
 
     CRB_shrink_stack(inter, stack_count);
 
@@ -390,8 +392,8 @@ static void gc_mark_value(CRB_Value *v) {
     if (crb_is_object_value(v->type)) {
         gc_mark(v->u.object);
     } else if (v->type == CRB_CLOSURE_VALUE) {
-        if (v->u.closure.environment) {
-            gc_mark(v->u.closure.environment);
+        if (v->u.closure.scope_chain) {
+            gc_mark(v->u.closure.scope_chain);
         }
     } else if (v->type == CRB_FAKE_METHOD_VALUE) {
         gc_mark(v->u.fake_method.object);
@@ -423,14 +425,14 @@ static void gc_mark_objects(CRB_Interpreter *inter) {
         gc_reset_mark(obj);
     }
 
-    if (inter->global_vars000 != NULL) {
-        rbtree_ldr(inter->global_vars000, _every_variable_gc_mark_value, NULL);
+    if (inter->global_vars != NULL) {
+        rbtree_ldr(inter->global_vars, _every_variable_gc_mark_value, NULL);
     }
 
     rbtree_ldr(inter->modules, _every_module, NULL);
 
     for (CRB_LocalEnvironment* lv=inter->top_environment; lv; lv=lv->next) {
-        gc_mark(lv->variable);
+        gc_mark(lv->scope_chain);
         gc_mark_ref_in_native_method(lv);
     }
 

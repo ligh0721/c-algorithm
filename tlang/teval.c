@@ -66,7 +66,7 @@ inline void CRB_shrink_stack(CRB_Interpreter *inter, int shrink_size) {
 /*
  * 分配作用域
  */
-static CRB_LocalEnvironment* alloc_local_environment(CRB_Interpreter *inter, CRB_Module* module, const char *func_name, int caller_line_number, CRB_Object *closure_env) {
+static CRB_LocalEnvironment* alloc_local_environment(CRB_Interpreter *inter, CRB_Module* module, const char *func_name, int caller_line_number, CRB_Object *closure_scope_chain) {
     CRB_LocalEnvironment* ret = MEM_malloc(sizeof(CRB_LocalEnvironment));
     ret->next = inter->top_environment;
     inter->top_environment = ret;
@@ -74,10 +74,14 @@ static CRB_LocalEnvironment* alloc_local_environment(CRB_Interpreter *inter, CRB
     ret->module = module;
     ret->current_function_name = func_name;
     ret->caller_line_number = caller_line_number;
+
+    // 接下来的crb_create_xxx()包含alloc_object操作，可能会触发GC，GC会扫描ref_in_native_method和scope_chain，所以这里提前设为NULL
     ret->ref_in_native_method = NULL; /* to stop marking by GC */
-    ret->variable = NULL; /* to stop marking by GC */
-    CRB_Object* frame = crb_create_assoc_i(inter);
-    ret->variable = crb_create_scope_chain(inter, frame, closure_env);
+    ret->scope_chain = NULL; /* to stop marking by GC */
+
+    ret->scope_chain = crb_create_scope_chain(inter);  // 每个函数的执行环境都有自己的作用域链的起始指针
+    ret->scope_chain->u.scope_chain.frame = crb_create_assoc_i(inter);
+    ret->scope_chain->u.scope_chain.next = closure_scope_chain;
     ret->global_var_refs = NULL;
     return ret;
 }
@@ -217,9 +221,9 @@ static void eval_closure_expression(CRB_Interpreter *inter, CRB_LocalEnvironment
     result.type = CRB_CLOSURE_VALUE;
     result.u.closure.function = expr->u.closure.function_definition;
     if (env) {
-        result.u.closure.environment = env->variable;
+        result.u.closure.scope_chain = env->scope_chain;
     } else {
-        result.u.closure.environment = NULL;
+        result.u.closure.scope_chain = NULL;
     }
     push_value(inter, &result);
 }
@@ -252,7 +256,7 @@ static void eval_identifier_expression(CRB_Interpreter *inter, CRB_LocalEnvironm
         CRB_Value v;
         v.type = CRB_CLOSURE_VALUE;
         v.u.closure.function = func;
-        v.u.closure.environment = NULL;
+        v.u.closure.scope_chain = NULL;
         push_value(inter, &v);
         return;
     }
@@ -583,7 +587,7 @@ static void dispose_local_environment(CRB_Interpreter *inter) {
 void CRB_create_closure(CRB_LocalEnvironment *env, CRB_FunctionDefinition *fd, CRB_Value* closure) {
     closure->type = CRB_CLOSURE_VALUE;
     closure->u.closure.function = fd;
-    closure->u.closure.environment = env->variable;
+    closure->u.closure.scope_chain = env->scope_chain;
 }
 
 static void call_crowbar_function_from_native(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_LocalEnvironment *caller_env, CRB_Value *func, int arg_count, CRB_Value *args, CRB_Value *result) {
@@ -644,25 +648,25 @@ static inline void call_fake_method_from_native(CRB_Interpreter *inter, CRB_Loca
  */
 void CRB_call_function(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_Value *func, int arg_count, CRB_Value *args, CRB_Value *result) {
     const char* func_name;
-    CRB_Object* closure_env;
+    CRB_Object* closure_scope_chain;
     CRB_Module* module;
     if (func->type == CRB_CLOSURE_VALUE) {
         func_name = func->u.closure.function->name;
-        closure_env = func->u.closure.environment;
+        closure_scope_chain = func->u.closure.scope_chain;
         module = func->u.closure.function->module;
     } else if (func->type == CRB_FAKE_METHOD_VALUE) {
         func_name = func->u.fake_method.method_name;
-        closure_env = NULL;
+        closure_scope_chain = NULL;
         module = NULL;
     } else {
         DBG_panic(("func->type..%d\n", func->type));
         func_name = NULL;
-        closure_env = NULL;
+        closure_scope_chain = NULL;
         module = NULL;
     }
-    CRB_LocalEnvironment* local_env = alloc_local_environment(inter, module, func_name, line_number, closure_env);
+    CRB_LocalEnvironment* local_env = alloc_local_environment(inter, module, func_name, line_number, closure_scope_chain);
     if (func->type == CRB_CLOSURE_VALUE && func->u.closure.function->is_closure && func->u.closure.function->name) {
-        CRB_add_assoc_member(inter, local_env->variable->u.scope_chain.frame, func->u.closure.function->name, func, CRB_TRUE);
+        CRB_add_assoc_member(inter, local_env->scope_chain->u.scope_chain.frame, func->u.closure.function->name, func, CRB_TRUE);
     }
 
     int stack_pointer_backup = crb_get_stack_pointer(inter);
@@ -849,28 +853,28 @@ static void do_function_call(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
  */
 static void eval_function_call_expression(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     const char* func_name;
-    CRB_Object* closure_env;
+    CRB_Object* closure_scope_chain;
     CRB_Module* module;
     eval_expression(inter, env, expr->u.function_call_expression.function);
     CRB_Value* func = peek_stack(inter, 0);
     if (func->type == CRB_CLOSURE_VALUE) {
         func_name = func->u.closure.function->name;
-        closure_env = func->u.closure.environment;
+        closure_scope_chain = func->u.closure.scope_chain;
         module = func->u.closure.function->module;
     } else if (func->type == CRB_FAKE_METHOD_VALUE) {
         func_name = func->u.fake_method.method_name;
-        closure_env = NULL;
+        closure_scope_chain = NULL;
         module = NULL;
     } else {
         crb_runtime_error(inter, env, expr->line_number, NOT_FUNCTION_ERR, CRB_MESSAGE_ARGUMENT_END);
         func_name = NULL;
-        closure_env = NULL;
+        closure_scope_chain = NULL;
         module = NULL;
     }
 
-    CRB_LocalEnvironment* local_env = alloc_local_environment(inter, module, func_name, expr->line_number, closure_env);
+    CRB_LocalEnvironment* local_env = alloc_local_environment(inter, module, func_name, expr->line_number, closure_scope_chain);
     if (func->type == CRB_CLOSURE_VALUE && func->u.closure.function->is_closure && func->u.closure.function->name) {
-        CRB_add_assoc_member(inter, local_env->variable->u.scope_chain.frame, func->u.closure.function->name, func, CRB_TRUE);
+        CRB_add_assoc_member(inter, local_env->scope_chain->u.scope_chain.frame, func->u.closure.function->name, func, CRB_TRUE);
     }
 
     int stack_pointer_backup = crb_get_stack_pointer(inter);

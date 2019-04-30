@@ -69,12 +69,12 @@ typedef struct CRB_LocalEnvironment_tag CRB_LocalEnvironment;
 typedef struct CRB_Module_tag CRB_Module;
 
 #define CRB_env_module(inter, env) ((env) ? (env)->module : (inter)->current_module)
-#define CRB_global_vars(inter, module) ((module) ? (module)->global_vars : (inter)->global_vars000)
-#define CRB_global_funcs(inter, module) ((module) ? (module)->global_funcs : (inter)->global_funcs000)
+#define CRB_global_vars(inter, module) ((module) ? (module)->global_vars : (inter)->global_vars)
+#define CRB_global_funcs(inter, module) ((module) ? (module)->global_funcs : (inter)->global_funcs)
 
 typedef struct {
-    CRB_FunctionDefinition *function;
-    CRB_Object          *environment; /* CRB_ScopeChain */
+    CRB_FunctionDefinition  *function;
+    CRB_Object              *scope_chain; /* CRB_ScopeChain */
 } CRB_Closure;
 
 typedef struct {
@@ -218,7 +218,8 @@ void CRB_array_append(CRB_Interpreter *inter, CRB_Object *obj, CRB_Value *new_va
 void CRB_array_insert(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int pos, CRB_Value *new_value, int line_number);
 void CRB_array_pop(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_Object *obj, int pos, int line_number, CRB_Value *popped);
 CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *interpreter, CRB_Module *module, const char *name, int param_count, CRB_NativeFunctionFunc *func);
-void CRB_set_function_definition(CRB_Module *module, const char *name, int param_count, CRB_NativeFunctionFunc *func, CRB_FunctionDefinition *fd);
+void CRB_set_native_function(CRB_Module *module, const char *name, int param_count,
+                             CRB_NativeFunctionFunc *func, CRB_FunctionDefinition *fd);
 void CRB_check_argument_count(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, int arg_count, int expected_count);
 //#define CRB_check_argument_count_in_native(inter, env, arg_count, expected_count) (CRB_check_argument_count(inter, env, __LINE__, arg_count, expected_count))
 

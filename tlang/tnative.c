@@ -165,7 +165,7 @@ CRB_FunctionDefinition* CRB_add_native_function(CRB_Interpreter *inter, CRB_Modu
     return fd;
 }
 
-void CRB_set_function_definition(CRB_Module *module, const char *name, int param_count, CRB_NativeFunctionFunc *func, CRB_FunctionDefinition *fd) {
+void CRB_set_native_function(CRB_Module *module, const char *name, int param_count, CRB_NativeFunctionFunc *func, CRB_FunctionDefinition *fd) {
     fd->name = name;
     fd->type = CRB_NATIVE_FUNCTION_DEFINE;
     fd->is_closure = CRB_TRUE;

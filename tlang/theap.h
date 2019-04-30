@@ -19,7 +19,7 @@ CRB_Object* crb_create_array_slice_i(CRB_Interpreter *inter, CRB_Value_SLICE* ar
 CRB_Object* crb_create_assoc_i(CRB_Interpreter *inter);
 
 // scope chain
-CRB_Object* crb_create_scope_chain(CRB_Interpreter *inter, CRB_Object* frame, CRB_Object* next);
+CRB_Object* crb_create_scope_chain(CRB_Interpreter *inter);
 
 // native pointer
 CRB_Object* crb_create_native_pointer_i(CRB_Interpreter *inter, void *pointer, const CRB_NativePointerInfo *info);

@@ -47,8 +47,8 @@ CRB_Interpreter* CRB_create_interpreter(void) {
     interpreter->interpreter_storage = storage;
     interpreter->execute_storage = MEM_open_storage(0);
     interpreter->modules = open_rbtree(_crb_asc_order_named_item);
-    interpreter->global_vars000 = open_rbtree(_crb_asc_order_named_item);
-    interpreter->global_funcs000 = open_rbtree(_crb_asc_order_named_item);
+    interpreter->global_vars = open_rbtree(_crb_asc_order_named_item);
+    interpreter->global_funcs = open_rbtree(_crb_asc_order_named_item);
     interpreter->fake_methods = open_rbtree(_asc_order_fake_method);
     interpreter->statement_list = NULL;
     interpreter->last_statement_pos = NULL;
@@ -77,7 +77,7 @@ CRB_Interpreter* CRB_create_interpreter(void) {
 
     crb_set_current_interpreter(interpreter);
     crb_init_native_const_values();
-    crb_add_native_functions(interpreter);  // add to interpreter->functions
+    crb_add_native_functions(interpreter);
     crb_add_fake_methods(interpreter);
 //    crb_add_regexp_functions(interpreter);
 
@@ -234,7 +234,6 @@ static void _dispose_vars(CRB_Module* module) {
 
 static void _dispose_funcs(CRB_Module* module) {
     close_rbtree(module->global_funcs);
-    module->global_funcs = NULL;
 }
 
 static int _every_module(const VALUE* value, void* param) {
@@ -251,42 +250,36 @@ void CRB_dispose_interpreter(CRB_Interpreter *interpreter) {
     if (interpreter->execute_storage) {
         MEM_dispose_storage(interpreter->execute_storage);
     }
-    close_rbtree(interpreter->global_vars000);
-    interpreter->global_vars000 = NULL;
+    close_rbtree(interpreter->global_vars);
+    interpreter->global_vars = NULL;
     rbtree_ldr(interpreter->modules, _every_module, _dispose_vars);
     crb_garbage_collect(interpreter);
     DBG_assert(interpreter->heap.current_heap_size == 0, ("%d bytes leaked.\n", interpreter->heap.current_heap_size));
     MEM_free(interpreter->stack.stack);
 //    crb_dispose_regexp_literals(interpreter);
-    close_rbtree(interpreter->global_funcs000);
-    interpreter->global_funcs000 = NULL;
+    close_rbtree(interpreter->global_funcs);
     rbtree_ldr(interpreter->modules, _every_module, _dispose_funcs);
+    close_rbtree(interpreter->modules);
     close_rbtree(interpreter->fake_methods);
     MEM_dispose_storage(interpreter->interpreter_storage);
 }
 
 static inline void save_interpreter_state(CRB_Interpreter* interpreter, CRB_Interpreter* state) {
-//    memcpy(state, interpreter, sizeof(CRB_Interpreter));
-//    state->global_vars = interpreter->global_vars;
-//    state->functions = interpreter->functions;
     state->statement_list = interpreter->statement_list;
-//    state->last_statement_pos = interpreter->last_statement_pos;
+    state->last_statement_pos = interpreter->last_statement_pos;
     state->current_module = interpreter->current_module;
     state->current_line_number = interpreter->current_line_number;
     state->input_mode = interpreter->input_mode;
-//    state->current_recovery_environment = interpreter->current_recovery_environment;
+    state->current_recovery_environment = interpreter->current_recovery_environment;
 }
 
 static inline void recovery_interpreter_state(CRB_Interpreter* interpreter, const CRB_Interpreter* state) {
-//    memcpy(interpreter, state, sizeof(CRB_Interpreter));
-//    interpreter->global_vars = state->global_vars;
-//    interpreter->functions = state->functions;
-//    interpreter->statement_list = state->statement_list;
-//    interpreter->last_statement_pos = state->last_statement_pos;
+    interpreter->statement_list = state->statement_list;
+    interpreter->last_statement_pos = state->last_statement_pos;
     interpreter->current_module = state->current_module;
     interpreter->current_line_number = state->current_line_number;
     interpreter->input_mode = state->input_mode;
-//    interpreter->current_recovery_environment = state->current_recovery_environment;
+    interpreter->current_recovery_environment = state->current_recovery_environment;
 }
 
 void CRB_import_model(CRB_Interpreter* interpreter, const char* name) {
@@ -305,17 +298,13 @@ void CRB_import_model(CRB_Interpreter* interpreter, const char* name) {
         crb_runtime_error(interpreter, NULL, 0, FUNCTION_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", name, CRB_MESSAGE_ARGUMENT_END);
     }
 
-//    struct _interpreter_state state;
     CRB_Interpreter state;
     save_interpreter_state(interpreter, &state);
-//    interpreter->global_vars = open_rbtree(_crb_asc_order_named_item);
-//    interpreter->functions = open_rbtree(_crb_asc_order_named_item);
     interpreter->statement_list = NULL;
     interpreter->last_statement_pos = NULL;
     interpreter->current_module = module;
     interpreter->current_line_number = 1;
     interpreter->input_mode = CRB_FILE_INPUT_MODE;
-//    crb_add_native_functions(interpreter);
 
     yyin = fp;
     do_compile(interpreter);

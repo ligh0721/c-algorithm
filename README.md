@@ -17,3 +17,5 @@
 >```
 >A : B | A B
 >```
+
+**alloc_object()函数可能会触发GC，由于crb_create_xxx()函数内部会调用alloc_object()函数，所以这类可能触发GC的函数在连续出现的时候，前一个crb_create_xxx()函数不可以使用中间变量去接收返回值，否则容易其后面的GC释放掉**
