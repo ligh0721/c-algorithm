@@ -88,6 +88,10 @@ CRB_Object* crb_string_substr_i(CRB_Interpreter *inter, CRB_LocalEnvironment *en
 CRB_Object* crb_create_array_i(CRB_Interpreter *inter, int size) {
     CRB_Object* ret = alloc_object(inter, ARRAY_OBJECT);
     ret->u.array.array = open_CRB_Value_slice(size, size);
+    CRB_Value* data = CRB_Value_slice_data(ret->u.array.array);
+    for (long i=0; i<size; ++i) {
+        data[i].type = CRB_NULL_VALUE;
+    }
     inter->heap.current_heap_size += sizeof(CRB_Value) * size;
     return ret;
 }
