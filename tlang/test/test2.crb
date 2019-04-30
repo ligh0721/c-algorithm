@@ -3,3 +3,4 @@ println()
 foreach(i: arr) {
     println(i)
 }
+import "test3"

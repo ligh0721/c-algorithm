@@ -16,9 +16,9 @@ static void check_gc(CRB_Interpreter *inter) {
     crb_garbage_collect(inter);
 #endif
     if (inter->heap.current_heap_size > inter->heap.current_threshold) {
-        fprintf(stderr, "garbage collecting...");
+//        fprintf(stderr, "garbage collecting...");
         crb_garbage_collect(inter);
-        fprintf(stderr, "done.\n");
+//        fprintf(stderr, "done.\n");
 
         inter->heap.current_threshold = inter->heap.current_heap_size + HEAP_THRESHOLD_SIZE;
     }
