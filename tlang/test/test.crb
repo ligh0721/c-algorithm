@@ -5,5 +5,9 @@ func test(arr, i) {
 }
 
 clock()
-test2.test2 = 3
+x = test2.test2
+println(test2.test2)
+x.append(8)
+println(test2.test2)
 test2.test(arr)
+test2.test2 = 3

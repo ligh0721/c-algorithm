@@ -4,4 +4,4 @@ func test(arr) {
     }
 }
 
-test2 = 1234
+test2 = [1,2,3,4]
