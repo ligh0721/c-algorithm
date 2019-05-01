@@ -20,7 +20,7 @@ b.println()
 
 println(a)
 try {
-    import "test2"
+    import "test3"
 } catch (e) {
     println("@@@@@@")
     e.print_stack_trace()

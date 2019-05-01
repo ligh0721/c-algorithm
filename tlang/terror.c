@@ -150,12 +150,12 @@ static void self_check(void) {
 void crb_compile_error(CompileError id, ...) {
     va_list ap;
     VString message;
+    crb_vstr_init(&message);
 
     self_check();
     va_start(ap, id);
     CRB_Interpreter* inter = crb_get_current_interpreter();
     int line_number = inter->current_line_number;
-    crb_vstr_clear(&message);
     format_message(inter, NULL, line_number, &crb_compile_error_message_format[id], &message, ap);
     fprintf(stderr, "module %s, line %d: ", inter->current_module->name, line_number);
     CRB_print_wcs_ln(stderr, message.string);
@@ -201,10 +201,10 @@ static void throw_runtime_exception(CRB_Interpreter *inter, CRB_LocalEnvironment
 void crb_runtime_error(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, RuntimeError id, ...) {
     va_list ap;
     VString message;
+    crb_vstr_init(&message);
 
     self_check();
     va_start(ap, id);
-    crb_vstr_clear(&message);
     format_message(inter, env, line_number, &crb_runtime_error_message_format[id], &message, ap);
     va_end(ap);
 
@@ -214,9 +214,9 @@ void crb_runtime_error(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int li
 void CRB_error(CRB_Interpreter *inter, CRB_LocalEnvironment *env, CRB_NativeLibInfo *info, int line_number, int error_code, ...) {
     va_list ap;
     VString message;
+    crb_vstr_init(&message);
 
     va_start(ap, error_code);
-    crb_vstr_clear(&message);
     format_message(inter, env, line_number, &info->message_format[error_code], &message, ap);
     throw_runtime_exception(inter, env, line_number, message.string, &info->message_format[error_code]);
 }

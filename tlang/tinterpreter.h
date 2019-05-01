@@ -564,6 +564,8 @@ int _crb_asc_order_named_item(VALUE a, VALUE b);
 // others
 typedef struct {
     CRB_Char    *string;
+    long        len;
+    long        cap;
 } VString;
 
 #endif //TLANG_TINTERPRETER_H

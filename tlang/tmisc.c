@@ -148,29 +148,38 @@ const char* CRB_get_type_name(CRB_ValueType type) {
 }
 
 // vstring
-static int my_strlen(CRB_Char* str) {
-    if (str == NULL) {
-        return 0;
+static inline void vstr_grow(VString *v, long mincap) {
+    long new_cap = v->cap << 1;
+    if (new_cap < mincap) {
+        new_cap = mincap;
     }
-    return CRB_wcslen(str);
+    DBG_assert(new_cap > 0, ("vstr out of memory.\n"));
+    v->string = MEM_realloc(v->string, sizeof(CRB_Char)*new_cap);
+    v->cap = new_cap;
 }
 
-void crb_vstr_clear(VString *v) {
+void crb_vstr_init(VString *v) {
     v->string = NULL;
+    v->cap = v->len = 0;
 }
 
 void crb_vstr_append_string(VString *v, const CRB_Char *str) {
-    int old_len = my_strlen(v->string);
-    int new_size = sizeof(CRB_Char) * (old_len + CRB_wcslen(str)  + 1);
-    v->string = MEM_realloc(v->string, new_size);
-    CRB_wcscpy(&v->string[old_len], str);
+    int mincap = v->len + CRB_wcslen(str) + 1;
+    if (mincap > v->cap) {
+        vstr_grow(v, mincap);
+    }
+    CRB_wcscpy(v->string+v->len, str);
+    v->len = mincap - 1;
 }
 
 void crb_vstr_append_character(VString *v, CRB_Char ch) {
-    int current_len = my_strlen(v->string);
-    v->string = MEM_realloc(v->string,sizeof(CRB_Char)*(current_len+2));
-    v->string[current_len] = ch;
-    v->string[current_len+1] = L'\0';
+    int mincap = v->len + 2;
+    if (mincap > v->cap) {
+        vstr_grow(v, mincap);
+    }
+    v->string[v->len] = ch;
+    v->string[v->len+1] = 0;
+    v->len = mincap - 1;
 }
 
 CRB_Value* CRB_add_global_variable(CRB_Interpreter *inter, CRB_Module* module, const char *identifier, CRB_Value *value, CRB_Boolean is_final) {
@@ -367,7 +376,7 @@ CRB_Char* CRB_value_to_string(CRB_Interpreter *inter, CRB_LocalEnvironment *env,
     struct _value_to_string_params* params = (struct _value_to_string_params*)param;
     if (params == NULL) {
         params = (struct _value_to_string_params*)MEM_malloc(sizeof(struct _value_to_string_params));
-        crb_vstr_clear(&params->vstr);
+        crb_vstr_init(&params->vstr);
         params->record = open_rbtree(asc_order_int);
         params->deep = 0;
     }
