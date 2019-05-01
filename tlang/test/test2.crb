@@ -1,8 +1,1 @@
-func print_arr(arr) {
-    foreach (i: arr) {
-        print(i, "")
-    }
-    println()
-}
-
-test_arr = [1,2,3,4]
+a++

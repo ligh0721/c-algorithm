@@ -1,13 +1,8 @@
-import "test2"
-
-test2.test_arr.append(8)
-
-test2.print_arr(test2.test_arr)
-clock()
 
 try {
-    import "test3"
+    import "test2"
 } catch (e) {
     println("@@@@@@")
-    println(e)
+    e.print_stack_trace()
 }
+println("!!!!!")

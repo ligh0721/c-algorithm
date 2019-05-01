@@ -77,6 +77,7 @@ CRB_Interpreter* CRB_create_interpreter(void) {
 
     crb_set_current_interpreter(interpreter);
     crb_init_native_const_values();
+    crb_add_std_fp(interpreter);
     crb_add_native_functions(interpreter);
     crb_add_fake_methods(interpreter);
 //    crb_add_regexp_functions(interpreter);
@@ -203,7 +204,6 @@ void CRB_interpret(CRB_Interpreter *interpreter) {
         return;
     }
 
-    crb_add_std_fp(interpreter);
     if ((setjmp(interpreter->current_recovery_environment.environment)) == 0) {
         StatementList* list = interpreter->statement_list;
         struct lnode* last_pos = interpreter->last_statement_pos ? interpreter->last_statement_pos : llist_before_front_node(list);
@@ -264,22 +264,46 @@ void CRB_dispose_interpreter(CRB_Interpreter *interpreter) {
     MEM_dispose_storage(interpreter->interpreter_storage);
 }
 
-static inline void save_interpreter_state(CRB_Interpreter* interpreter, CRB_Interpreter* state) {
-    state->statement_list = interpreter->statement_list;
-    state->last_statement_pos = interpreter->last_statement_pos;
-    state->current_module = interpreter->current_module;
-    state->current_line_number = interpreter->current_line_number;
-    state->input_mode = interpreter->input_mode;
-    state->current_recovery_environment = interpreter->current_recovery_environment;
+static inline void save_interpreter_state(CRB_Interpreter* interpreter, CRB_Interpreter* recovery) {
+    recovery->statement_list = interpreter->statement_list;
+    recovery->last_statement_pos = interpreter->last_statement_pos;
+    recovery->current_module = interpreter->current_module;
+    recovery->current_line_number = interpreter->current_line_number;
+    recovery->input_mode = interpreter->input_mode;
+    recovery->current_recovery_environment = interpreter->current_recovery_environment;
 }
 
-static inline void recovery_interpreter_state(CRB_Interpreter* interpreter, const CRB_Interpreter* state) {
-    interpreter->statement_list = state->statement_list;
-    interpreter->last_statement_pos = state->last_statement_pos;
-    interpreter->current_module = state->current_module;
-    interpreter->current_line_number = state->current_line_number;
-    interpreter->input_mode = state->input_mode;
-    interpreter->current_recovery_environment = state->current_recovery_environment;
+static inline void recovery_interpreter_state(CRB_Interpreter* interpreter, const CRB_Interpreter* recovery) {
+    interpreter->statement_list = recovery->statement_list;
+    interpreter->last_statement_pos = recovery->last_statement_pos;
+    interpreter->current_module = recovery->current_module;
+    interpreter->current_line_number = recovery->current_line_number;
+    interpreter->input_mode = recovery->input_mode;
+    interpreter->current_recovery_environment = recovery->current_recovery_environment;
+}
+
+void interpret_module(CRB_Interpreter *interpreter, CRB_Interpreter *recovery) {
+    if (interpreter->statement_list == NULL) {
+        return;
+    }
+
+    if ((setjmp(interpreter->current_recovery_environment.environment)) == 0) {
+        StatementList* list = interpreter->statement_list;
+        struct lnode* last_pos = interpreter->last_statement_pos ? interpreter->last_statement_pos : llist_before_front_node(list);
+        interpreter->last_statement_pos = llist_back_node(list);
+        StatementResult result;
+        crb_execute_statement_list_with_pos(interpreter, NULL, last_pos, &result);
+        if (result.type != NORMAL_STATEMENT_RESULT) {
+            crb_runtime_error(interpreter, NULL, 0, BREAK_OR_CONTINUE_REACHED_TOPLEVEL_ERR, CRB_MESSAGE_ARGUMENT_END);
+        }
+    } else {
+        crb_set_stack_pointer(interpreter, 0);
+        recovery_interpreter_state(interpreter, recovery);
+        crb_garbage_collect(interpreter);
+        longjmp(interpreter->current_recovery_environment.environment, LONGJMP_ARG);
+    }
+    DBG_assert(interpreter->stack.stack_pointer == 0, ("stack_pointer..%d\n", interpreter->stack.stack_pointer));
+    crb_garbage_collect(interpreter);
 }
 
 void CRB_import_model(CRB_Interpreter* interpreter, const char* name) {
@@ -297,8 +321,8 @@ void CRB_import_model(CRB_Interpreter* interpreter, const char* name) {
         crb_runtime_error(interpreter, NULL, 0, MODULE_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", name, CRB_MESSAGE_ARGUMENT_END);
     }
 
-    CRB_Interpreter state;
-    save_interpreter_state(interpreter, &state);
+    CRB_Interpreter recovery;
+    save_interpreter_state(interpreter, &recovery);
     interpreter->statement_list = NULL;
     interpreter->last_statement_pos = NULL;
     interpreter->current_module = module;
@@ -310,7 +334,7 @@ void CRB_import_model(CRB_Interpreter* interpreter, const char* name) {
     fclose(fp);
     crb_reset_string_literal_buffer();
 
-    CRB_interpret(interpreter);
+    interpret_module(interpreter, &recovery);
 
-    recovery_interpreter_state(interpreter, &state);
+    recovery_interpreter_state(interpreter, &recovery);
 }
