@@ -282,7 +282,7 @@ static inline void recovery_interpreter_state(CRB_Interpreter* interpreter, cons
     interpreter->current_recovery_environment = recovery->current_recovery_environment;
 }
 
-void interpret_module(CRB_Interpreter *interpreter, CRB_Interpreter *recovery) {
+static inline void interpret_module(CRB_Interpreter *interpreter, CRB_Interpreter *recovery) {
     if (interpreter->statement_list == NULL) {
         return;
     }
