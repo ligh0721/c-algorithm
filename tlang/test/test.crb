@@ -1,4 +1,24 @@
+clock()
+func c() {
+    obj = {}
+    obj.m = 1
+    obj.set = closure(x) {
+        obj.m = x
+    }
+    obj.println = closure aa() {
+        println(obj.m)
+    }
+    return obj
+}
 
+a = c()
+b = c()
+a.set(55)
+b.set(66)
+a.println()
+b.println()
+
+println(a)
 try {
     import "test2"
 } catch (e) {

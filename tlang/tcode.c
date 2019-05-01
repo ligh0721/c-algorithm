@@ -239,17 +239,33 @@ ExpressionList* crb_chain_expression_list(ExpressionList *list, Expression *expr
 /*
  * 创建关联数组字面量成员项
  */
-AssocExpression* crb_create_assoc_expression(CRB_Boolean is_final, const char* member_name, Expression* expr) {
+AssocExpression* crb_create_identifier_assoc_expression(CRB_Boolean is_final, const char* member_name, Expression* expr) {
     AssocExpression* assoc_expr = crb_malloc(sizeof(AssocExpression));
     assoc_expr->member_name = member_name;
     assoc_expr->expression = expr;
     assoc_expr->is_final = is_final;
     return assoc_expr;
 }
+
+/*
+ * 创建关联数组字面量成员项
+ */
+AssocExpression* crb_create_string_assoc_expression(CRB_Boolean is_final, Expression* member_name, Expression* expr) {
+    AssocExpression* assoc_expr = crb_malloc(sizeof(AssocExpression));
+    int len = CRB_wcstombs_len(member_name->u.string_value);
+    CRB_Interpreter* inter = crb_get_current_interpreter();
+    char* name = crb_execute_malloc(inter, len+1);
+    CRB_wcstombs(member_name->u.string_value, name);
+    assoc_expr->member_name = name;
+    assoc_expr->expression = expr;
+    assoc_expr->is_final = is_final;
+    return assoc_expr;
+}
+
 /*
  * 创建关联数组字面量表达式列表
  */
-AssocExpressionList* crb_create_assoc_expression_list(AssocExpression* expr) {
+AssocExpressionList* crb_create_identifier_assoc_expression_list(AssocExpression* expr) {
     return create_list(expr);
 }
 

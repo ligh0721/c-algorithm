@@ -26,8 +26,9 @@ Expression* crb_create_function_call_expression(Expression *function, ArgumentLi
 ExpressionList* crb_create_expression_list(Expression *expression);
 ExpressionList* crb_chain_expression_list(ExpressionList* list, Expression *expr);
 
-AssocExpression* crb_create_assoc_expression(CRB_Boolean is_final, const char* member_name, Expression* expr);
-AssocExpressionList* crb_create_assoc_expression_list(AssocExpression* expr);
+AssocExpression* crb_create_identifier_assoc_expression(CRB_Boolean is_final, const char* member_name, Expression* expr);
+AssocExpression* crb_create_string_assoc_expression(CRB_Boolean is_final, Expression* member_name, Expression* expr);
+AssocExpressionList* crb_create_identifier_assoc_expression_list(AssocExpression* expr);
 AssocExpressionList* crb_chain_assoc_expression_list(AssocExpressionList* list, AssocExpression* expr);
 
 void crb_function_define(const char *identifier, CRB_ParameterList *parameter_list, CRB_Block *block);

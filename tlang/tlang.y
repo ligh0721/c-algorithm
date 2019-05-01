@@ -392,7 +392,7 @@ assoc_expression_list
         }
         | assoc_expression
         {
-            $$ = crb_create_assoc_expression_list($1);
+            $$ = crb_create_identifier_assoc_expression_list($1);
         }
         | assoc_expression_list comma assoc_expression
         {
@@ -403,11 +403,19 @@ assoc_expression_list
 assoc_expression
         : IDENTIFIER COLON assignment_expression
         {
-            $$ = crb_create_assoc_expression(CRB_FALSE, $1, $3);
+            $$ = crb_create_identifier_assoc_expression(CRB_FALSE, $1, $3);
         }
         | FINAL IDENTIFIER COLON assignment_expression
         {
-            $$ = crb_create_assoc_expression(CRB_TRUE, $2, $4);
+            $$ = crb_create_identifier_assoc_expression(CRB_TRUE, $2, $4);
+        }
+        | STRING_LITERAL COLON assignment_expression
+        {
+            $$ = crb_create_string_assoc_expression(CRB_FALSE, $1, $3);
+        }
+        | FINAL STRING_LITERAL COLON assignment_expression
+        {
+            $$ = crb_create_string_assoc_expression(CRB_TRUE, $2, $4);
         }
         ;
 
