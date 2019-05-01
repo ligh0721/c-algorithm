@@ -134,6 +134,8 @@ CRB_ErrorDefinition crb_runtime_error_message_format[] = {
                 "AssignToFinalVariableException"},
         {"找不到函数($(name))。",
                 "FunctionNotFoundException"},
+        {"找不到模块($(name))。",
+                "ModuleNotFoundException"},
         {"dummy", NULL}
 };
 

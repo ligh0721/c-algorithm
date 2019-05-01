@@ -1,7 +1,8 @@
-func test(arr) {
+func print_arr(arr) {
     foreach (i: arr) {
-        println(i)
+        print(i, "")
     }
+    println()
 }
 
-test2 = [1,2,3,4]
+test_arr = [1,2,3,4]

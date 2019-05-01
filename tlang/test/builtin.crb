@@ -78,6 +78,7 @@ GroupIndexOverflowException = create_exception_class(BugException);
 BreakOrContinueReachedTopLevelException = create_exception_class(BugException);
 AssignToFinalVariableException = create_exception_class(BugException);
 FunctionNotFoundException = create_exception_class(BugException);
+ModuleNotFoundException = create_exception_class(BugException);
 
 # native.c
 FOpenArgumentTypeException = create_exception_class(BugException);

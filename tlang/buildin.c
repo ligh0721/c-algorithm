@@ -88,6 +88,7 @@ static const char* st_builtin_src[] = {
         "BreakOrContinueReachedTopLevelException = create_exception_class(BugException);\n",
         "AssignToFinalVariableException = create_exception_class(BugException);\n",
         "FunctionNotFoundException = create_exception_class(BugException);\n",
+        "ModuleNotFoundException = create_exception_class(BugException);\n",
         "\n",
         "# native.c\n",
         "FOpenArgumentTypeException = create_exception_class(BugException);\n",

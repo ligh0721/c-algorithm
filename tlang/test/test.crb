@@ -1,13 +1,8 @@
 import "test2"
-arr = [1,2,[34],5,7]
-func test(arr, i) {
-    return arr[i];
-}
 
+test2.test_arr.append(8)
+
+test2.print_arr(test2.test_arr)
 clock()
-x = test2.test2
-println(test2.test2)
-x.append(8)
-println(test2.test2)
-test2.test(arr)
-test2.test2 = 3
+
+import "test3"

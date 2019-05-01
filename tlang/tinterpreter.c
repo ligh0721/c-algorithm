@@ -294,8 +294,7 @@ void CRB_import_model(CRB_Interpreter* interpreter, const char* name) {
     FILE* fp = fopen(file_name, "r");
     MEM_free(file_name);
     if (fp == NULL) {
-        // TODO: FILE_NOT_FOUND_ERR
-        crb_runtime_error(interpreter, NULL, 0, FUNCTION_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", name, CRB_MESSAGE_ARGUMENT_END);
+        crb_runtime_error(interpreter, NULL, 0, MODULE_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", name, CRB_MESSAGE_ARGUMENT_END);
     }
 
     CRB_Interpreter state;

@@ -949,7 +949,6 @@ static void eval_member_expression(CRB_Interpreter *inter, CRB_LocalEnvironment 
                 return;
             }
 
-            // TODO: MODULE_IDENTIFIER_NOT_FOUND_ERR
             crb_runtime_error(inter, env, expr->line_number, IDENTIFIER_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", expr->u.member_expression.member_name, CRB_MESSAGE_ARGUMENT_END);
 
         }
@@ -1096,24 +1095,43 @@ static void assign_to_member(CRB_Interpreter *inter, CRB_LocalEnvironment *env, 
     Expression *left = expr->u.assign_expression.left;
     eval_expression(inter, env, left->u.member_expression.expression);
     CRB_Value* assoc = peek_stack(inter, 0);
-    // TODO: support module.global
-    if (assoc->type != CRB_ASSOC_VALUE) {
+    if (assoc->type == CRB_ASSOC_VALUE) {
+        CRB_Boolean is_final;
+        CRB_Value* dest = CRB_search_assoc_member(assoc->u.object, left->u.member_expression.member_name, &is_final);
+        if (dest == NULL) {
+            if (expr->u.assign_expression.operator != NORMAL_ASSIGN) {
+                crb_runtime_error(inter, env, expr->line_number, NO_SUCH_MEMBER_ERR, CRB_STRING_MESSAGE_ARGUMENT, "member_name", left->u.member_expression.member_name, CRB_MESSAGE_ARGUMENT_END);
+            }
+            CRB_add_assoc_member(inter, assoc->u.object, left->u.member_expression.member_name, src, expr->u.assign_expression.is_final);
+        } else {
+            if (is_final) {
+                crb_runtime_error(inter, env, expr->line_number, ASSIGN_TO_FINAL_VARIABLE_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", left->u.member_expression.member_name, CRB_MESSAGE_ARGUMENT_END);
+            }
+            do_assign(inter, env, src, dest, expr->u.assign_expression.operator, expr->line_number);
+        }
+    } else if (assoc->type == CRB_MODULE_VALUE) {
+        CRB_Boolean is_final;
+        CRB_Value* dest = CRB_search_global_variable(inter, assoc->u.module, left->u.member_expression.member_name, &is_final);
+        if (dest == NULL) {
+            if (expr->u.assign_expression.operator != NORMAL_ASSIGN) {
+                crb_runtime_error(inter, env, expr->line_number, IDENTIFIER_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", left->u.member_expression.member_name, CRB_MESSAGE_ARGUMENT_END);
+            }
+            CRB_FunctionDefinition* fd = CRB_search_function(inter, assoc->u.module, left->u.member_expression.member_name);
+            if (fd != NULL) {
+                crb_runtime_error(inter, env, expr->line_number, FUNCTION_EXISTS_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", left->u.member_expression.member_name, CRB_MESSAGE_ARGUMENT_END);
+            }
+            CRB_add_global_variable(inter, assoc->u.module, left->u.member_expression.member_name, src, expr->u.assign_expression.is_final);
+        } else {
+            if (is_final) {
+                crb_runtime_error(inter, env, expr->line_number, ASSIGN_TO_FINAL_VARIABLE_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", left->u.member_expression.member_name, CRB_MESSAGE_ARGUMENT_END);
+            }
+            do_assign(inter, env, src, dest, expr->u.assign_expression.operator, expr->line_number);
+        }
+    } else {
         crb_runtime_error(inter, env, expr->line_number, NOT_OBJECT_MEMBER_ASSIGN_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
 
-    CRB_Boolean is_final;
-    CRB_Value* dest = CRB_search_assoc_member(assoc->u.object, left->u.member_expression.member_name, &is_final);
-    if (dest == NULL) {
-        if (expr->u.assign_expression.operator != NORMAL_ASSIGN) {
-            crb_runtime_error(inter, env, expr->line_number, NO_SUCH_MEMBER_ERR, CRB_STRING_MESSAGE_ARGUMENT, "member_name", left->u.member_expression.member_name, CRB_MESSAGE_ARGUMENT_END);
-        }
-        CRB_add_assoc_member(inter, assoc->u.object, left->u.member_expression.member_name, src, expr->u.assign_expression.is_final);
-    } else {
-        if (is_final) {
-            crb_runtime_error(inter, env, expr->line_number, ASSIGN_TO_FINAL_VARIABLE_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", left->u.member_expression.member_name, CRB_MESSAGE_ARGUMENT_END);
-        }
-        do_assign(inter, env, src, dest, expr->u.assign_expression.operator, expr->line_number);
-    }
+
     shrink_stack(inter, 1);
 }
 
@@ -1154,7 +1172,7 @@ static inline CRB_Value* get_array_element_lvalue(CRB_Interpreter *inter, CRB_Lo
 }
 
 /*
- * 获取元素左值地址
+ * 获取角标元素左值地址
  */
 static inline CRB_Value* get_element_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
     eval_expression(inter, env, expr->u.index_expression.array);
@@ -1183,18 +1201,10 @@ static CRB_Value* get_member_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment
     } else if (assoc.type == CRB_MODULE_VALUE) {
         CRB_Boolean is_final = CRB_FALSE;
         CRB_Value* dest = CRB_search_global_variable(inter, assoc.u.module, expr->u.member_expression.member_name, &is_final);
-        if (dest != NULL) {
-            return dest;
+        if (is_final) {
+            crb_runtime_error(inter, env, expr->line_number, ASSIGN_TO_FINAL_VARIABLE_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", expr->u.member_expression.member_name, CRB_MESSAGE_ARGUMENT_END);
         }
-        // TODO: function -> identifier
-        CRB_FunctionDefinition* fd = CRB_search_function(inter, assoc.u.module, expr->u.member_expression.member_name);
-        if (fd != NULL) {
-            CRB_Value func;
-            CRB_create_closure(NULL, fd, &func);
-            push_value(inter, &func);
-            return;
-        }
-        return NULL;
+        return dest;
     } else {
         crb_runtime_error(inter, env, expr->line_number, NOT_OBJECT_MEMBER_UPDATE_ERR, CRB_MESSAGE_ARGUMENT_END);
     }
@@ -1205,15 +1215,20 @@ static CRB_Value* get_member_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment
  * 获取左值地址
  */
 static CRB_Value* get_lvalue(CRB_Interpreter *inter, CRB_LocalEnvironment *env, Expression *expr) {
-    CRB_Value* dest = NULL;
-    if (expr->type == IDENTIFIER_EXPRESSION) {
-        dest = crb_get_identifier_lvalue(inter, env, expr->line_number, expr->u.identifier);
-    } else if (expr->type == INDEX_EXPRESSION) {
-        dest = get_element_lvalue(inter, env, expr);
-    } else if (expr->type == MEMBER_EXPRESSION) {
-        dest = get_member_lvalue(inter, env, expr);
-    } else {
-        crb_runtime_error(inter, env, expr->line_number, NOT_LVALUE_ERR, CRB_MESSAGE_ARGUMENT_END);
+    CRB_Value* dest;
+    switch (expr->type) {
+        case IDENTIFIER_EXPRESSION:
+            dest = crb_get_identifier_lvalue(inter, env, expr->line_number, expr->u.identifier);
+            return dest;
+        case INDEX_EXPRESSION:
+            dest = get_element_lvalue(inter, env, expr);
+            return dest;
+        case MEMBER_EXPRESSION:
+            dest = get_member_lvalue(inter, env, expr);
+            return dest;
+        default:
+            crb_runtime_error(inter, env, expr->line_number, NOT_LVALUE_ERR, CRB_MESSAGE_ARGUMENT_END);
+            dest = NULL;
     }
     return dest;
 }
@@ -1388,33 +1403,56 @@ static void eval_assign_expression(CRB_Interpreter *inter, CRB_LocalEnvironment 
 
     // 获取左值地址
     CRB_Value* dest = get_lvalue(inter, env, left);
-
-
-
-
-
-
-
-    if (left->type == IDENTIFIER_EXPRESSION && dest == NULL) {
+    if (dest != NULL) {
+        do_assign(inter, env, src, dest, expr->u.assign_expression.operator, expr->line_number);
+    } else {
+        // 左值不存在，可能需要创建变量
         if (expr->u.assign_expression.operator != NORMAL_ASSIGN) {
             crb_runtime_error(inter, env, expr->line_number, IDENTIFIER_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", left->u.identifier, CRB_MESSAGE_ARGUMENT_END);
         }
-        if (env != NULL) {
-            CRB_add_local_variable(inter, env, left->u.identifier, src, expr->u.assign_expression.is_final);
+        if (left->type == IDENTIFIER_EXPRESSION) {
+            if (env != NULL) {
+                CRB_add_local_variable(inter, env, left->u.identifier, src, expr->u.assign_expression.is_final);
+            } else {
+                CRB_FunctionDefinition* fd = CRB_search_function(inter, CRB_env_module(inter, env), left->u.identifier);
+                if (fd == NULL) {
+                    fd = CRB_search_function(inter, NULL, left->u.identifier);
+                }
+                if (fd != NULL) {
+                    crb_runtime_error(inter, env, expr->line_number, FUNCTION_EXISTS_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", left->u.identifier, CRB_MESSAGE_ARGUMENT_END);
+                }
+                CRB_add_global_variable(inter, CRB_env_module(inter, env), left->u.identifier, src, expr->u.assign_expression.is_final);
+            }
         } else {
-            CRB_FunctionDefinition* fd = CRB_search_function(inter, CRB_env_module(inter, env), left->u.identifier);
-            if (fd == NULL) {
-                fd = CRB_search_function(inter, NULL, left->u.identifier);
-            }
-            if (fd != NULL) {
-                crb_runtime_error(inter, env, expr->line_number, FUNCTION_EXISTS_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", left->u.identifier, CRB_MESSAGE_ARGUMENT_END);
-            }
-            CRB_add_global_variable(inter, CRB_env_module(inter, env), left->u.identifier, src, expr->u.assign_expression.is_final);
+            DBG_assert(0, ("bad expression type: %d\n", left->type));
         }
-    } else {
-        DBG_assert(dest != NULL, ("dest == NULL.\n"));
-        do_assign(inter, env, src, dest, expr->u.assign_expression.operator, expr->line_number);
     }
+
+
+
+
+
+
+//    if (left->type == IDENTIFIER_EXPRESSION && dest == NULL) {
+//        if (expr->u.assign_expression.operator != NORMAL_ASSIGN) {
+//            crb_runtime_error(inter, env, expr->line_number, IDENTIFIER_NOT_FOUND_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", left->u.identifier, CRB_MESSAGE_ARGUMENT_END);
+//        }
+//        if (env != NULL) {
+//            CRB_add_local_variable(inter, env, left->u.identifier, src, expr->u.assign_expression.is_final);
+//        } else {
+//            CRB_FunctionDefinition* fd = CRB_search_function(inter, CRB_env_module(inter, env), left->u.identifier);
+//            if (fd == NULL) {
+//                fd = CRB_search_function(inter, NULL, left->u.identifier);
+//            }
+//            if (fd != NULL) {
+//                crb_runtime_error(inter, env, expr->line_number, FUNCTION_EXISTS_ERR, CRB_STRING_MESSAGE_ARGUMENT, "name", left->u.identifier, CRB_MESSAGE_ARGUMENT_END);
+//            }
+//            CRB_add_global_variable(inter, CRB_env_module(inter, env), left->u.identifier, src, expr->u.assign_expression.is_final);
+//        }
+//    } else {
+//        DBG_assert(dest != NULL, ("dest == NULL.\n"));
+//        do_assign(inter, env, src, dest, expr->u.assign_expression.operator, expr->line_number);
+//    }
 }
 
 /*
