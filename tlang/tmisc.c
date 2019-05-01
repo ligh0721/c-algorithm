@@ -7,6 +7,7 @@
 #include <limits.h>
 #include "tinterpreter.h"
 #include "tmisc.h"
+#include "terror.h"
 
 
 /*
@@ -254,7 +255,11 @@ struct _fake_method_entry {
 FakeMethodDefinition* crb_search_fake_method(CRB_Interpreter *inter, CRB_LocalEnvironment *env, int line_number, CRB_FakeMethod *fm) {
     struct _fake_method_entry key = {fm->object->type, fm->method_name};
     VALUE res = rbtree_get(inter->fake_methods, ptr_value(&key), NULL);
-    return (FakeMethodDefinition*)res.ptr_value;
+    FakeMethodDefinition* ret = (FakeMethodDefinition*)res.ptr_value;
+    if (ret == NULL) {
+        crb_runtime_error(inter, env, line_number, NO_SUCH_METHOD_ERR, CRB_STRING_MESSAGE_ARGUMENT, "method_name", fm->method_name, CRB_MESSAGE_ARGUMENT_END);
+    }
+    return ret;
 }
 
 CRB_Module* CRB_add_module(CRB_Interpreter* inter, const char* name) {

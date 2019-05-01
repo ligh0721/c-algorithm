@@ -5,4 +5,4 @@ try {
     println("@@@@@@")
     e.print_stack_trace()
 }
-println("!!!!!")
+println(ARGS.len(), "!!!!!")
