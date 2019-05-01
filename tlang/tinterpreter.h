@@ -118,6 +118,7 @@ struct CRB_Object_tag {
 #define EXCEPTION_MEMBER_FUNCTION_NAME          ("function_name")
 #define EXCEPTION_MEMBER_PRINT_STACK_TRACE      ("print_stack_trace")
 #define EXCEPTION_CREATE_METHOD_NAME            ("create")
+#define EXCEPTION_TRACE_TOP_LEVEL               ("<top>")
 
 typedef enum {
     PARSE_ERR = 1,

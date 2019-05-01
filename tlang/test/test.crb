@@ -5,4 +5,9 @@ test2.test_arr.append(8)
 test2.print_arr(test2.test_arr)
 clock()
 
-import "test3"
+try {
+    import "test3"
+} catch (e) {
+    println("@@@@@@")
+    println(e)
+}

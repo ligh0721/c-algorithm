@@ -11,6 +11,7 @@
 #include <rbtree.h>
 
 #define UTF_8_SOURCE
+#define MAIN_MODULE_NAME ("<main>")
 
 
 // tinterpreter

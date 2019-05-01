@@ -130,7 +130,7 @@ static void do_compile(CRB_Interpreter *inter) {
 
 void CRB_compile(CRB_Interpreter *interpreter, FILE *fp) {
     crb_set_current_interpreter(interpreter);
-    interpreter->current_module = CRB_add_module_if_not_exist(interpreter, "<main>", NULL);
+    interpreter->current_module = CRB_add_module_if_not_exist(interpreter, MAIN_MODULE_NAME, NULL);
     interpreter->current_line_number = 1;
     interpreter->input_mode = CRB_FILE_INPUT_MODE;
 
@@ -143,7 +143,7 @@ void CRB_compile(CRB_Interpreter *interpreter, FILE *fp) {
 void CRB_compile_string(CRB_Interpreter *interpreter, const char** lines) {
     crb_set_current_interpreter(interpreter);
     crb_set_source_string(lines);
-    interpreter->current_module = CRB_add_module_if_not_exist(interpreter, "<main>", NULL);
+    interpreter->current_module = CRB_add_module_if_not_exist(interpreter, MAIN_MODULE_NAME, NULL);
     interpreter->current_line_number = 1;
     interpreter->input_mode = CRB_STRING_INPUT_MODE;
 
@@ -167,7 +167,7 @@ void CRB_compile_builtin_string(CRB_Interpreter *interpreter, const char** lines
 void CRB_compile_readline(CRB_Interpreter* interpreter, ReadLineModeParams* params) {
     crb_set_current_interpreter(interpreter);
     crb_set_readline(params);
-    interpreter->current_module = CRB_add_module_if_not_exist(interpreter, "<main>", NULL);
+    interpreter->current_module = CRB_add_module_if_not_exist(interpreter, MAIN_MODULE_NAME, NULL);
     interpreter->current_line_number = 1;
     interpreter->input_mode = CRB_READLINE_INPUT_MODE;
 
